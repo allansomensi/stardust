@@ -1,5 +1,5 @@
-//! Minigames: uma Fenda cai de um inimigo, o piloto encosta nela e o jogo pausa para um
-//! desafio rápido de 10 a 15 segundos. O resultado vira prêmio na partida.
+//! Minigames: a Rift drops from an enemy, the pilot touches it and the game pauses for a
+//! quick 10 to 15 second challenge. The result becomes a reward in the run.
 
 use crate::audio::{Audio, Sfx};
 use crate::ui::{self, CYAN, DIM, GOLD, GREEN, PINK, RED};
@@ -10,67 +10,70 @@ use std::f32::consts::TAU;
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum MgKind {
-    Chuva,
-    Cofre,
-    Sequencia,
-    Alvos,
-    Asteroides,
+    CrystalRain,
+    Vault,
+    Sequence,
+    Targets,
+    Asteroids,
 }
 
 pub const MG_KINDS: [MgKind; 5] = [
-    MgKind::Chuva,
-    MgKind::Cofre,
-    MgKind::Sequencia,
-    MgKind::Alvos,
-    MgKind::Asteroides,
+    MgKind::CrystalRain,
+    MgKind::Vault,
+    MgKind::Sequence,
+    MgKind::Targets,
+    MgKind::Asteroids,
 ];
 
 impl MgKind {
     pub fn name(self) -> &'static str {
         match self {
-            MgKind::Chuva => "CHUVA DE CRISTAIS",
-            MgKind::Cofre => "COFRE ESTELAR",
-            MgKind::Sequencia => "SEQUÊNCIA DAS ESTRELAS",
-            MgKind::Alvos => "TIRO AO ALVO",
-            MgKind::Asteroides => "CAMPO DE ASTEROIDES",
+            MgKind::CrystalRain => "CRYSTAL RAIN",
+            MgKind::Vault => "STAR VAULT",
+            MgKind::Sequence => "STAR SEQUENCE",
+            MgKind::Targets => "TARGET PRACTICE",
+            MgKind::Asteroids => "ASTEROID FIELD",
         }
     }
     fn how(self) -> [&'static str; 2] {
         match self {
-            MgKind::Chuva => ["Pegue os cristais que caem.", "Desvie das pedras!"],
-            MgKind::Cofre => [
-                "Aperte ESPAÇO quando a agulha",
-                "estiver na faixa dourada. 3 travas.",
+            MgKind::CrystalRain => ["Catch the falling crystals.", "Dodge the rocks!"],
+            MgKind::Vault => [
+                "Press SPACE when the needle",
+                "is on the golden band. 3 locks.",
             ],
-            MgKind::Sequencia => ["Memorize as estrelas que acendem", "e repita com as SETAS."],
-            MgKind::Alvos => ["Acerte os alvos com ESPAÇO.", "Dourados valem mais."],
-            MgKind::Asteroides => ["Sobreviva 12 segundos.", "Cada batida custa caro."],
+            MgKind::Sequence => [
+                "Memorize the stars that light up",
+                "and repeat them with the ARROWS.",
+            ],
+            MgKind::Targets => ["Hit the targets with SPACE.", "Golden ones are worth more."],
+            MgKind::Asteroids => ["Survive for 12 seconds.", "Every crash costs you."],
         }
     }
     fn color(self) -> Color {
         match self {
-            MgKind::Chuva => CYAN,
-            MgKind::Cofre => GOLD,
-            MgKind::Sequencia => PINK,
-            MgKind::Alvos => GREEN,
-            MgKind::Asteroides => Color::from_rgba(255, 150, 80, 255),
+            MgKind::CrystalRain => CYAN,
+            MgKind::Vault => GOLD,
+            MgKind::Sequence => PINK,
+            MgKind::Targets => GREEN,
+            MgKind::Asteroids => Color::from_rgba(255, 150, 80, 255),
         }
     }
 }
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub enum Grade {
-    Derrota,
-    Vitoria,
-    Perfeito,
+    Defeat,
+    Victory,
+    Perfect,
 }
 
 impl Grade {
     pub fn label(self) -> &'static str {
         match self {
-            Grade::Derrota => "NÃO FOI DESSA VEZ",
-            Grade::Vitoria => "VITÓRIA!",
-            Grade::Perfeito => "PERFEITO!",
+            Grade::Defeat => "NOT THIS TIME",
+            Grade::Victory => "VICTORY!",
+            Grade::Perfect => "PERFECT!",
         }
     }
 }
@@ -85,7 +88,7 @@ struct Obj {
 
 pub struct Minigame {
     pub kind: MgKind,
-    stage: u8, // 0 intro, 1 jogando, 2 resultado
+    stage: u8, // 0 intro, 1 playing, 2 result
     t: f32,
     play_t: f32,
     ship: Vec2,
@@ -96,14 +99,14 @@ pub struct Minigame {
     score: i32,
     total: i32,
     hits: i32,
-    // cofre
+    // vault
     needle: f32,
     needle_dir: f32,
     zone: (f32, f32),
     round: u8,
     flash: f32,
     flash_ok: bool,
-    // sequência
+    // sequence
     seq: Vec<u8>,
     shown: f32,
     last_shown: i32,
@@ -141,7 +144,7 @@ impl Minigame {
             input_i: 0,
             showing: true,
             lit: None,
-            grade: Grade::Derrota,
+            grade: Grade::Defeat,
             done: false,
         };
         m.setup();
@@ -150,11 +153,11 @@ impl Minigame {
 
     fn setup(&mut self) {
         match self.kind {
-            MgKind::Cofre => self.new_zone(),
-            MgKind::Sequencia => {
+            MgKind::Vault => self.new_zone(),
+            MgKind::Sequence => {
                 self.seq = (0..4).map(|_| gen_range(0, 4) as u8).collect();
             }
-            MgKind::Alvos => {
+            MgKind::Targets => {
                 for row in 0..3 {
                     for k in 0..4 {
                         let gold = gen_range(0, 6) == 0;
@@ -187,47 +190,47 @@ impl Minigame {
 
     fn duration(&self) -> f32 {
         match self.kind {
-            MgKind::Chuva => 10.0,
-            MgKind::Alvos => 10.0,
-            MgKind::Asteroides => 12.0,
+            MgKind::CrystalRain => 10.0,
+            MgKind::Targets => 10.0,
+            MgKind::Asteroids => 12.0,
             _ => 30.0,
         }
     }
 
     fn finish(&mut self) {
         self.grade = match self.kind {
-            MgKind::Chuva => {
+            MgKind::CrystalRain => {
                 if self.score >= 22 && self.hits == 0 {
-                    Grade::Perfeito
+                    Grade::Perfect
                 } else if self.score >= 12 {
-                    Grade::Vitoria
+                    Grade::Victory
                 } else {
-                    Grade::Derrota
+                    Grade::Defeat
                 }
             }
-            MgKind::Cofre => match self.score {
-                3 => Grade::Perfeito,
-                2 => Grade::Vitoria,
-                _ => Grade::Derrota,
+            MgKind::Vault => match self.score {
+                3 => Grade::Perfect,
+                2 => Grade::Victory,
+                _ => Grade::Defeat,
             },
-            MgKind::Sequencia => match self.score {
-                3 => Grade::Perfeito,
-                2 => Grade::Vitoria,
-                _ => Grade::Derrota,
+            MgKind::Sequence => match self.score {
+                3 => Grade::Perfect,
+                2 => Grade::Victory,
+                _ => Grade::Defeat,
             },
-            MgKind::Alvos => {
+            MgKind::Targets => {
                 if self.score >= self.total {
-                    Grade::Perfeito
+                    Grade::Perfect
                 } else if self.score >= self.total * 2 / 3 {
-                    Grade::Vitoria
+                    Grade::Victory
                 } else {
-                    Grade::Derrota
+                    Grade::Defeat
                 }
             }
-            MgKind::Asteroides => match self.hits {
-                0 => Grade::Perfeito,
-                1 | 2 => Grade::Vitoria,
-                _ => Grade::Derrota,
+            MgKind::Asteroids => match self.hits {
+                0 => Grade::Perfect,
+                1 | 2 => Grade::Victory,
+                _ => Grade::Defeat,
             },
         };
         self.stage = 2;
@@ -255,7 +258,7 @@ impl Minigame {
         self.ship.y = self.ship.y.clamp(H * 0.45, H - 60.0);
     }
 
-    /// Avança o minigame. Devolve true quando o resultado já foi mostrado.
+    /// Advances the minigame. Sets `done` once the result has been shown.
     pub fn update(&mut self, dt: f32, inp: &Input, au: &mut Audio) {
         self.t += dt;
         self.flash = (self.flash - dt).max(0.0);
@@ -283,9 +286,9 @@ impl Minigame {
             _ => {}
         }
         self.play_t += dt;
-        let fire = inp.confirm || (inp.fire && self.shot_cd <= 0.0 && self.kind == MgKind::Alvos);
+        let fire = inp.confirm || (inp.fire && self.shot_cd <= 0.0 && self.kind == MgKind::Targets);
         match self.kind {
-            MgKind::Chuva => {
+            MgKind::CrystalRain => {
                 self.move_ship(dt, inp, false);
                 self.spawn_t -= dt;
                 if self.spawn_t <= 0.0 {
@@ -319,7 +322,7 @@ impl Minigame {
                     self.finish();
                 }
             }
-            MgKind::Cofre => {
+            MgKind::Vault => {
                 let speed = [0.9, 1.25, 1.65][self.round.min(2) as usize];
                 self.needle += self.needle_dir * speed * dt;
                 if self.needle > 1.0 {
@@ -348,7 +351,7 @@ impl Minigame {
                     }
                 }
             }
-            MgKind::Sequencia => {
+            MgKind::Sequence => {
                 if self.showing {
                     self.shown += dt;
                     let step = 0.55;
@@ -400,7 +403,7 @@ impl Minigame {
                     }
                 }
             }
-            MgKind::Alvos => {
+            MgKind::Targets => {
                 self.move_ship(dt, inp, false);
                 self.shot_cd -= dt;
                 if fire && self.shot_cd <= 0.0 {
@@ -436,7 +439,7 @@ impl Minigame {
                     self.finish();
                 }
             }
-            MgKind::Asteroides => {
+            MgKind::Asteroids => {
                 self.move_ship(dt, inp, false);
                 self.spawn_t -= dt;
                 if self.spawn_t <= 0.0 {
@@ -472,7 +475,7 @@ impl Minigame {
     fn draw_ship(&self, time: f32, ship: &crate::sprites::Spr) {
         let s = self.ship;
         let blink =
-            self.kind == MgKind::Asteroides && self.flash > 0.0 && (time * 20.0) as i32 % 2 == 0;
+            self.kind == MgKind::Asteroids && self.flash > 0.0 && (time * 20.0) as i32 % 2 == 0;
         if blink {
             return;
         }
@@ -514,7 +517,7 @@ impl Minigame {
 
         match self.stage {
             0 => {
-                ui::text_c("FENDA ESTELAR", W / 2.0, 250.0, 16.0, DIM);
+                ui::text_c("STAR RIFT", W / 2.0, 250.0, 16.0, DIM);
                 let how = self.kind.how();
                 ui::text_c(how[0], W / 2.0, 320.0, 18.0, WHITE);
                 ui::text_c(how[1], W / 2.0, 346.0, 18.0, WHITE);
@@ -524,9 +527,9 @@ impl Minigame {
             }
             2 => {
                 let gc = match self.grade {
-                    Grade::Derrota => RED,
-                    Grade::Vitoria => GREEN,
-                    Grade::Perfeito => GOLD,
+                    Grade::Defeat => RED,
+                    Grade::Victory => GREEN,
+                    Grade::Perfect => GOLD,
                 };
                 ui::text_outline_fit(
                     self.grade.label(),
@@ -538,9 +541,9 @@ impl Minigame {
                     W - 30.0,
                 );
                 let sub = match self.grade {
-                    Grade::Derrota => "Uma lembrança de consolo: 5 cristais.",
-                    Grade::Vitoria => "Prêmio: cristais, nível de arma e um poder.",
-                    Grade::Perfeito => "Prêmio dobrado e uma carta!",
+                    Grade::Defeat => "A consolation prize: 5 crystals.",
+                    Grade::Victory => "Reward: crystals, a weapon level and a power-up.",
+                    Grade::Perfect => "Double reward and a card!",
                 };
                 ui::text_c(sub, W / 2.0, H / 2.0 + 40.0, 15.0, WHITE);
                 return;
@@ -548,17 +551,17 @@ impl Minigame {
             _ => {}
         }
 
-        // tempo
+        // timer
         if matches!(
             self.kind,
-            MgKind::Chuva | MgKind::Alvos | MgKind::Asteroides
+            MgKind::CrystalRain | MgKind::Targets | MgKind::Asteroids
         ) {
             let left = (self.duration() - self.play_t).max(0.0) / self.duration();
             draw_rectangle(30.0, 80.0, W - 60.0, 6.0, Color::new(0.2, 0.2, 0.3, 1.0));
             draw_rectangle(30.0, 80.0, (W - 60.0) * left, 6.0, c);
         }
         match self.kind {
-            MgKind::Chuva => {
+            MgKind::CrystalRain => {
                 for o in &self.objs {
                     if o.kind == 1 {
                         draw_poly(
@@ -585,21 +588,21 @@ impl Minigame {
                 }
                 self.draw_ship(time, ship);
                 ui::text_c(
-                    &format!("CRISTAIS: {}", self.score),
+                    &format!("CRYSTALS: {}", self.score),
                     W / 2.0,
                     120.0,
                     22.0,
                     CYAN,
                 );
                 ui::text_c(
-                    "12 para vencer · 22 sem bater = perfeito",
+                    "12 to win · 22 without crashing = perfect",
                     W / 2.0,
                     142.0,
                     12.0,
                     DIM,
                 );
             }
-            MgKind::Cofre => {
+            MgKind::Vault => {
                 let (x0, x1, y) = (50.0, W - 50.0, H / 2.0);
                 let bw = x1 - x0;
                 draw_rectangle(x0, y - 18.0, bw, 36.0, Color::new(0.12, 0.1, 0.2, 1.0));
@@ -632,9 +635,9 @@ impl Minigame {
                 if self.flash > 0.0 {
                     ui::text_c(
                         if self.flash_ok {
-                            "TRAVA ABERTA!"
+                            "LOCK OPENED!"
                         } else {
-                            "ERROU!"
+                            "MISSED!"
                         },
                         W / 2.0,
                         y - 70.0,
@@ -642,9 +645,9 @@ impl Minigame {
                         if self.flash_ok { GOLD } else { RED },
                     );
                 }
-                ui::text_c("ESPAÇO para travar", W / 2.0, y + 150.0, 14.0, DIM);
+                ui::text_c("SPACE to lock", W / 2.0, y + 150.0, 14.0, DIM);
             }
-            MgKind::Sequencia => {
+            MgKind::Sequence => {
                 let center = vec2(W / 2.0, H / 2.0 + 20.0);
                 let dirs = [
                     vec2(0.0, -1.0),
@@ -670,9 +673,9 @@ impl Minigame {
                     );
                 }
                 let label = if self.showing {
-                    "OBSERVE..."
+                    "WATCH..."
                 } else {
-                    "SUA VEZ!"
+                    "YOUR TURN!"
                 };
                 ui::text_c(
                     label,
@@ -682,11 +685,7 @@ impl Minigame {
                     if self.showing { DIM } else { WHITE },
                 );
                 ui::text_c(
-                    &format!(
-                        "RODADA {} de 3 · {} estrelas",
-                        self.score + 1,
-                        self.seq.len()
-                    ),
+                    &format!("ROUND {} of 3 · {} stars", self.score + 1, self.seq.len()),
                     W / 2.0,
                     176.0,
                     14.0,
@@ -702,7 +701,7 @@ impl Minigame {
                     );
                 }
             }
-            MgKind::Alvos => {
+            MgKind::Targets => {
                 for o in &self.objs {
                     if !o.alive {
                         continue;
@@ -718,14 +717,14 @@ impl Minigame {
                 }
                 self.draw_ship(time, ship);
                 ui::text_c(
-                    &format!("ALVOS: {} / {}", self.score, self.total),
+                    &format!("TARGETS: {} / {}", self.score, self.total),
                     W / 2.0,
                     120.0,
                     22.0,
                     GREEN,
                 );
             }
-            MgKind::Asteroides => {
+            MgKind::Asteroids => {
                 for o in &self.objs {
                     draw_poly(
                         o.pos.x,
@@ -748,7 +747,7 @@ impl Minigame {
                 self.draw_ship(time, ship);
                 let hearts = 3 - self.hits.min(3);
                 let col = if hearts > 1 { GREEN } else { RED };
-                ui::text_r("ESCUDO", W / 2.0 - 10.0, 120.0, 18.0, col);
+                ui::text_r("SHIELD", W / 2.0 - 10.0, 120.0, 18.0, col);
                 for i in 0..3 {
                     let x = W / 2.0 + 10.0 + i as f32 * 22.0;
                     if i < hearts {

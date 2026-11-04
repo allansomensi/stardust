@@ -1,4 +1,4 @@
-//! Uma partida: modos, setores, ondas, jogador, inimigos, chefes, loja e segredos.
+//! A run: modes, sectors, waves, player, enemies, bosses, shop and secrets.
 
 use crate::art::Art;
 use crate::audio::{Audio, Music, Sfx};
@@ -13,110 +13,110 @@ use crate::{H, Input, W};
 use macroquad::prelude::*;
 use macroquad::rand::gen_range;
 
+pub mod arcade;
+pub mod encounters;
 pub mod minigame;
-pub mod v3;
-pub mod v4;
-pub mod v5;
+pub mod rifts;
 
 pub const COLS: usize = 8;
 pub const SECTORS: u32 = 8;
-/// Altura fixa da nave: ela só se move para os lados.
+/// Fixed ship height: it only moves sideways.
 pub const PLAYER_Y: f32 = H - 80.0;
 const S: f32 = 3.0;
 
 // ---------------------------------------------------------------------------
-// Inimigos
+// Enemies
 // ---------------------------------------------------------------------------
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Kind {
-    Zangao,
-    Vespa,
-    Besouro,
-    Atirador,
-    Divisor,
+    Drone,
+    Wasp,
+    Beetle,
+    Gunner,
+    Splitter,
     Kamikaze,
     Mini,
-    Escudeiro,
-    Tecela,
-    Portadora,
-    Camaleao,
-    Dourado,
-    Vaca,
-    Mercador,
-    Mimico,
-    Ladrao,
-    Cargueiro,
-    Minador,
-    Saltador,
+    Shieldbearer,
+    Weaver,
+    Carrier,
+    Chameleon,
+    Golden,
+    Cow,
+    Merchant,
+    Mimic,
+    Thief,
+    Freighter,
+    Minelayer,
+    Jumper,
 }
 
 impl Kind {
     pub fn hp(self) -> i32 {
         match self {
-            Kind::Besouro | Kind::Divisor => 2,
-            Kind::Portadora => 5,
-            Kind::Dourado => 8,
-            Kind::Vaca => 6,
-            Kind::Mercador => 12,
-            Kind::Cargueiro => 8,
-            Kind::Ladrao => 3,
-            Kind::Mimico => 4,
-            Kind::Minador => 2,
+            Kind::Beetle | Kind::Splitter => 2,
+            Kind::Carrier => 5,
+            Kind::Golden => 8,
+            Kind::Cow => 6,
+            Kind::Merchant => 12,
+            Kind::Freighter => 8,
+            Kind::Thief => 3,
+            Kind::Mimic => 4,
+            Kind::Minelayer => 2,
             _ => 1,
         }
     }
     pub fn points(self) -> u32 {
         match self {
-            Kind::Zangao => 50,
-            Kind::Vespa => 80,
-            Kind::Besouro => 150,
-            Kind::Atirador => 120,
-            Kind::Divisor => 100,
+            Kind::Drone => 50,
+            Kind::Wasp => 80,
+            Kind::Beetle => 150,
+            Kind::Gunner => 120,
+            Kind::Splitter => 100,
             Kind::Kamikaze => 100,
             Kind::Mini => 40,
-            Kind::Escudeiro => 140,
-            Kind::Tecela => 110,
-            Kind::Portadora => 300,
-            Kind::Camaleao => 130,
-            Kind::Dourado => 5000,
-            Kind::Vaca => 1000,
-            Kind::Mercador => 0,
-            Kind::Mimico => 400,
-            Kind::Ladrao => 500,
-            Kind::Cargueiro => 300,
-            Kind::Minador => 160,
-            Kind::Saltador => 140,
+            Kind::Shieldbearer => 140,
+            Kind::Weaver => 110,
+            Kind::Carrier => 300,
+            Kind::Chameleon => 130,
+            Kind::Golden => 5000,
+            Kind::Cow => 1000,
+            Kind::Merchant => 0,
+            Kind::Mimic => 400,
+            Kind::Thief => 500,
+            Kind::Freighter => 300,
+            Kind::Minelayer => 160,
+            Kind::Jumper => 140,
         }
     }
     pub fn color(self) -> Color {
         match self {
-            Kind::Zangao => Color::from_rgba(110, 230, 110, 255),
-            Kind::Vespa => Color::from_rgba(190, 120, 255, 255),
-            Kind::Besouro => Color::from_rgba(255, 90, 80, 255),
-            Kind::Atirador => Color::from_rgba(255, 170, 60, 255),
-            Kind::Divisor | Kind::Mini => Color::from_rgba(80, 230, 210, 255),
+            Kind::Drone => Color::from_rgba(110, 230, 110, 255),
+            Kind::Wasp => Color::from_rgba(190, 120, 255, 255),
+            Kind::Beetle => Color::from_rgba(255, 90, 80, 255),
+            Kind::Gunner => Color::from_rgba(255, 170, 60, 255),
+            Kind::Splitter | Kind::Mini => Color::from_rgba(80, 230, 210, 255),
             Kind::Kamikaze => Color::from_rgba(255, 120, 200, 255),
-            Kind::Escudeiro => Color::from_rgba(90, 150, 240, 255),
-            Kind::Tecela => Color::from_rgba(220, 200, 255, 255),
-            Kind::Portadora => Color::from_rgba(200, 130, 70, 255),
-            Kind::Camaleao => Color::from_rgba(120, 240, 150, 255),
-            Kind::Dourado => Color::from_rgba(255, 220, 80, 255),
-            Kind::Vaca => WHITE,
-            Kind::Mercador => Color::from_rgba(150, 220, 255, 255),
-            Kind::Mimico => Color::from_rgba(255, 80, 80, 255),
-            Kind::Ladrao => Color::from_rgba(140, 90, 200, 255),
-            Kind::Cargueiro => Color::from_rgba(255, 170, 60, 255),
-            Kind::Minador => Color::from_rgba(255, 110, 70, 255),
-            Kind::Saltador => Color::from_rgba(255, 150, 255, 255),
+            Kind::Shieldbearer => Color::from_rgba(90, 150, 240, 255),
+            Kind::Weaver => Color::from_rgba(220, 200, 255, 255),
+            Kind::Carrier => Color::from_rgba(200, 130, 70, 255),
+            Kind::Chameleon => Color::from_rgba(120, 240, 150, 255),
+            Kind::Golden => Color::from_rgba(255, 220, 80, 255),
+            Kind::Cow => WHITE,
+            Kind::Merchant => Color::from_rgba(150, 220, 255, 255),
+            Kind::Mimic => Color::from_rgba(255, 80, 80, 255),
+            Kind::Thief => Color::from_rgba(140, 90, 200, 255),
+            Kind::Freighter => Color::from_rgba(255, 170, 60, 255),
+            Kind::Minelayer => Color::from_rgba(255, 110, 70, 255),
+            Kind::Jumper => Color::from_rgba(255, 150, 255, 255),
         }
     }
     fn radius(self) -> f32 {
         match self {
             Kind::Mini => 9.0,
             Kind::Kamikaze => 11.0,
-            Kind::Portadora | Kind::Vaca => 17.0,
-            Kind::Mercador | Kind::Cargueiro => 21.0,
+            Kind::Carrier | Kind::Cow => 17.0,
+            Kind::Merchant | Kind::Freighter => 21.0,
             _ => 14.0,
         }
     }
@@ -236,7 +236,7 @@ impl Enemy {
         matches!(self.state, EState::Diving { .. } | EState::Free { .. })
     }
     fn alpha(&self, time: f32) -> f32 {
-        if self.kind == Kind::Camaleao {
+        if self.kind == Kind::Chameleon {
             (((time * 2.1 + self.seed).sin() * 0.5 + 0.5) * 1.15).clamp(0.08, 1.0)
         } else {
             1.0
@@ -245,7 +245,7 @@ impl Enemy {
 }
 
 // ---------------------------------------------------------------------------
-// Projéteis, drops e perigos
+// Projectiles, drops and hazards
 // ---------------------------------------------------------------------------
 
 #[derive(Clone, Copy, PartialEq)]
@@ -310,7 +310,7 @@ pub struct EBullet {
     pub pos: Vec2,
     pub vel: Vec2,
     pub r: f32,
-    /// 0 rosa, 1 laranja, 2 ciano, 3 teia (deixa lento), 4 roxo
+    /// 0 pink, 1 orange, 2 red, 3 web (slows you down), 4 purple
     pub style: u8,
     grazed: bool,
 }
@@ -329,63 +329,63 @@ impl EBullet {
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 enum PowerKind {
-    Frenesi,
-    Estrela,
-    Ima,
-    Lento,
-    Vida,
-    Bomba,
-    Escudo,
-    Cristais,
+    Frenzy,
+    Star,
+    Magnet,
+    SlowMo,
+    ExtraLife,
+    Bomb,
+    Shield,
+    Crystals,
 }
 
 impl PowerKind {
     fn letter(self) -> &'static str {
         match self {
-            PowerKind::Frenesi => "F",
-            PowerKind::Estrela => "*",
-            PowerKind::Ima => "U",
-            PowerKind::Lento => "Z",
-            PowerKind::Vida => "1UP",
-            PowerKind::Bomba => "B",
-            PowerKind::Escudo => "S",
-            PowerKind::Cristais => "$",
+            PowerKind::Frenzy => "F",
+            PowerKind::Star => "*",
+            PowerKind::Magnet => "U",
+            PowerKind::SlowMo => "Z",
+            PowerKind::ExtraLife => "1UP",
+            PowerKind::Bomb => "B",
+            PowerKind::Shield => "S",
+            PowerKind::Crystals => "$",
         }
     }
     fn name(self) -> &'static str {
         match self {
-            PowerKind::Frenesi => "FRENESI!",
-            PowerKind::Estrela => "INVENCÍVEL!",
-            PowerKind::Ima => "SUPER ÍMÃ!",
-            PowerKind::Lento => "CÂMERA LENTA!",
-            PowerKind::Vida => "VIDA EXTRA!",
-            PowerKind::Bomba => "+1 BOMBA",
-            PowerKind::Escudo => "ESCUDO!",
-            PowerKind::Cristais => "+25 CRISTAIS",
+            PowerKind::Frenzy => "FRENZY!",
+            PowerKind::Star => "INVINCIBLE!",
+            PowerKind::Magnet => "SUPER MAGNET!",
+            PowerKind::SlowMo => "SLOW MOTION!",
+            PowerKind::ExtraLife => "EXTRA LIFE!",
+            PowerKind::Bomb => "+1 BOMB",
+            PowerKind::Shield => "SHIELD!",
+            PowerKind::Crystals => "+25 CRYSTALS",
         }
     }
     fn color(self) -> Color {
         match self {
-            PowerKind::Frenesi => Color::from_rgba(255, 80, 60, 255),
-            PowerKind::Estrela => Color::from_rgba(255, 230, 80, 255),
-            PowerKind::Ima => Color::from_rgba(255, 90, 140, 255),
-            PowerKind::Lento => Color::from_rgba(120, 160, 255, 255),
-            PowerKind::Vida => Color::from_rgba(120, 255, 120, 255),
-            PowerKind::Bomba => Color::from_rgba(200, 200, 210, 255),
-            PowerKind::Escudo => Color::from_rgba(100, 230, 255, 255),
-            PowerKind::Cristais => Color::from_rgba(120, 220, 255, 255),
+            PowerKind::Frenzy => Color::from_rgba(255, 80, 60, 255),
+            PowerKind::Star => Color::from_rgba(255, 230, 80, 255),
+            PowerKind::Magnet => Color::from_rgba(255, 90, 140, 255),
+            PowerKind::SlowMo => Color::from_rgba(120, 160, 255, 255),
+            PowerKind::ExtraLife => Color::from_rgba(120, 255, 120, 255),
+            PowerKind::Bomb => Color::from_rgba(200, 200, 210, 255),
+            PowerKind::Shield => Color::from_rgba(100, 230, 255, 255),
+            PowerKind::Crystals => Color::from_rgba(120, 220, 255, 255),
         }
     }
     fn random() -> PowerKind {
         match gen_range(0, 100) {
-            0..=17 => PowerKind::Frenesi,
-            18..=27 => PowerKind::Estrela,
-            28..=42 => PowerKind::Ima,
-            43..=55 => PowerKind::Lento,
-            56..=59 => PowerKind::Vida,
-            60..=74 => PowerKind::Bomba,
-            75..=86 => PowerKind::Escudo,
-            _ => PowerKind::Cristais,
+            0..=17 => PowerKind::Frenzy,
+            18..=27 => PowerKind::Star,
+            28..=42 => PowerKind::Magnet,
+            43..=55 => PowerKind::SlowMo,
+            56..=59 => PowerKind::ExtraLife,
+            60..=74 => PowerKind::Bomb,
+            75..=86 => PowerKind::Shield,
+            _ => PowerKind::Crystals,
         }
     }
 }
@@ -401,7 +401,7 @@ enum DropKind {
     Card(usize),
     Power(PowerKind),
     Log(usize),
-    Curse(v4::Curse, i32),
+    Curse(rifts::Curse, i32),
     Relic(Weapon),
     Rift,
     Letter(usize),
@@ -437,7 +437,7 @@ struct Bolt {
 }
 
 // ---------------------------------------------------------------------------
-// Jogador
+// Player
 // ---------------------------------------------------------------------------
 
 pub struct Player {
@@ -517,7 +517,7 @@ pub enum Phase {
     },
 }
 
-/// Fatos que a interface transforma em estatísticas, bestiário e conquistas.
+/// Facts the interface turns into stats, bestiary entries and achievements.
 pub enum Event {
     Ach(usize),
     Seen(usize),
@@ -546,174 +546,174 @@ pub enum Event {
 }
 
 // ---------------------------------------------------------------------------
-// Loja
+// Shop
 // ---------------------------------------------------------------------------
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 enum Item {
-    Vida,
-    Bomba,
-    Escudo,
-    Melhoria,
-    Arma(Weapon),
-    Propulsor,
-    Gatilho,
-    Ima,
+    ExtraLife,
+    Bomb,
+    Shield,
+    Upgrade,
+    Weapon(Weapon),
+    Thruster,
+    Trigger,
+    Magnet,
     Drone,
-    Laterais,
-    Seguro,
-    Carga,
-    Banco,
+    SideCannons,
+    Insurance,
+    EnergyCell,
+    Bank,
     Radar,
-    Amuleto,
-    Cristalizador,
-    Mapa,
-    Mercenario,
-    Carta,
-    Auto,
-    Mira,
+    Amulet,
+    Crystallizer,
+    TreasureMap,
+    Mercenary,
+    MysteryCard,
+    Autofire,
+    LaserSight,
     Capacitor,
-    Caixa,
-    Nucleo,
+    MysteryBox,
+    DamageCore,
 }
 
 impl Item {
     fn name(self) -> String {
         match self {
-            Item::Vida => "VIDA EXTRA".into(),
-            Item::Bomba => "BOMBA".into(),
-            Item::Escudo => "ESCUDO".into(),
-            Item::Melhoria => "MELHORIA DE ARMA".into(),
-            Item::Arma(w) => format!("{}  {}", w.name(), "*".repeat(w.tier() as usize)),
-            Item::Propulsor => "PROPULSOR".into(),
-            Item::Gatilho => "GATILHO".into(),
-            Item::Ima => "ÍMÃ".into(),
-            Item::Drone => "DRONE DE ATAQUE".into(),
-            Item::Laterais => "CANHÕES LATERAIS".into(),
-            Item::Seguro => "SEGURO DE ARMA".into(),
-            Item::Carga => "CÉLULA DE ENERGIA".into(),
-            Item::Banco => "BANCO ESTELAR".into(),
-            Item::Radar => "RADAR DE CARTAS".into(),
-            Item::Amuleto => "AMULETO".into(),
-            Item::Cristalizador => "CRISTALIZADOR".into(),
-            Item::Mapa => "MAPA DO TESOURO".into(),
-            Item::Mercenario => "MERCENÁRIO".into(),
-            Item::Carta => "CARTA MISTERIOSA".into(),
-            Item::Auto => "TIRO AUTOMÁTICO".into(),
-            Item::Mira => "MIRA LASER".into(),
+            Item::ExtraLife => "EXTRA LIFE".into(),
+            Item::Bomb => "BOMB".into(),
+            Item::Shield => "SHIELD".into(),
+            Item::Upgrade => "WEAPON UPGRADE".into(),
+            Item::Weapon(w) => format!("{}  {}", w.name(), "*".repeat(w.tier() as usize)),
+            Item::Thruster => "THRUSTER".into(),
+            Item::Trigger => "TRIGGER".into(),
+            Item::Magnet => "MAGNET".into(),
+            Item::Drone => "ATTACK DRONE".into(),
+            Item::SideCannons => "SIDE CANNONS".into(),
+            Item::Insurance => "WEAPON INSURANCE".into(),
+            Item::EnergyCell => "ENERGY CELL".into(),
+            Item::Bank => "STAR BANK".into(),
+            Item::Radar => "CARD RADAR".into(),
+            Item::Amulet => "AMULET".into(),
+            Item::Crystallizer => "CRYSTALLIZER".into(),
+            Item::TreasureMap => "TREASURE MAP".into(),
+            Item::Mercenary => "MERCENARY".into(),
+            Item::MysteryCard => "MYSTERY CARD".into(),
+            Item::Autofire => "AUTOFIRE".into(),
+            Item::LaserSight => "LASER SIGHT".into(),
             Item::Capacitor => "CAPACITOR".into(),
-            Item::Caixa => "CAIXA MISTERIOSA".into(),
-            Item::Nucleo => "NÚCLEO DE DANO".into(),
+            Item::MysteryBox => "MYSTERY BOX".into(),
+            Item::DamageCore => "DAMAGE CORE".into(),
         }
     }
     fn desc(self) -> &'static str {
         match self {
-            Item::Vida => "+1 nave reserva.",
-            Item::Bomba => "+1 bomba (tecla X).",
-            Item::Escudo => "Absorve um golpe.",
-            Item::Melhoria => "+1 nível na arma atual.",
-            Item::Arma(w) => w.desc(),
-            Item::Propulsor => "Nave 8% mais rápida.",
-            Item::Gatilho => "Atira 10% mais rápido.",
-            Item::Ima => "Puxa cristais de mais longe.",
-            Item::Drone => "Um drone que atira com você.",
-            Item::Laterais => "Tiros extras em diagonal.",
-            Item::Seguro => "A próxima morte não tira nível da arma.",
-            Item::Carga => "Enche a habilidade e acelera a recarga.",
-            Item::Banco => "Rende 15% dos cristais a cada setor.",
-            Item::Radar => "Cartas caem com o dobro de frequência.",
-            Item::Amuleto => "Mais power-ups até o fim da partida.",
-            Item::Cristalizador => "Inimigos soltam mais cristais.",
-            Item::Mapa => "Um Escaravelho Dourado no próximo setor.",
-            Item::Mercenario => "Um ala atira ao seu lado por 2 setores.",
-            Item::Carta => "Uma carta aleatória para a coleção.",
-            Item::Auto => "Segure o tiro para atirar sem parar.",
-            Item::Mira => "Uma linha mostra onde o tiro vai passar.",
-            Item::Capacitor => "Tiro carregado 40% mais rápido e forte.",
-            Item::Caixa => "Quem sabe o que tem dentro? Quase sempre é bom.",
-            Item::Nucleo => "+15% de dano em todas as armas. Acumula até 6x.",
+            Item::ExtraLife => "+1 reserve ship.",
+            Item::Bomb => "+1 bomb (X key).",
+            Item::Shield => "Absorbs one hit.",
+            Item::Upgrade => "+1 level on the current weapon.",
+            Item::Weapon(w) => w.desc(),
+            Item::Thruster => "Ship 8% faster.",
+            Item::Trigger => "Fires 10% faster.",
+            Item::Magnet => "Pulls crystals from farther away.",
+            Item::Drone => "A drone that fires with you.",
+            Item::SideCannons => "Extra diagonal shots.",
+            Item::Insurance => "Your next death won't cost a weapon level.",
+            Item::EnergyCell => "Fills the ability and speeds up recharge.",
+            Item::Bank => "Earns 15% of your crystals every sector.",
+            Item::Radar => "Cards drop twice as often.",
+            Item::Amulet => "More power-ups until the end of the run.",
+            Item::Crystallizer => "Enemies drop more crystals.",
+            Item::TreasureMap => "A Golden Scarab in the next sector.",
+            Item::Mercenary => "A wingman fires at your side for 2 sectors.",
+            Item::MysteryCard => "A random card for your collection.",
+            Item::Autofire => "Hold fire to shoot nonstop.",
+            Item::LaserSight => "A line shows where your shot will go.",
+            Item::Capacitor => "Charged shot 40% faster and stronger.",
+            Item::MysteryBox => "Who knows what's inside? It's almost always good.",
+            Item::DamageCore => "+15% damage on every weapon. Stacks up to 6x.",
         }
     }
     fn icon(self) -> Icon {
         match self {
-            Item::Vida => Icon::Heart,
-            Item::Bomba => Icon::Bomb,
-            Item::Escudo | Item::Seguro => Icon::Shield,
-            Item::Melhoria | Item::Arma(_) | Item::Amuleto => Icon::Star,
-            Item::Propulsor | Item::Mercenario => Icon::Engine,
-            Item::Gatilho | Item::Carga => Icon::Bolt,
-            Item::Ima => Icon::Magnet,
-            Item::Drone | Item::Laterais => Icon::Drone,
-            Item::Banco => Icon::Bag,
-            Item::Radar | Item::Carta => Icon::Card,
-            Item::Cristalizador | Item::Mapa => Icon::Crystal,
-            Item::Auto | Item::Capacitor => Icon::Bolt,
-            Item::Mira => Icon::Target,
-            Item::Caixa => Icon::Bag,
-            Item::Nucleo => Icon::Star,
+            Item::ExtraLife => Icon::Heart,
+            Item::Bomb => Icon::Bomb,
+            Item::Shield | Item::Insurance => Icon::Shield,
+            Item::Upgrade | Item::Weapon(_) | Item::Amulet => Icon::Star,
+            Item::Thruster | Item::Mercenary => Icon::Engine,
+            Item::Trigger | Item::EnergyCell => Icon::Bolt,
+            Item::Magnet => Icon::Magnet,
+            Item::Drone | Item::SideCannons => Icon::Drone,
+            Item::Bank => Icon::Bag,
+            Item::Radar | Item::MysteryCard => Icon::Card,
+            Item::Crystallizer | Item::TreasureMap => Icon::Crystal,
+            Item::Autofire | Item::Capacitor => Icon::Bolt,
+            Item::LaserSight => Icon::Target,
+            Item::MysteryBox => Icon::Bag,
+            Item::DamageCore => Icon::Star,
         }
     }
     fn price(self) -> u32 {
         match self {
-            Item::Vida => 70,
-            Item::Bomba => 25,
-            Item::Escudo => 40,
-            Item::Melhoria => 50,
-            Item::Arma(w) => [40, 80, 130, 190, 260][(w.tier() - 1) as usize],
-            Item::Propulsor => 35,
-            Item::Gatilho => 45,
-            Item::Ima => 25,
+            Item::ExtraLife => 70,
+            Item::Bomb => 25,
+            Item::Shield => 40,
+            Item::Upgrade => 50,
+            Item::Weapon(w) => [40, 80, 130, 190, 260][(w.tier() - 1) as usize],
+            Item::Thruster => 35,
+            Item::Trigger => 45,
+            Item::Magnet => 25,
             Item::Drone => 80,
-            Item::Laterais => 60,
-            Item::Seguro => 30,
-            Item::Carga => 40,
-            Item::Banco => 60,
+            Item::SideCannons => 60,
+            Item::Insurance => 30,
+            Item::EnergyCell => 40,
+            Item::Bank => 60,
             Item::Radar => 70,
-            Item::Amuleto => 50,
-            Item::Cristalizador => 55,
-            Item::Mapa => 45,
-            Item::Mercenario => 75,
-            Item::Carta => 90,
-            Item::Auto => 75,
-            Item::Mira => 25,
+            Item::Amulet => 50,
+            Item::Crystallizer => 55,
+            Item::TreasureMap => 45,
+            Item::Mercenary => 75,
+            Item::MysteryCard => 90,
+            Item::Autofire => 75,
+            Item::LaserSight => 25,
             Item::Capacitor => 50,
-            Item::Caixa => 20,
-            Item::Nucleo => 70,
+            Item::MysteryBox => 20,
+            Item::DamageCore => 70,
         }
     }
-    /// Chave única (armas diferentes contam separado).
+    /// Unique key (different weapons count separately).
     fn key(self) -> usize {
         match self {
-            Item::Arma(w) => 100 + w.index(),
-            Item::Vida => 0,
-            Item::Bomba => 1,
-            Item::Escudo => 2,
-            Item::Melhoria => 3,
-            Item::Propulsor => 5,
-            Item::Gatilho => 6,
-            Item::Ima => 7,
+            Item::Weapon(w) => 100 + w.index(),
+            Item::ExtraLife => 0,
+            Item::Bomb => 1,
+            Item::Shield => 2,
+            Item::Upgrade => 3,
+            Item::Thruster => 5,
+            Item::Trigger => 6,
+            Item::Magnet => 7,
             Item::Drone => 8,
-            Item::Laterais => 9,
-            Item::Seguro => 10,
-            Item::Carga => 11,
-            Item::Banco => 12,
+            Item::SideCannons => 9,
+            Item::Insurance => 10,
+            Item::EnergyCell => 11,
+            Item::Bank => 12,
             Item::Radar => 13,
-            Item::Amuleto => 14,
-            Item::Cristalizador => 15,
-            Item::Mapa => 16,
-            Item::Mercenario => 17,
-            Item::Carta => 18,
-            Item::Auto => 19,
-            Item::Mira => 20,
+            Item::Amulet => 14,
+            Item::Crystallizer => 15,
+            Item::TreasureMap => 16,
+            Item::Mercenary => 17,
+            Item::MysteryCard => 18,
+            Item::Autofire => 19,
+            Item::LaserSight => 20,
             Item::Capacitor => 21,
-            Item::Caixa => 22,
-            Item::Nucleo => 23,
+            Item::MysteryBox => 22,
+            Item::DamageCore => 23,
         }
     }
 }
 
 // ---------------------------------------------------------------------------
-// Configuração da partida
+// Run configuration
 // ---------------------------------------------------------------------------
 
 pub struct RunConfig {
@@ -740,7 +740,7 @@ struct Stage {
 }
 
 // ---------------------------------------------------------------------------
-// Jogo
+// Game
 // ---------------------------------------------------------------------------
 
 pub struct Game {
@@ -790,13 +790,13 @@ pub struct Game {
     drone_cd: f32,
     ally_pos: Vec2,
     ally_cd: f32,
-    // loja
+    // shop
     shop_sel: usize,
     shop_offers: Vec<Item>,
     shop_buys: Vec<(usize, u32)>,
     rerolls: u32,
     free_reroll_used: bool,
-    // melhorias compradas
+    // purchased upgrades
     drones_bought: u32,
     side_cannons: bool,
     insurance: bool,
@@ -805,7 +805,7 @@ pub struct Game {
     treasure_map: bool,
     ally_sectors: u32,
     grudge: bool,
-    // poderes e habilidades
+    // power-ups and abilities
     frenzy_t: f32,
     star_t: f32,
     magnet_t: f32,
@@ -816,7 +816,7 @@ pub struct Game {
     timewarp_t: f32,
     cannon_t: f32,
     nostalgia_t: f32,
-    // segredos e eventos
+    // secrets and events
     pub events: Vec<Event>,
     blasts: Vec<(Vec2, f32, f32, Option<Weapon>)>,
     pub frozen_count: u32,
@@ -843,14 +843,14 @@ pub struct Game {
     credits_shown: bool,
     fog: Option<Texture2D>,
     intro_lock: bool,
-    pub x: v3::V3State,
-    pub y: v4::V4State,
-    pub z: v5::V5State,
+    pub enc: encounters::Encounters,
+    pub rift: rifts::Rifts,
+    pub arcade: arcade::Arcade,
 }
 
 impl Game {
     pub fn new(cfg: RunConfig) -> Game {
-        let classic = cfg.mode == Mode::Classico;
+        let classic = cfg.mode == Mode::Classic;
         let equipped = if classic {
             vec![]
         } else {
@@ -865,15 +865,15 @@ impl Game {
             mods.crystal_mul *= 1.2;
         }
         let mut lives = 3 + mods.extra_lives + ship.lives + cfg.diff.lives();
-        let mut weapon = Weapon::Rajada;
+        let mut weapon = Weapon::Blaster;
         let mut level = mods.start_level;
         if mods.second_laser {
             weapon = Weapon::Laser;
             level = level.max(2);
         }
         match cfg.daily {
-            Some(Daily::VidroFino) => lives = 1,
-            Some(Daily::SoLaser) => {
+            Some(Daily::ThinGlass) => lives = 1,
+            Some(Daily::LaserOnly) => {
                 weapon = Weapon::Laser;
                 level = level.max(3);
             }
@@ -904,12 +904,12 @@ impl Game {
         bg.set_theme(0);
         let pos = player.pos;
         let crystals = mods.start_crystals as f32;
-        let fog = if cfg.daily == Some(Daily::Neblina) {
+        let fog = if cfg.daily == Some(Daily::Fog) {
             Some(make_fog())
         } else {
             None
         };
-        let continues = if classic || cfg.mode == Mode::Sobrevivencia {
+        let continues = if classic || cfg.mode == Mode::Survival {
             0
         } else {
             cfg.diff.continues() + mods.extra_continue
@@ -1009,9 +1009,9 @@ impl Game {
             credits_shown: false,
             fog,
             intro_lock: true,
-            x: v3::V3State::new(&cfg),
-            y: v4::V4State::new(),
-            z: v5::V5State::new(),
+            enc: encounters::Encounters::new(&cfg),
+            rift: rifts::Rifts::new(),
+            arcade: arcade::Arcade::new(),
             cfg,
         }
     }
@@ -1021,19 +1021,19 @@ impl Game {
     }
 
     fn classic(&self) -> bool {
-        self.cfg.mode == Mode::Classico
+        self.cfg.mode == Mode::Classic
     }
 
     fn sectors_in_run(&self) -> u32 {
         match self.cfg.mode {
-            Mode::Diario => 3,
-            Mode::Expedicao => u32::MAX,
+            Mode::Daily => 3,
+            Mode::Expedition => u32::MAX,
             _ => SECTORS,
         }
     }
 
     fn stage(&self) -> Stage {
-        if self.x.void {
+        if self.enc.void {
             return Stage {
                 kind: WaveKind::Boss,
                 theme: 9,
@@ -1043,7 +1043,7 @@ impl Game {
         }
         let w = self.wave;
         match self.cfg.mode {
-            Mode::Campanha | Mode::Diario | Mode::Expedicao => {
+            Mode::Campaign | Mode::Daily | Mode::Expedition => {
                 let sector = (w - 1) / 5 + 1;
                 let sub = (w - 1) % 5 + 1;
                 let kind = match sub {
@@ -1057,8 +1057,8 @@ impl Game {
                     kind
                 };
                 let extra = match self.cfg.mode {
-                    Mode::Diario => 0.5,
-                    Mode::Expedicao => -((sector - 1) as f32) * 0.1,
+                    Mode::Daily => 0.5,
+                    Mode::Expedition => -((sector - 1) as f32) * 0.1,
                     _ => 0.0,
                 };
                 Stage {
@@ -1075,7 +1075,7 @@ impl Game {
                         + extra,
                 }
             }
-            Mode::Classico => {
+            Mode::Classic => {
                 let block = (w - 1) / 3;
                 Stage {
                     kind: if w.is_multiple_of(3) {
@@ -1088,7 +1088,7 @@ impl Game {
                     diff: (w - 1) as f32 * 0.22,
                 }
             }
-            Mode::Sobrevivencia => Stage {
+            Mode::Survival => Stage {
                 kind: if w.is_multiple_of(6) {
                     WaveKind::Boss
                 } else {
@@ -1098,7 +1098,7 @@ impl Game {
                 tier: ((w - 1) / 3 + 1).min(8),
                 diff: (w - 1) as f32 * 0.3,
             },
-            Mode::Chefoes => Stage {
+            Mode::BossRush => Stage {
                 kind: WaveKind::Boss,
                 theme: (w - 1) as usize % 8,
                 tier: w.min(8),
@@ -1109,10 +1109,10 @@ impl Game {
 
     pub fn sector(&self) -> u32 {
         match self.cfg.mode {
-            Mode::Campanha | Mode::Diario | Mode::Expedicao => (self.wave - 1) / 5 + 1,
-            Mode::Classico => (self.wave - 1) / 3 + 1,
-            Mode::Sobrevivencia => (self.wave - 1) / 6 + 1,
-            Mode::Chefoes => self.wave,
+            Mode::Campaign | Mode::Daily | Mode::Expedition => (self.wave - 1) / 5 + 1,
+            Mode::Classic => (self.wave - 1) / 3 + 1,
+            Mode::Survival => (self.wave - 1) / 6 + 1,
+            Mode::BossRush => self.wave,
         }
     }
     fn sub(&self) -> u32 {
@@ -1123,7 +1123,7 @@ impl Game {
     }
     pub fn absolute_sector(&self) -> u32 {
         match self.cfg.mode {
-            Mode::Campanha | Mode::Diario | Mode::Expedicao => self.cycle * SECTORS + self.sector(),
+            Mode::Campaign | Mode::Daily | Mode::Expedition => self.cycle * SECTORS + self.sector(),
             _ => self.wave,
         }
     }
@@ -1131,7 +1131,7 @@ impl Game {
         (1 + self.combo / 10).min(self.mods.max_combo)
     }
     fn fire_rate_enemy(&self) -> f32 {
-        let d = if self.cfg.daily == Some(Daily::TirosDobrados) {
+        let d = if self.cfg.daily == Some(Daily::DoubleShots) {
             2.0
         } else {
             1.0
@@ -1143,8 +1143,8 @@ impl Game {
     }
     fn score_mul(&self) -> f32 {
         let daily = match self.cfg.daily {
-            Some(Daily::InimigosVelozes) => 2.0,
-            Some(Daily::VidroFino) => 3.0,
+            Some(Daily::FastEnemies) => 2.0,
+            Some(Daily::ThinGlass) => 3.0,
             _ => 1.0,
         };
         self.mods.score_mul * self.cfg.diff.score_mul() * daily
@@ -1174,7 +1174,7 @@ impl Game {
     }
 
     fn add_score(&mut self, base: u32) -> u32 {
-        let fever = if self.x.fever_t > 0.0 { 2.0 } else { 1.0 };
+        let fever = if self.enc.fever_t > 0.0 { 2.0 } else { 1.0 };
         let pts = (base as f32 * self.multiplier() as f32 * self.score_mul() * fever) as u32;
         self.score += pts;
         pts
@@ -1195,7 +1195,7 @@ impl Game {
     }
 
     fn weapon_pool(&self) -> Vec<Weapon> {
-        if self.cfg.daily == Some(Daily::SoLaser) {
+        if self.cfg.daily == Some(Daily::LaserOnly) {
             return vec![Weapon::Laser];
         }
         WEAPONS
@@ -1209,11 +1209,11 @@ impl Game {
     }
 
     // -----------------------------------------------------------------------
-    // Ondas
+    // Waves
     // -----------------------------------------------------------------------
 
     fn begin_sector(&mut self) {
-        self.v4_begin_sector();
+        self.rift_begin_sector();
         self.sector_hits = 0;
         self.sector_shots = 0;
         self.sector_landed = 0;
@@ -1234,13 +1234,13 @@ impl Game {
             if interest > 0.0 {
                 self.fx.text(
                     vec2(W / 2.0, H * 0.55),
-                    format!("BANCO: +{interest} CRISTAIS"),
+                    format!("BANK: +{interest} CRYSTALS"),
                     CYAN,
                     18.0,
                 );
             }
         }
-        self.v3_begin_sector();
+        self.enc_begin_sector();
         let th = self.stage().theme;
         self.bg.set_theme(th);
         self.rocks.clear();
@@ -1254,7 +1254,7 @@ impl Game {
         self.dive_timer = 3.5;
         self.groups.clear();
         self.bg.set_theme(st.theme);
-        if self.cfg.mode == Mode::Sobrevivencia {
+        if self.cfg.mode == Mode::Survival {
             self.events.push(Event::SurvivalWave(self.wave));
         }
         match st.kind {
@@ -1267,16 +1267,16 @@ impl Game {
                     Music::Stage
                 }));
                 self.maybe_specials();
-                self.v3_wave_start();
-                self.v4_wave_start();
-                self.v5_wave_start();
+                self.enc_wave_start();
+                self.rift_wave_start();
+                self.arcade_wave_start();
             }
             WaveKind::Challenge => {
                 self.build_challenge(false);
                 self.fired_in_bonus = false;
                 self.banner = Some((
-                    "ESTÁGIO BÔNUS".into(),
-                    "Eles não atiram. Acerte todos!".into(),
+                    "BONUS STAGE".into(),
+                    "They don't shoot. Hit them all!".into(),
                     3.0,
                 ));
                 au.music(Some(Music::Stage));
@@ -1285,14 +1285,14 @@ impl Game {
                 self.build_challenge(true);
                 self.fired_in_bonus = false;
                 self.banner = Some((
-                    "DIMENSÃO DOURADA".into(),
-                    "Um tesouro escondido entre as dimensões...".into(),
+                    "GOLDEN DIMENSION".into(),
+                    "A treasure hidden between dimensions...".into(),
                     3.0,
                 ));
                 au.music(Some(Music::Shop));
             }
             WaveKind::Boss => {
-                self.boss_warning = if self.cfg.mode == Mode::Chefoes && self.wave == 1 {
+                self.boss_warning = if self.cfg.mode == Mode::BossRush && self.wave == 1 {
                     2.0
                 } else {
                     3.2
@@ -1309,11 +1309,12 @@ impl Game {
         }
         let campaign = matches!(
             self.cfg.mode,
-            Mode::Campanha | Mode::Diario | Mode::Expedicao
+            Mode::Campaign | Mode::Daily | Mode::Expedition
         );
-        let want_golden =
-            (self.mods.golden_every || self.treasure_map || self.x.event == Some(v3::SEvent::Ouro))
-                && !self.golden_this_sector;
+        let want_golden = (self.mods.golden_every
+            || self.treasure_map
+            || self.enc.event == Some(encounters::SEvent::GoldRush))
+            && !self.golden_this_sector;
         if want_golden || gen_range(0, 100) < 6 {
             self.golden_this_sector = true;
             self.treasure_map = false;
@@ -1333,7 +1334,7 @@ impl Game {
                     vec2(mx(W + 40.0), 120.0),
                 ],
             );
-            self.spawn_special(Kind::Dourado, path, 5.5, gen_range(4.0, 12.0));
+            self.spawn_special(Kind::Golden, path, 5.5, gen_range(4.0, 12.0));
         }
         if campaign && !self.cow_this_run && gen_range(0, 100) < 3 {
             self.cow_this_run = true;
@@ -1343,7 +1344,7 @@ impl Game {
                 vec2(W * 0.7, H * 0.45),
                 vec2(W + 40.0, H * 0.3),
             );
-            self.spawn_special(Kind::Vaca, path, 11.0, gen_range(6.0, 14.0));
+            self.spawn_special(Kind::Cow, path, 11.0, gen_range(6.0, 14.0));
         }
         if campaign
             && self.sector() >= 2
@@ -1358,10 +1359,10 @@ impl Game {
                 vec2(W * 0.33, 200.0),
                 vec2(-50.0, 240.0),
             );
-            self.spawn_special(Kind::Mercador, path, 9.0, gen_range(5.0, 9.0));
+            self.spawn_special(Kind::Merchant, path, 9.0, gen_range(5.0, 9.0));
             self.banner = Some((
-                "UM MERCADOR SE APROXIMA".into(),
-                "Ele parece pacífico...".into(),
+                "A MERCHANT APPROACHES".into(),
+                "It looks peaceful...".into(),
                 2.5,
             ));
         }
@@ -1388,7 +1389,7 @@ impl Game {
             _ => vec2(W / 2.0, -40.0),
         };
         let hp = if bonus { 1 } else { kind.hp() };
-        let shield = if kind == Kind::Escudeiro && !bonus {
+        let shield = if kind == Kind::Shieldbearer && !bonus {
             3 + (self.diff() / 2.0) as i32
         } else {
             0
@@ -1460,66 +1461,66 @@ impl Game {
         let s = self.stage().tier;
         if s > 8 && gen_range(0, 4) == 0 {
             let pool = [
-                Kind::Vespa,
-                Kind::Atirador,
-                Kind::Divisor,
+                Kind::Wasp,
+                Kind::Gunner,
+                Kind::Splitter,
                 Kind::Kamikaze,
-                Kind::Escudeiro,
-                Kind::Tecela,
-                Kind::Camaleao,
-                Kind::Minador,
-                Kind::Saltador,
+                Kind::Shieldbearer,
+                Kind::Weaver,
+                Kind::Chameleon,
+                Kind::Minelayer,
+                Kind::Jumper,
             ];
             return pool[gen_range(0, pool.len())];
         }
         match row {
             0 => {
                 if s >= 6 && (col == 3 || col == 4) {
-                    Kind::Portadora
+                    Kind::Carrier
                 } else {
-                    Kind::Besouro
+                    Kind::Beetle
                 }
             }
             1 => {
                 if s >= 2 && (col == 1 || col == 6) {
-                    Kind::Atirador
+                    Kind::Gunner
                 } else if s >= 4 && (col == 3 || col == 4) {
-                    Kind::Escudeiro
+                    Kind::Shieldbearer
                 } else {
-                    Kind::Vespa
+                    Kind::Wasp
                 }
             }
             2 => {
                 if s >= 6 && (col == 1 || col == 6) {
-                    Kind::Minador
+                    Kind::Minelayer
                 } else if s >= 3 && (col == 0 || col == 2 || col == 5 || col == 7) {
-                    Kind::Divisor
+                    Kind::Splitter
                 } else if s >= 5 && (col == 3 || col == 4) {
-                    Kind::Tecela
+                    Kind::Weaver
                 } else {
-                    Kind::Vespa
+                    Kind::Wasp
                 }
             }
             3 => {
                 if s >= 3 && (col == 3 || col == 4) {
-                    Kind::Saltador
+                    Kind::Jumper
                 } else if s >= 4 && (col == 0 || col == 7) {
                     Kind::Kamikaze
                 } else if s >= 7 && (col == 2 || col == 5) {
-                    Kind::Camaleao
+                    Kind::Chameleon
                 } else {
-                    Kind::Zangao
+                    Kind::Drone
                 }
             }
             _ => {
                 if s >= 4 && (col == 3 || col == 4) {
                     Kind::Kamikaze
                 } else if s >= 7 && (col == 1 || col == 6) {
-                    Kind::Camaleao
+                    Kind::Chameleon
                 } else if s >= 5 && col.is_multiple_of(3) {
-                    Kind::Atirador
+                    Kind::Gunner
                 } else {
-                    Kind::Zangao
+                    Kind::Drone
                 }
             }
         }
@@ -1534,7 +1535,7 @@ impl Game {
             vec![3, 1, 2, 0, 4]
         };
         let base_t = gen_range(0, 4) as u32;
-        let fast = self.cfg.mode == Mode::Sobrevivencia;
+        let fast = self.cfg.mode == Mode::Survival;
         for (gi, &row) in order.iter().enumerate() {
             let cols: Vec<usize> = if row == 0 {
                 (2..6).collect()
@@ -1624,12 +1625,12 @@ impl Game {
 
     fn build_challenge(&mut self, golden: bool) {
         let kinds = [
-            Kind::Zangao,
-            Kind::Vespa,
+            Kind::Drone,
+            Kind::Wasp,
             Kind::Kamikaze,
-            Kind::Besouro,
-            Kind::Divisor,
-            Kind::Tecela,
+            Kind::Beetle,
+            Kind::Splitter,
+            Kind::Weaver,
         ];
         self.challenge_total = 0;
         self.challenge_hits = 0;
@@ -1640,7 +1641,7 @@ impl Game {
             for j in 0..8 {
                 let delay = 0.8 + g as f32 * 2.6 + j as f32 * 0.14;
                 let kind = if golden {
-                    Kind::Dourado
+                    Kind::Golden
                 } else {
                     kinds[(g as usize + self.wave as usize) % kinds.len()]
                 };
@@ -1665,7 +1666,7 @@ impl Game {
     fn start_dive(&mut self, i: usize) {
         let p = self.player.pos;
         let diff = self.diff();
-        let speed = if self.cfg.daily == Some(Daily::InimigosVelozes) {
+        let speed = if self.cfg.daily == Some(Daily::FastEnemies) {
             0.6
         } else {
             1.0
@@ -1683,7 +1684,7 @@ impl Game {
                 ),
                 (1.3 - diff * 0.03).max(0.9),
             ),
-            Kind::Atirador | Kind::Tecela => (
+            Kind::Gunner | Kind::Weaver => (
                 Path::two(
                     [
                         pos,
@@ -1731,7 +1732,7 @@ impl Game {
             path,
             shots: 0,
         };
-        if kind == Kind::Besouro {
+        if kind == Kind::Beetle {
             let mut escorts = 0;
             for j in 0..self.enemies.len() {
                 if escorts >= 2 {
@@ -1760,7 +1761,7 @@ impl Game {
     }
 
     // -----------------------------------------------------------------------
-    // Atualização
+    // Update
     // -----------------------------------------------------------------------
 
     pub fn update(&mut self, dt: f32, inp: &Input, au: &mut Audio) {
@@ -1781,7 +1782,7 @@ impl Game {
             self.hitstop -= dt;
             return;
         }
-        if self.v4_minigame(dt, inp, au) || self.v4_blessing(dt, inp, au) {
+        if self.rift_minigame(dt, inp, au) || self.rift_blessing(dt, inp, au) {
             return;
         }
         if !matches!(
@@ -1839,7 +1840,7 @@ impl Game {
                 let t = t + dt;
                 if t > 1.6 && !self.room_active() {
                     self.wave += 1;
-                    if self.cfg.mode == Mode::Classico && (self.wave - 1).is_multiple_of(3) {
+                    if self.cfg.mode == Mode::Classic && (self.wave - 1).is_multiple_of(3) {
                         Phase::Intro { t: 0.0 }
                     } else {
                         self.start_wave(au);
@@ -1864,7 +1865,7 @@ impl Game {
                         Phase::Intro { t: 0.0 }
                     } else {
                         self.wave += 1;
-                        if self.cfg.mode == Mode::Classico && (self.wave - 1).is_multiple_of(3) {
+                        if self.cfg.mode == Mode::Classic && (self.wave - 1).is_multiple_of(3) {
                             Phase::Intro { t: 0.0 }
                         } else {
                             self.start_wave(au);
@@ -1885,7 +1886,7 @@ impl Game {
                 let t = t + dt;
                 if t > 3.4 {
                     self.finish_boss(au);
-                    if self.cfg.mode == Mode::Sobrevivencia {
+                    if self.cfg.mode == Mode::Survival {
                         self.wave += 1;
                         self.start_wave(au);
                         Phase::Playing
@@ -1935,7 +1936,7 @@ impl Game {
                 self.bg.speed_mul = 1.0 + t * 3.0;
                 if t > 3.5 {
                     self.bg.speed_mul = 1.0;
-                    if !self.x.void {
+                    if !self.enc.void {
                         self.secret_stage = true;
                         self.ach(ach::DIMENSIONAL);
                     }
@@ -1955,7 +1956,7 @@ impl Game {
             }
             Phase::Victory { mut sel, t } => {
                 let t = t + dt;
-                let can_continue = self.cfg.mode == Mode::Campanha;
+                let can_continue = self.cfg.mode == Mode::Campaign;
                 if can_continue && (inp.up_p || inp.down_p) {
                     sel = 1 - sel;
                     au.play(Sfx::MenuMove);
@@ -1965,7 +1966,7 @@ impl Game {
                     if sel == 0 && can_continue {
                         self.cycle += 1;
                         self.wave = 1;
-                        self.x.void = false;
+                        self.enc.void = false;
                         self.rocks.clear();
                         Phase::Intro { t: 0.0 }
                     } else {
@@ -2011,7 +2012,7 @@ impl Game {
             }
         };
         self.phase = next;
-        self.v5_post_update(au);
+        self.arcade_post_update(au);
 
         let waiting = matches!(self.phase, Phase::GameOver { .. } | Phase::Continue { .. });
         if !waiting && self.player.lives <= 0 && self.player.dead_t <= 0.0 {
@@ -2027,10 +2028,10 @@ impl Game {
             self.cfg.highscore = self.score;
         }
         if self.score >= 1_000_000 {
-            self.ach(ach::MILIONARIO);
+            self.ach(ach::MILLIONAIRE);
         }
         if self.crystals >= 300.0 {
-            self.ach(ach::PATINHAS);
+            self.ach(ach::SCROOGE);
         }
         if self.score >= self.next_life_at {
             let classic = self.classic();
@@ -2045,7 +2046,7 @@ impl Game {
                 au.play(Sfx::OneUp);
                 self.fx.text(
                     self.player.pos - vec2(0.0, 40.0),
-                    "VIDA EXTRA!",
+                    "EXTRA LIFE!",
                     GREEN,
                     22.0,
                 );
@@ -2054,7 +2055,7 @@ impl Game {
     }
 
     fn after_sector(&mut self, au: &mut Audio) -> Phase {
-        self.v3_sector_clear();
+        self.enc_sector_clear();
         if self.devour_ready() {
             self.sectors_cleared += 1;
             return self.enter_void(au);
@@ -2062,30 +2063,30 @@ impl Game {
         self.sectors_cleared += 1;
         self.ally_sectors = self.ally_sectors.saturating_sub(1);
         let last = match self.cfg.mode {
-            Mode::Chefoes => self.wave >= 9,
+            Mode::BossRush => self.wave >= 9,
             _ => self.sector() >= self.sectors_in_run(),
         };
         if last {
             self.collect_all_drops(au);
             self.victory = true;
             self.events.push(Event::Victory);
-            if self.cfg.mode == Mode::Campanha {
-                self.ach(ach::CORACAO_PARTIDO);
-                if self.cfg.diff as u8 >= Difficulty::Dificil as u8 && self.continues_used == 0 {
-                    self.ach(ach::FINAL_VERDADEIRO);
+            if self.cfg.mode == Mode::Campaign {
+                self.ach(ach::BROKEN_HEART);
+                if self.cfg.diff as u8 >= Difficulty::Hard as u8 && self.continues_used == 0 {
+                    self.ach(ach::TRUE_ENDING);
                 }
-                if self.cfg.diff == Difficulty::Pesadelo {
-                    self.ach(ach::PESADELO);
+                if self.cfg.diff == Difficulty::Nightmare {
+                    self.ach(ach::NIGHTMARE);
                 }
                 if self.cycle == 0 {
-                    self.give_card(cards::id::COROA, au);
+                    self.give_card(cards::id::CROWN, au);
                 }
             }
-            if self.cfg.mode == Mode::Chefoes && self.run_time < 12.0 * 60.0 {
-                self.ach(ach::VELOCISTA);
+            if self.cfg.mode == Mode::BossRush && self.run_time < 12.0 * 60.0 {
+                self.ach(ach::SPEEDRUNNER);
             }
             au.play(Sfx::Fanfare);
-            if self.cfg.mode == Mode::Campanha && !self.credits_shown {
+            if self.cfg.mode == Mode::Campaign && !self.credits_shown {
                 self.credits_shown = true;
                 au.music(Some(Music::Credits));
                 return Phase::Credits { t: 0.0 };
@@ -2099,11 +2100,11 @@ impl Game {
         self.shop_sel = 0;
         self.rerolls = 0;
         self.free_reroll_used = false;
-        if self.cfg.mode == Mode::Chefoes {
+        if self.cfg.mode == Mode::BossRush {
             self.crystals += 50.0;
         }
         self.roll_offers();
-        if self.cfg.mode == Mode::Expedicao {
+        if self.cfg.mode == Mode::Expedition {
             self.offer_blessing();
         }
         Phase::Shop
@@ -2112,7 +2113,7 @@ impl Game {
     fn check_wave_end(&mut self, au: &mut Audio) -> Phase {
         match self.wave_kind {
             WaveKind::Normal => {
-                if self.cfg.mode == Mode::Sobrevivencia {
+                if self.cfg.mode == Mode::Survival {
                     let real = self.enemies.iter().filter(|e| !e.harmless).count();
                     if self.wave_age > 5.0 && real <= self.wave_size / 4 {
                         self.wave += 1;
@@ -2122,7 +2123,7 @@ impl Game {
                 }
                 if self.enemies.is_empty() && self.wave_age > 1.0 {
                     if self.wave == 1 {
-                        self.ach(ach::PRIMEIRO_VOO);
+                        self.ach(ach::FIRST_FLIGHT);
                     }
                     self.wave_speed_bonus();
                     Phase::WaveClear { t: 0.0 }
@@ -2139,7 +2140,7 @@ impl Game {
                     if hits == total {
                         bonus += 10_000 * (1 + self.cycle) * self.mods.bonus_mul;
                         au.play(Sfx::Fanfare);
-                        self.ach(ach::PERFEICAO);
+                        self.ach(ach::PERFECTION);
                         if !golden {
                             self.offer_warp();
                         }
@@ -2151,22 +2152,22 @@ impl Game {
                         au.play(Sfx::MenuOk);
                     }
                     if !self.fired_in_bonus && !golden {
-                        self.ach(ach::PACIFISTA);
+                        self.ach(ach::PACIFIST);
                         bonus += 5000;
                         if !self.classic() {
                             self.spawn_drop(
                                 vec2(W / 2.0, 40.0),
-                                DropKind::Card(cards::id::PACIFISTA),
+                                DropKind::Card(cards::id::PACIFIST),
                             );
                         }
                         self.banner = Some((
-                            "PACIFISTA".into(),
-                            "Nenhum tiro disparado. Respeito.".into(),
+                            "PACIFIST".into(),
+                            "Not a single shot fired. Respect.".into(),
                             3.0,
                         ));
                     }
                     if golden {
-                        self.spawn_drop(vec2(W / 2.0, 50.0), DropKind::Card(cards::id::DIMENSAO));
+                        self.spawn_drop(vec2(W / 2.0, 50.0), DropKind::Card(cards::id::DIMENSION));
                         self.drop_log(8, vec2(W / 2.0 + 40.0, 50.0));
                     }
                     self.score += bonus;
@@ -2194,26 +2195,26 @@ impl Game {
     fn sector_tally(&mut self) -> Vec<(String, u32, bool)> {
         let mut lines = vec![];
         let sec = self.absolute_sector();
-        lines.push(("CHEFE DERROTADO".to_string(), 20_000 * sec, false));
+        lines.push(("BOSS DEFEATED".to_string(), 20_000 * sec, false));
         if let Some(l) = self.boss_time_line() {
             lines.push(l);
         }
         if self.sector_hits == 0 {
-            lines.push(("INTOCÁVEL".to_string(), 15_000 * sec, false));
-            self.ach(ach::INTOCAVEL);
+            lines.push(("UNTOUCHABLE".to_string(), 15_000 * sec, false));
+            self.ach(ach::UNTOUCHABLE);
         }
         let acc = if self.sector_shots > 0 {
             (self.sector_landed as f32 / self.sector_shots as f32 * 100.0).min(100.0)
         } else {
             0.0
         };
-        lines.push((format!("PRECISÃO {:.0}%", acc), (acc * 80.0) as u32, false));
+        lines.push((format!("ACCURACY {:.0}%", acc), (acc * 80.0) as u32, false));
         lines.push((
-            format!("MAIOR COMBO {}", self.best_combo),
+            format!("BEST COMBO {}", self.best_combo),
             self.best_combo * 50,
             false,
         ));
-        lines.push(("CRISTAIS DE BÔNUS".to_string(), 15 + 8 * sec, true));
+        lines.push(("BONUS CRYSTALS".to_string(), 15 + 8 * sec, true));
         lines
     }
 
@@ -2245,21 +2246,21 @@ impl Game {
             self.on_boss_killed(&b);
             self.seen(lore);
             let a = match b.kind {
-                BossKind::Queen => ach::REGICIDA,
-                BossKind::Warship => ach::FERRO_VELHO,
-                BossKind::Serpent => ach::SERPENTES,
-                BossKind::Weaver => ach::ARACNO,
-                BossKind::Eye => ach::NAO_PISQUE,
-                BossKind::Twins => ach::GEMEAS,
-                BossKind::Devourer => ach::DEVORADOR,
-                BossKind::Comet => ach::COMETA,
+                BossKind::Queen => ach::REGICIDE,
+                BossKind::Warship => ach::SCRAPYARD,
+                BossKind::Serpent => ach::SNAKE_CHARMER,
+                BossKind::Weaver => ach::ARACHNO,
+                BossKind::Eye => ach::DONT_BLINK,
+                BossKind::Twins => ach::TWINS,
+                BossKind::Devourer => ach::DEVOURER,
+                BossKind::Comet => ach::COMET,
             };
             self.ach(a);
             if b.all_parts_destroyed() {
-                self.ach(ach::DESMONTE);
+                self.ach(ach::DISMANTLE);
             }
             if self.boss_hits == 0 {
-                self.ach(ach::SEM_ARRANHOES);
+                self.ach(ach::NO_SCRATCH);
             }
         }
         self.ebullets.clear();
@@ -2282,9 +2283,9 @@ impl Game {
         self.pending_cards.push(c);
         let def = &cards::CARDS[c];
         let label = if new {
-            format!("NOVA CARTA: {}", def.name)
+            format!("NEW CARD: {}", def.name)
         } else {
-            format!("CARTA: {}", def.name)
+            format!("CARD: {}", def.name)
         };
         self.banner = Some((label, format!("{} - {}", def.rarity.name(), def.desc), 3.0));
         let pp = self.player.pos;
@@ -2293,11 +2294,11 @@ impl Game {
     }
 
     // -----------------------------------------------------------------------
-    // Mundo
+    // World
     // -----------------------------------------------------------------------
 
     fn update_world(&mut self, dt: f32, inp: &Input, au: &mut Audio) {
-        // Dobra temporal e câmera lenta afetam só o mundo, não a nave.
+        // Time warp and slow motion only affect the world, not the ship.
         let mut wdt = dt;
         if self.timewarp_t > 0.0 {
             wdt *= 0.3;
@@ -2314,12 +2315,12 @@ impl Game {
         self.update_bullets(dt, wdt);
         self.update_drops(dt, au);
         self.update_abilities(dt, au);
-        self.v3_update(dt, au);
-        self.v4_update(dt, au);
-        self.v5_update(dt, au);
+        self.enc_update(dt, au);
+        self.rift_update(dt, au);
+        self.arcade_update(dt, au);
         self.collisions(au);
-        self.v4_collisions(au);
-        self.v5_hazards(au);
+        self.rift_collisions(au);
+        self.arcade_hazards(au);
         self.process_deaths(au);
         if self.combo_t > 0.0 {
             self.combo_t -= dt;
@@ -2369,7 +2370,7 @@ impl Game {
         if p.lives <= 0 {
             return;
         }
-        let mirror = (self.cfg.daily == Some(Daily::Espelho)) != (self.y.mirror_t > 0.0);
+        let mirror = (self.cfg.daily == Some(Daily::Mirror)) != (self.rift.mirror_t > 0.0);
         let (l, r) = if mirror {
             (inp.right, inp.left)
         } else {
@@ -2392,7 +2393,7 @@ impl Game {
             * self.mods.speed_mul
             * if inp.focus { 0.5 } else { 1.0 }
             * if self.web_t > 0.0 { 0.5 } else { 1.0 }
-            * if self.y.anchor_t > 0.0 { 0.55 } else { 1.0 };
+            * if self.rift.anchor_t > 0.0 { 0.55 } else { 1.0 };
         let intro = self.intro_lock;
         if !intro {
             let target = d * speed;
@@ -2406,7 +2407,7 @@ impl Game {
                 p.vel.x = 0.0;
             }
             p.pos.x = p.pos.x.clamp(18.0, W - 18.0);
-            // como nos clássicos: a nave só anda para os lados
+            // like the classics: the ship only moves sideways
             p.pos.y += (PLAYER_Y - p.pos.y) * (dt * 10.0).min(1.0);
         }
         p.tilt += (d.x - p.tilt) * (dt * 10.0).min(1.0);
@@ -2434,7 +2435,7 @@ impl Game {
         if inp.bomb && self.player.bombs > 0 {
             self.player.bombs -= 1;
             self.events.push(Event::Bomb);
-            self.x.bombs_sector += 1;
+            self.enc.bombs_sector += 1;
             self.detonate(au, false);
         }
 
@@ -2465,7 +2466,7 @@ impl Game {
                         vec2(0.0, -600.0),
                         1.0,
                         BKind::Shot,
-                        Weapon::Rajada,
+                        Weapon::Blaster,
                     ));
                 }
             }
@@ -2480,7 +2481,7 @@ impl Game {
                         vec2(0.0, -640.0),
                         1.0,
                         BKind::Shot,
-                        Weapon::Rajada,
+                        Weapon::Blaster,
                     ));
                 }
             }
@@ -2490,10 +2491,10 @@ impl Game {
     fn fire(&mut self, au: &mut Audio) {
         let ship = self.ship();
         let p = &self.player;
-        if p.cd > 0.0 || self.y.jam_t > 0.0 {
+        if p.cd > 0.0 || self.rift.jam_t > 0.0 {
             return;
         }
-        let daily_x2 = if self.cfg.daily == Some(Daily::TirosDobrados) {
+        let daily_x2 = if self.cfg.daily == Some(Daily::DoubleShots) {
             2.0
         } else {
             1.0
@@ -2518,7 +2519,7 @@ impl Game {
         };
         let mut cd = 0.14;
         match weapon {
-            Weapon::Rajada => {
+            Weapon::Blaster => {
                 let sp = 640.0;
                 let angles: &[f32] = match lv {
                     1 => &[0.0],
@@ -2559,7 +2560,7 @@ impl Game {
                 }
                 au.play_vol(Sfx::Laser, 0.4);
             }
-            Weapon::Missil => {
+            Weapon::Missile => {
                 cd = 0.16;
                 out.push(mk(
                     o + vec2(if lv >= 3 { -5.0 } else { 0.0 }, 0.0),
@@ -2602,7 +2603,7 @@ impl Game {
                     au.play_vol(Sfx::Blaster, 0.3);
                 }
             }
-            Weapon::Onda => {
+            Weapon::Wave => {
                 cd = 0.12;
                 let n = match lv {
                     1 => 1,
@@ -2624,7 +2625,7 @@ impl Game {
                 }
                 au.play_vol(Sfx::WaveShot, 0.4);
             }
-            Weapon::Estilhaco => {
+            Weapon::Shrapnel => {
                 cd = 0.36;
                 let n = 4 + lv * 2;
                 let spread = 34.0 + lv as f32 * 4.0;
@@ -2637,7 +2638,7 @@ impl Game {
                 }
                 au.play_vol(Sfx::Pellet, 0.5);
             }
-            Weapon::Disco => {
+            Weapon::Disc => {
                 cd = 0.32;
                 let n = match lv {
                     1 | 2 => 1,
@@ -2653,11 +2654,11 @@ impl Game {
                 }
                 au.play_vol(Sfx::Disc, 0.4);
             }
-            Weapon::Trovao => {
+            Weapon::Thunder => {
                 cd = 0.17;
                 self.lightning(lv, dmg, au);
             }
-            Weapon::Chama => {
+            Weapon::Flame => {
                 cd = 0.035;
                 let n = 1 + (lv as usize).div_ceil(2);
                 let width = 10.0 + lv as f32 * 4.0;
@@ -2689,7 +2690,7 @@ impl Game {
                 au.play_vol(Sfx::WaveShot, 0.3);
             }
             other => {
-                cd = v3::fire_extra(
+                cd = encounters::fire_extra(
                     other,
                     lv,
                     dmg,
@@ -2703,7 +2704,7 @@ impl Game {
                 );
             }
         }
-        if self.side_cannons && weapon != Weapon::Chama {
+        if self.side_cannons && weapon != Weapon::Flame {
             for a in [-35.0, 35.0] {
                 out.push(mk(pos, a, 560.0, dmg, BKind::Shot));
             }
@@ -2760,7 +2761,7 @@ impl Game {
                 e.hp -= (1.3 * dmg).ceil() as i32;
                 e.flash = 0.07;
                 e.damaged = true;
-                e.last_weapon = Some(Weapon::Trovao);
+                e.last_weapon = Some(Weapon::Thunder);
             }
             hit.push(e.id);
             cur = e.pos;
@@ -2801,12 +2802,12 @@ impl Game {
         let pp = self.player.pos;
         self.banner = Some((ship.ab_name.to_string(), String::new(), 1.2));
         match ship.ability {
-            Ability::Sobrecarga => {
+            Ability::Overdrive => {
                 self.overdrive_t = 5.0;
                 au.play(Sfx::Ability);
                 self.fx.ring(pp, 300.0, 0.4, GOLD, 4.0);
             }
-            Ability::Rasante => {
+            Ability::Dash => {
                 let d = if dir.x.abs() > 0.0 {
                     vec2(dir.x.signum(), 0.0)
                 } else if pp.x < W / 2.0 {
@@ -2825,11 +2826,11 @@ impl Game {
                 au.play(Sfx::Dash);
                 self.banner = None;
             }
-            Ability::Muralha => {
+            Ability::Bulwark => {
                 self.wall_t = 5.0;
                 au.play(Sfx::Shield);
             }
-            Ability::Pulso => {
+            Ability::StarPulse => {
                 au.play(Sfx::Sparkle);
                 self.fx.ring(pp, 500.0, 0.5, GOLD, 6.0);
                 self.fx.ring(pp, 350.0, 0.6, WHITE, 3.0);
@@ -2846,16 +2847,16 @@ impl Game {
                     b.bomb_damage(12.0);
                 }
             }
-            Ability::Dobra => {
+            Ability::TimeWarp => {
                 self.timewarp_t = 5.0;
                 au.play(Sfx::Portal);
             }
-            Ability::Canhao => {
+            Ability::Cannon => {
                 self.cannon_t = 3.0;
                 au.play(Sfx::Ability);
             }
-            Ability::Aerogel | Ability::Saque | Ability::Reflexo => {
-                self.v4_ability(ship.ability, au)
+            Ability::Aerogel | Ability::Loot | Ability::Reflect => {
+                self.rift_ability(ship.ability, au)
             }
             Ability::Nostalgia => {
                 self.nostalgia_t = 4.0;
@@ -2999,7 +3000,7 @@ impl Game {
                         .filter(|(_, e)| {
                             matches!(e.state, EState::Formation)
                                 && !e.dead
-                                && e.kind != Kind::Portadora
+                                && e.kind != Kind::Carrier
                         })
                         .map(|(i, _)| i)
                         .collect();
@@ -3031,7 +3032,7 @@ impl Game {
                     continue;
                 }
             }
-            if matches!(e.kind, Kind::Mimico | Kind::Ladrao) {
+            if matches!(e.kind, Kind::Mimic | Kind::Thief) {
                 continue;
             }
             let prev = e.pos;
@@ -3070,7 +3071,7 @@ impl Game {
                 }
                 EState::Formation => {
                     e.pos = slot;
-                    if e.kind == Kind::Portadora && can_shoot {
+                    if e.kind == Kind::Carrier && can_shoot {
                         e.spawn_cd -= dt;
                         if e.spawn_cd <= 0.0 {
                             e.spawn_cd = gen_range(5.0, 8.0);
@@ -3082,7 +3083,7 @@ impl Game {
                     }
                     if can_shoot && gen_range(0.0, 1.0) < formation_rate * dt {
                         match e.kind {
-                            Kind::Atirador => {
+                            Kind::Gunner => {
                                 for a in [-0.25f32, 0.0, 0.25] {
                                     new_bullets.push(EBullet::new(
                                         e.pos + vec2(0.0, 10.0),
@@ -3092,13 +3093,13 @@ impl Game {
                                     ));
                                 }
                             }
-                            Kind::Tecela => new_bullets.push(EBullet::new(
+                            Kind::Weaver => new_bullets.push(EBullet::new(
                                 e.pos + vec2(0.0, 10.0),
                                 aim(e.pos, bspeed * 0.6),
                                 8.0,
                                 3,
                             )),
-                            Kind::Portadora => {}
+                            Kind::Carrier => {}
                             _ => new_bullets.push(EBullet::new(
                                 e.pos + vec2(0.0, 10.0),
                                 vec2(0.0, bspeed),
@@ -3120,7 +3121,7 @@ impl Game {
                     if can_shoot {
                         let marks: &[f32] = match e.kind {
                             Kind::Kamikaze => &[],
-                            Kind::Atirador | Kind::Tecela => &[0.4, 0.5],
+                            Kind::Gunner | Kind::Weaver => &[0.4, 0.5],
                             _ => {
                                 if diff >= 2.0 {
                                     &[0.3, 0.55]
@@ -3132,7 +3133,7 @@ impl Game {
                         if (shots as usize) < marks.len() && t > marks[shots as usize] {
                             shots += 1;
                             match e.kind {
-                                Kind::Atirador => {
+                                Kind::Gunner => {
                                     let base = (player - e.pos).normalize_or_zero();
                                     let ang = base.y.atan2(base.x);
                                     for k in -2..=2 {
@@ -3145,7 +3146,7 @@ impl Game {
                                         ));
                                     }
                                 }
-                                Kind::Tecela => new_bullets.push(EBullet::new(
+                                Kind::Weaver => new_bullets.push(EBullet::new(
                                     e.pos,
                                     aim(e.pos, bspeed * 0.6),
                                     8.0,
@@ -3210,7 +3211,7 @@ impl Game {
             let v = e.pos - prev;
             let keep_up = matches!(e.state, EState::Formation)
                 || v.length() < 0.05
-                || matches!(e.kind, Kind::Vaca | Kind::Mercador);
+                || matches!(e.kind, Kind::Cow | Kind::Merchant);
             let target = if keep_up {
                 0.0
             } else {
@@ -3278,9 +3279,9 @@ impl Game {
 
     fn spawn_boss(&mut self, au: &mut Audio) {
         self.boss_hits = 0;
-        self.z.boss_t = 0.0;
+        self.arcade.boss_t = 0.0;
         let (kind, variant, final_boss, lvl) = match self.cfg.mode {
-            Mode::Expedicao => {
+            Mode::Expedition => {
                 let sec = self.sector();
                 let list = [
                     BossKind::Queen,
@@ -3294,7 +3295,7 @@ impl Game {
                 let k = list[(sec as usize - 1) % list.len()];
                 (k, sec > 7, false, 1.0 + 0.28 * (sec - 1) as f32)
             }
-            Mode::Campanha | Mode::Diario => {
+            Mode::Campaign | Mode::Daily => {
                 let sec = self.sector();
                 let third = if gen_range(0, 2) == 0 {
                     BossKind::Serpent
@@ -3312,11 +3313,11 @@ impl Game {
                     (BossKind::Queen, false),
                 ];
                 let (k, v) = list[(sec as usize - 1) % 8];
-                let fin = self.cfg.mode == Mode::Campanha && sec == SECTORS;
+                let fin = self.cfg.mode == Mode::Campaign && sec == SECTORS;
                 let lvl = 1.0 + 0.3 * (sec - 1) as f32 + self.cycle as f32 * 0.9;
                 (k, v, fin, lvl)
             }
-            Mode::Chefoes => {
+            Mode::BossRush => {
                 let list = [
                     (BossKind::Queen, false, false),
                     (BossKind::Warship, false, false),
@@ -3345,7 +3346,7 @@ impl Game {
                 (k, self.wave > 30, false, 1.0 + self.wave as f32 * 0.08)
             }
         };
-        let (kind, variant, final_boss, lvl) = if self.x.void {
+        let (kind, variant, final_boss, lvl) = if self.enc.void {
             (BossKind::Devourer, false, false, 3.0)
         } else {
             (kind, variant, final_boss, lvl)
@@ -3356,7 +3357,7 @@ impl Game {
             boss.max_hp *= 0.05;
         }
         self.boss = Some(boss);
-        au.music(Some(if final_boss || variant || self.x.void {
+        au.music(Some(if final_boss || variant || self.enc.void {
             Music::Final
         } else {
             Music::Boss
@@ -3500,14 +3501,14 @@ impl Game {
                 | BKind::Bee
                 | BKind::Hole
                 | BKind::Cow
-                | BKind::Ice => v3::move_bullet(b, dt, &targets, boss_pos),
+                | BKind::Ice => encounters::move_bullet(b, dt, &targets, boss_pos),
                 BKind::Needle
                 | BKind::Boomerang
                 | BKind::Prism
                 | BKind::Mine
                 | BKind::Nova
                 | BKind::Dust
-                | BKind::Lance => v4::move_bullet(b, dt, &targets, boss_pos, pp),
+                | BKind::Lance => rifts::move_bullet(b, dt, &targets, boss_pos, pp),
                 _ => b.pos += b.vel * dt,
             }
             b.life -= dt;
@@ -3530,7 +3531,7 @@ impl Game {
     }
 
     fn spawn_drop(&mut self, pos: Vec2, kind: DropKind) {
-        // Muitos cristais na tela poluem a visão: os novos se juntam aos que já caem.
+        // Too many crystals on screen clutter the view: new ones merge into the ones already falling.
         if let DropKind::Crystal(v) = kind {
             let n = self
                 .drops
@@ -3582,7 +3583,7 @@ impl Game {
             }
         }
         if list.is_empty() {
-            list.push(Weapon::Rajada);
+            list.push(Weapon::Blaster);
         }
         let mut arr = [list[0]; 4];
         for (i, w) in list.iter().enumerate() {
@@ -3651,7 +3652,7 @@ impl Game {
                         d.vel.y = (d.vel.y + 120.0 * dt).min(60.0);
                         d.vel.x = (d.age * 2.0).cos() * 25.0;
                     }
-                    other => v4::drop_motion(other, &mut d.vel, d.age, d.pos, pp, dt),
+                    other => rifts::drop_motion(other, &mut d.vel, d.age, d.pos, pp, dt),
                 }
             }
             d.pos += d.vel * dt;
@@ -3671,11 +3672,11 @@ impl Game {
         match d.kind {
             DropKind::Crystal(v) => {
                 let mut amount = v as f32 * self.mods.crystal_mul * self.event_crystal_mul();
-                self.x.crystals += v;
-                if self.cfg.daily == Some(Daily::CristaisEmDobro) {
+                self.enc.crystals += v;
+                if self.cfg.daily == Some(Daily::DoubleCrystals) {
                     amount *= 2.0;
                 }
-                if self.cfg.mode == Mode::Sobrevivencia {
+                if self.cfg.mode == Mode::Survival {
                     self.score += (amount * 50.0) as u32;
                 }
                 self.crystals += amount;
@@ -3685,7 +3686,7 @@ impl Game {
                     if self.crystal_bomb_acc >= 100.0 {
                         self.crystal_bomb_acc -= 100.0;
                         self.player.bombs = (self.player.bombs + 1).min(9);
-                        self.fx.text(pp - vec2(0.0, 30.0), "+1 BOMBA", GOLD, 18.0);
+                        self.fx.text(pp - vec2(0.0, 30.0), "+1 BOMB", GOLD, 18.0);
                     }
                 }
                 au.play_vol(Sfx::Crystal, 0.5);
@@ -3693,14 +3694,14 @@ impl Game {
             }
             DropKind::Capsule { weapons, idx, .. } => {
                 let weapon = weapons[idx];
-                self.x.capsules += 1;
+                self.enc.capsules += 1;
                 let p = &mut self.player;
                 if weapon == p.weapon {
                     if p.level < 5 {
                         p.level += 1;
                         self.fx.text(
                             pp - vec2(0.0, 40.0),
-                            format!("{} NÍVEL {}", weapon.name(), p.level),
+                            format!("{} LEVEL {}", weapon.name(), p.level),
                             weapon.color(),
                             20.0,
                         );
@@ -3709,7 +3710,7 @@ impl Game {
                         self.fx.text(pp - vec2(0.0, 40.0), "+2000", GOLD, 20.0);
                     }
                 } else {
-                    v3::pick_new_weapon(p, weapon);
+                    encounters::pick_new_weapon(p, weapon);
                     self.fx
                         .text(pp - vec2(0.0, 40.0), weapon.name(), weapon.color(), 22.0);
                 }
@@ -3729,20 +3730,20 @@ impl Game {
                 self.fx
                     .text(pp - vec2(0.0, 40.0), k.name(), k.color(), 22.0);
                 match k {
-                    PowerKind::Frenesi => self.frenzy_t = 8.0,
-                    PowerKind::Estrela => {
+                    PowerKind::Frenzy => self.frenzy_t = 8.0,
+                    PowerKind::Star => {
                         self.star_t = 6.0;
                         self.player.invuln = self.player.invuln.max(6.0);
                     }
-                    PowerKind::Ima => self.magnet_t = 10.0,
-                    PowerKind::Lento => self.slowmo_t = 6.0,
-                    PowerKind::Vida => {
+                    PowerKind::Magnet => self.magnet_t = 10.0,
+                    PowerKind::SlowMo => self.slowmo_t = 6.0,
+                    PowerKind::ExtraLife => {
                         self.player.lives = (self.player.lives + 1).min(9);
                         au.play(Sfx::OneUp);
                     }
-                    PowerKind::Bomba => self.player.bombs = (self.player.bombs + 1).min(9),
-                    PowerKind::Escudo => self.player.shield = true,
-                    PowerKind::Cristais => {
+                    PowerKind::Bomb => self.player.bombs = (self.player.bombs + 1).min(9),
+                    PowerKind::Shield => self.player.shield = true,
+                    PowerKind::Crystals => {
                         for _ in 0..5 {
                             self.spawn_drop(pp - vec2(0.0, 30.0), DropKind::Crystal(5));
                         }
@@ -3763,7 +3764,7 @@ impl Game {
     }
 
     // -----------------------------------------------------------------------
-    // Colisões
+    // Collisions
     // -----------------------------------------------------------------------
 
     fn collisions(&mut self, au: &mut Audio) {
@@ -3825,7 +3826,7 @@ impl Game {
                         }
                         e.frozen = e.frozen.max(1.6 * self.mods.freeze_mul);
                     }
-                    if e.kind == Kind::Mercador {
+                    if e.kind == Kind::Merchant {
                         pirate = true;
                     }
                     if e.hp > 0 {
@@ -3847,18 +3848,18 @@ impl Game {
             }
         }
         if charged5 {
-            self.ach(ach::CARREGADO);
+            self.ach(ach::CHARGED);
         }
         if pirate && !self.grudge {
             self.grudge = true;
-            self.ach(ach::PIRATA);
+            self.ach(ach::PIRATE);
             self.banner = Some((
-                "PIRATA ESPACIAL".into(),
-                "O Mercador nunca vai esquecer isso.".into(),
+                "SPACE PIRATE".into(),
+                "The Merchant will never forget this.".into(),
                 3.0,
             ));
         }
-        // chefe
+        // boss
         if let Some(boss) = &mut self.boss
             && boss.targetable()
         {
@@ -3900,7 +3901,7 @@ impl Game {
                         2,
                     );
                     if res.part_destroyed {
-                        self.x.parts += 1;
+                        self.enc.parts += 1;
                         au.play(Sfx::Boom);
                         self.fx
                             .explosion(res.part_pos, Color::from_rgba(255, 160, 80, 255), true);
@@ -3926,7 +3927,7 @@ impl Game {
                 }
             }
         }
-        // rochas
+        // rocks
         for b in &mut self.bullets {
             if b.life <= 0.0 {
                 continue;
@@ -3995,7 +3996,7 @@ impl Game {
         }
         self.rocks.extend(new_rocks);
 
-        // perigos x jogador
+        // hazards vs player
         if !self.player.alive() {
             return;
         }
@@ -4040,7 +4041,7 @@ impl Game {
                 self.events.push(Event::Graze);
             }
             if self.grazes >= 100 {
-                self.ach(ach::RASPA);
+                self.ach(ach::CLOSE_SHAVE);
             }
         }
         if invuln {
@@ -4104,8 +4105,8 @@ impl Game {
     }
 
     fn hurt_player(&mut self, au: &mut Audio) {
-        self.x.nohit_t = 0.0;
-        self.v4_on_hit();
+        self.enc.nohit_t = 0.0;
+        self.rift_on_hit();
         let pp = self.player.pos;
         self.sector_hits += 1;
         self.boss_hits += 1;
@@ -4149,13 +4150,13 @@ impl Game {
         if !keep {
             p.level = (p.level - 1).max(1);
         }
-        self.v4_on_death();
+        self.rift_on_death();
         let p = &mut self.player;
         p.dead_t = 1.4;
         if p.lives <= 0 && self.mods.phoenix && !p.phoenix_used {
             p.phoenix_used = true;
             p.lives = 1;
-            self.banner = Some(("FÊNIX!".into(), "Você renasceu das cinzas.".into(), 2.5));
+            self.banner = Some(("PHOENIX!".into(), "You rose from the ashes.".into(), 2.5));
         }
         self.ebullets.clear();
         self.strikes.clear();
@@ -4172,13 +4173,13 @@ impl Game {
                 if e.bonus && g < self.groups.len() {
                     self.groups[g].0 = 0;
                 }
-                if e.kind == Kind::Mercador && !e.damaged {
+                if e.kind == Kind::Merchant && !e.damaged {
                     self.events.push(Event::MerchantSpared);
                 }
                 continue;
             }
             if e.hp > 0 {
-                if e.kind == Kind::Mercador
+                if e.kind == Kind::Merchant
                     && !e.damaged
                     && !e.gifted
                     && let EState::Flyby { t, .. } = e.state
@@ -4192,8 +4193,8 @@ impl Game {
                         self.spawn_drop(pos, DropKind::Crystal(5));
                     }
                     self.banner = Some((
-                        "PRESENTE DO MERCADOR".into(),
-                        "Obrigado pela gentileza, piloto!".into(),
+                        "MERCHANT'S GIFT".into(),
+                        "Thanks for your kindness, pilot!".into(),
                         2.5,
                     ));
                     au.play(Sfx::Buy);
@@ -4224,8 +4225,8 @@ impl Game {
             }
             self.events.push(Event::Kill(e.kind, e.last_weapon));
             self.on_kill(&e, au);
-            self.v4_on_kill(&e);
-            self.v5_on_kill(&e);
+            self.rift_on_kill(&e);
+            self.arcade_on_kill(&e);
             self.seen(crate::progress::lore_of_kind(e.kind.index()));
             if !self.classic() {
                 self.player.meter = (self.player.meter + 0.025 * self.mods.meter_mul).min(1.0);
@@ -4250,31 +4251,31 @@ impl Game {
                 e.kind.color(),
                 matches!(
                     e.kind,
-                    Kind::Portadora | Kind::Dourado | Kind::Vaca | Kind::Mercador
+                    Kind::Carrier | Kind::Golden | Kind::Cow | Kind::Merchant
                 ),
             );
             match e.kind {
-                Kind::Dourado => {
-                    self.ach(ach::OURO);
+                Kind::Golden => {
+                    self.ach(ach::FOOLS_GOLD);
                     if !e.bonus {
                         au.play(Sfx::Fanfare);
                         for _ in 0..8 {
                             self.spawn_drop(e.pos, DropKind::Crystal(5));
                         }
                         self.banner = Some((
-                            "ESCARAVELHO DOURADO!".into(),
-                            "Uma fortuna em cristais!".into(),
+                            "GOLDEN SCARAB!".into(),
+                            "A fortune in crystals!".into(),
                             2.0,
                         ));
                     }
                 }
-                Kind::Vaca => {
+                Kind::Cow => {
                     au.play(Sfx::Moo);
-                    self.ach(ach::MUUU);
+                    self.ach(ach::MOO);
                     self.fx.text(e.pos - vec2(0.0, 30.0), "MUUUU!", WHITE, 30.0);
-                    self.spawn_drop(e.pos, DropKind::Card(cards::id::VACA));
+                    self.spawn_drop(e.pos, DropKind::Card(cards::id::COW));
                 }
-                Kind::Mercador => {
+                Kind::Merchant => {
                     for _ in 0..12 {
                         self.spawn_drop(e.pos, DropKind::Crystal(5));
                     }
@@ -4290,18 +4291,18 @@ impl Game {
                         let b = 1000 * (1 + self.cycle) * self.mods.bonus_mul;
                         self.score += b;
                         self.fx
-                            .text(e.pos - vec2(0.0, 24.0), format!("GRUPO! +{b}"), GREEN, 22.0);
+                            .text(e.pos - vec2(0.0, 24.0), format!("GROUP! +{b}"), GREEN, 22.0);
                         au.play(Sfx::MenuOk);
                     }
                 }
-                if e.kind == Kind::Dourado {
+                if e.kind == Kind::Golden {
                     for _ in 0..2 {
                         self.spawn_drop(e.pos, DropKind::Crystal(1));
                     }
                 }
                 continue;
             }
-            if e.kind == Kind::Divisor {
+            if e.kind == Kind::Splitter {
                 for s in [-1.0, 1.0] {
                     self.spawn(
                         Kind::Mini,
@@ -4318,12 +4319,12 @@ impl Game {
                     }
                 }
             }
-            if self.classic() || matches!(e.kind, Kind::Dourado | Kind::Vaca | Kind::Mercador) {
+            if self.classic() || matches!(e.kind, Kind::Golden | Kind::Cow | Kind::Merchant) {
                 continue;
             }
             let mut n_crystals = match e.kind {
-                Kind::Besouro | Kind::Portadora => 3,
-                Kind::Atirador | Kind::Divisor | Kind::Escudeiro => 2,
+                Kind::Beetle | Kind::Carrier => 3,
+                Kind::Gunner | Kind::Splitter | Kind::Shieldbearer => 2,
                 _ => (gen_range(0.0, 1.0) < 0.45) as i32,
             };
             if self.crystalizer && gen_range(0.0, 1.0) < 0.3 {
@@ -4338,13 +4339,13 @@ impl Game {
                 };
                 self.spawn_drop(e.pos, DropKind::Crystal(v));
             }
-            let rain = if self.cfg.daily == Some(Daily::ChuvaDeCapsulas) {
+            let rain = if self.cfg.daily == Some(Daily::CapsuleRain) {
                 3.0
             } else {
                 1.0
             };
             self.capsule_pity += 1;
-            let cap_chance = if e.kind == Kind::Besouro { 0.15 } else { 0.035 } * rain;
+            let cap_chance = if e.kind == Kind::Beetle { 0.15 } else { 0.035 } * rain;
             if self.capsule_pity > 28 || gen_range(0.0, 1.0) < cap_chance {
                 self.capsule_pity = 0;
                 let cap = self.make_capsule();
@@ -4352,11 +4353,8 @@ impl Game {
             } else if gen_range(0.0, 1.0) < 0.016 * self.mods.powerup_mul * rain {
                 self.spawn_drop(e.pos, DropKind::Power(PowerKind::random()));
             }
-            let card_chance = if e.kind == Kind::Besouro {
-                0.012
-            } else {
-                0.004
-            } * self.mods.card_mul;
+            let card_chance =
+                if e.kind == Kind::Beetle { 0.012 } else { 0.004 } * self.mods.card_mul;
             if gen_range(0.0, 1.0) < card_chance {
                 self.spawn_drop(e.pos, DropKind::Card(cards::roll(0)));
             }
@@ -4368,71 +4366,71 @@ impl Game {
     }
 
     // -----------------------------------------------------------------------
-    // Loja
+    // Shop
     // -----------------------------------------------------------------------
 
     fn roll_offers(&mut self) {
         let mut pool: Vec<Item> = vec![
-            Item::Melhoria,
-            Item::Propulsor,
-            Item::Gatilho,
-            Item::Ima,
-            Item::Seguro,
-            Item::Carga,
-            Item::Amuleto,
-            Item::Cristalizador,
-            Item::Carta,
-            Item::Laterais,
-            Item::Mira,
+            Item::Upgrade,
+            Item::Thruster,
+            Item::Trigger,
+            Item::Magnet,
+            Item::Insurance,
+            Item::EnergyCell,
+            Item::Amulet,
+            Item::Crystallizer,
+            Item::MysteryCard,
+            Item::SideCannons,
+            Item::LaserSight,
             Item::Capacitor,
-            Item::Caixa,
-            Item::Caixa,
+            Item::MysteryBox,
+            Item::MysteryBox,
         ];
         if self.cfg.rank >= 5 {
             pool.push(Item::Drone);
         }
         if self.cfg.rank >= 11 {
-            pool.extend([Item::Banco, Item::Radar, Item::Mapa, Item::Mercenario]);
+            pool.extend([Item::Bank, Item::Radar, Item::TreasureMap, Item::Mercenary]);
         }
         for w in self.weapon_pool() {
             if w != self.player.weapon {
-                pool.push(Item::Arma(w));
+                pool.push(Item::Weapon(w));
             }
         }
         pool.retain(|i| self.shop_block(*i).is_none());
-        // Sempre duas armas à venda, de preferência mais fortes que a atual.
+        // Always two weapons for sale, preferably stronger than the current one.
         let cur = self.player.weapon.tier();
         let mut weapons: Vec<Item> = pool
             .iter()
             .copied()
-            .filter(|i| matches!(i, Item::Arma(w) if w.tier() >= cur))
+            .filter(|i| matches!(i, Item::Weapon(w) if w.tier() >= cur))
             .collect();
         if weapons.len() < 2 {
             weapons = pool
                 .iter()
                 .copied()
-                .filter(|i| matches!(i, Item::Arma(_)))
+                .filter(|i| matches!(i, Item::Weapon(_)))
                 .collect();
         }
         let mut offers: Vec<Item> = vec![];
         while offers.len() < 2 && !weapons.is_empty() {
             offers.push(weapons.swap_remove(gen_range(0, weapons.len())));
         }
-        pool.retain(|i| !matches!(i, Item::Arma(_)));
+        pool.retain(|i| !matches!(i, Item::Weapon(_)));
         while offers.len() < 4 && !pool.is_empty() {
             let it = pool.swap_remove(gen_range(0, pool.len()));
             offers.push(it);
         }
         offers.sort_by_key(|i| match i {
-            Item::Arma(w) => w.tier() as i32,
+            Item::Weapon(w) => w.tier() as i32,
             _ => 10,
         });
-        self.shop_offers = vec![Item::Vida, Item::Bomba, Item::Escudo];
-        if !self.z.autofire {
-            self.shop_offers.push(Item::Auto);
+        self.shop_offers = vec![Item::ExtraLife, Item::Bomb, Item::Shield];
+        if !self.arcade.autofire {
+            self.shop_offers.push(Item::Autofire);
         }
-        if self.z.core < 6 {
-            self.shop_offers.push(Item::Nucleo);
+        if self.arcade.core < 6 {
+            self.shop_offers.push(Item::DamageCore);
         }
         self.shop_offers.extend(offers);
     }
@@ -4450,7 +4448,7 @@ impl Game {
         if self.grudge {
             p *= 1.3;
         }
-        if self.cfg.daily == Some(Daily::CristaisEmDobro) {
+        if self.cfg.daily == Some(Daily::DoubleCrystals) {
             p *= 1.5;
         }
         p.round() as u32
@@ -4467,25 +4465,25 @@ impl Game {
     fn shop_block(&self, it: Item) -> Option<&'static str> {
         let p = &self.player;
         match it {
-            Item::Vida if p.lives >= 7 => Some("MÁXIMO"),
-            Item::Bomba if p.bombs >= 7 => Some("MÁXIMO"),
-            Item::Melhoria if p.level >= 5 => Some("MÁXIMO"),
-            Item::Escudo if p.shield => Some("JÁ TEM"),
-            Item::Propulsor if p.speed_lvl >= 3 => Some("MÁXIMO"),
-            Item::Gatilho if p.fire_lvl >= 3 => Some("MÁXIMO"),
-            Item::Ima if p.magnet_lvl >= 3 || self.mods.magnet_all => Some("MÁXIMO"),
-            Item::Drone if self.drones_total() >= 3 => Some("MÁXIMO"),
-            Item::Laterais if self.side_cannons => Some("JÁ TEM"),
-            Item::Seguro if self.insurance || self.mods.keep_level => Some("JÁ TEM"),
-            Item::Banco if self.bank => Some("JÁ TEM"),
-            Item::Cristalizador if self.crystalizer => Some("JÁ TEM"),
-            Item::Mapa if self.treasure_map => Some("JÁ TEM"),
-            Item::Mercenario if self.ally_sectors > 0 => Some("JÁ TEM"),
-            Item::Arma(w) if w == p.weapon => Some("EQUIPADA"),
-            Item::Auto if self.z.autofire => Some("JÁ TEM"),
-            Item::Mira if self.z.sight => Some("JÁ TEM"),
-            Item::Capacitor if self.z.capacitor => Some("JÁ TEM"),
-            Item::Nucleo if self.z.core >= 6 => Some("MÁXIMO"),
+            Item::ExtraLife if p.lives >= 7 => Some("MAX"),
+            Item::Bomb if p.bombs >= 7 => Some("MAX"),
+            Item::Upgrade if p.level >= 5 => Some("MAX"),
+            Item::Shield if p.shield => Some("OWNED"),
+            Item::Thruster if p.speed_lvl >= 3 => Some("MAX"),
+            Item::Trigger if p.fire_lvl >= 3 => Some("MAX"),
+            Item::Magnet if p.magnet_lvl >= 3 || self.mods.magnet_all => Some("MAX"),
+            Item::Drone if self.drones_total() >= 3 => Some("MAX"),
+            Item::SideCannons if self.side_cannons => Some("OWNED"),
+            Item::Insurance if self.insurance || self.mods.keep_level => Some("OWNED"),
+            Item::Bank if self.bank => Some("OWNED"),
+            Item::Crystallizer if self.crystalizer => Some("OWNED"),
+            Item::TreasureMap if self.treasure_map => Some("OWNED"),
+            Item::Mercenary if self.ally_sectors > 0 => Some("OWNED"),
+            Item::Weapon(w) if w == p.weapon => Some("EQUIPPED"),
+            Item::Autofire if self.arcade.autofire => Some("OWNED"),
+            Item::LaserSight if self.arcade.sight => Some("OWNED"),
+            Item::Capacitor if self.arcade.capacitor => Some("OWNED"),
+            Item::DamageCore if self.arcade.core >= 6 => Some("MAX"),
             _ => None,
         }
     }
@@ -4540,36 +4538,36 @@ impl Game {
                 au.play(Sfx::Buy);
                 let p = &mut self.player;
                 match it {
-                    Item::Vida => p.lives += 1,
-                    Item::Bomba => p.bombs += 1,
-                    Item::Escudo => p.shield = true,
-                    Item::Melhoria => p.level += 1,
-                    Item::Arma(w) => v3::pick_new_weapon(p, w),
-                    Item::Propulsor => p.speed_lvl += 1,
-                    Item::Gatilho => p.fire_lvl += 1,
-                    Item::Ima => p.magnet_lvl += 1,
+                    Item::ExtraLife => p.lives += 1,
+                    Item::Bomb => p.bombs += 1,
+                    Item::Shield => p.shield = true,
+                    Item::Upgrade => p.level += 1,
+                    Item::Weapon(w) => encounters::pick_new_weapon(p, w),
+                    Item::Thruster => p.speed_lvl += 1,
+                    Item::Trigger => p.fire_lvl += 1,
+                    Item::Magnet => p.magnet_lvl += 1,
                     Item::Drone => self.drones_bought += 1,
-                    Item::Laterais => self.side_cannons = true,
-                    Item::Seguro => self.insurance = true,
-                    Item::Carga => {
+                    Item::SideCannons => self.side_cannons = true,
+                    Item::Insurance => self.insurance = true,
+                    Item::EnergyCell => {
                         p.meter = 1.0;
                         self.mods.meter_mul += 0.2;
                     }
-                    Item::Banco => self.bank = true,
+                    Item::Bank => self.bank = true,
                     Item::Radar => self.mods.card_mul *= 2.0,
-                    Item::Amuleto => self.mods.powerup_mul *= 1.6,
-                    Item::Cristalizador => self.crystalizer = true,
-                    Item::Mapa => self.treasure_map = true,
-                    Item::Mercenario => self.ally_sectors = 2,
-                    Item::Carta => {
+                    Item::Amulet => self.mods.powerup_mul *= 1.6,
+                    Item::Crystallizer => self.crystalizer = true,
+                    Item::TreasureMap => self.treasure_map = true,
+                    Item::Mercenary => self.ally_sectors = 2,
+                    Item::MysteryCard => {
                         let c = cards::roll(0);
                         self.give_card(c, au);
                     }
-                    Item::Auto => self.z.autofire = true,
-                    Item::Mira => self.z.sight = true,
-                    Item::Capacitor => self.z.capacitor = true,
-                    Item::Caixa => self.open_box(au),
-                    Item::Nucleo => self.z.core += 1,
+                    Item::Autofire => self.arcade.autofire = true,
+                    Item::LaserSight => self.arcade.sight = true,
+                    Item::Capacitor => self.arcade.capacitor = true,
+                    Item::MysteryBox => self.open_box(au),
+                    Item::DamageCore => self.arcade.core += 1,
                 }
                 self.check_mastery();
             }
@@ -4580,7 +4578,7 @@ impl Game {
     fn leave_shop(&mut self) -> Phase {
         self.rocks.clear();
         self.wave += 1;
-        if self.cfg.mode == Mode::Campanha
+        if self.cfg.mode == Mode::Campaign
             && self.cycle == 0
             && self.sector() == 4
             && self.deaths == 0
@@ -4592,7 +4590,7 @@ impl Game {
     }
 
     // -----------------------------------------------------------------------
-    // Desenho
+    // Drawing
     // -----------------------------------------------------------------------
 
     pub fn draw(&self, sp: &Sprites, art: &Art, shake_on: bool, show_hud: bool) {
@@ -4706,12 +4704,12 @@ impl Game {
                     } else {
                         None
                     };
-                    v4::draw_capsule(p, w, next, *t / cycle, self.time, blink);
+                    rifts::draw_capsule(p, w, next, *t / cycle, self.time, blink);
                 }
                 DropKind::Curse(..) | DropKind::Relic(_) | DropKind::Rift => {
-                    v4::draw_drop(&d.kind, p, self.time)
+                    rifts::draw_drop(&d.kind, p, self.time)
                 }
-                DropKind::Letter(i) => v5::draw_letter_drop(p, *i, self.time),
+                DropKind::Letter(i) => arcade::draw_letter_drop(p, *i, self.time),
                 DropKind::Card(c) => {
                     let rc = cards::CARDS[*c].rarity.color();
                     let pulse = (self.time * 6.0).sin() * 0.5 + 0.5;
@@ -4733,7 +4731,7 @@ impl Game {
                         },
                     );
                 }
-                DropKind::Log(_) => v3::draw_log_drop(p, self.time),
+                DropKind::Log(_) => encounters::draw_log_drop(p, self.time),
                 DropKind::Power(k) => {
                     let c = k.color();
                     let pulse = (self.time * 8.0).sin() * 2.0;
@@ -4753,7 +4751,7 @@ impl Game {
         }
 
         for e in &self.enemies {
-            if !e.active() || (e.kind == Kind::Mimico && !e.revealed) {
+            if !e.active() || (e.kind == Kind::Mimic && !e.revealed) {
                 continue;
             }
             let frame = ((self.time * 6.0 + e.seed) as usize) % 2;
@@ -4761,14 +4759,14 @@ impl Game {
             let mut tint = if e.kind.hp() > 1
                 && e.hp < e.kind.hp()
                 && !e.bonus
-                && !matches!(e.kind, Kind::Mercador | Kind::Vaca)
+                && !matches!(e.kind, Kind::Merchant | Kind::Cow)
             {
                 Color::new(1.0, 0.75, 0.75, 1.0)
             } else {
                 WHITE
             };
             tint.a = e.alpha(self.time);
-            if e.kind == Kind::Dourado {
+            if e.kind == Kind::Golden {
                 draw_circle(
                     e.pos.x + off.x,
                     e.pos.y + off.y,
@@ -4786,8 +4784,8 @@ impl Game {
                     e.flash > 0.0,
                 );
             }
-            if season == crate::progress::Season::Natal
-                && !matches!(e.kind, Kind::Vaca | Kind::Mercador)
+            if season == crate::progress::Season::Christmas
+                && !matches!(e.kind, Kind::Cow | Kind::Merchant)
             {
                 let h = e.pos + off + vec2(0.0, -16.0);
                 draw_triangle(
@@ -4799,7 +4797,7 @@ impl Game {
                 draw_rectangle(h.x - 8.0, h.y + 3.0, 16.0, 3.0, WHITE);
                 draw_circle(h.x + 2.0, h.y - 9.0, 2.5, WHITE);
             }
-            if season == crate::progress::Season::Halloween && e.kind == Kind::Besouro {
+            if season == crate::progress::Season::Halloween && e.kind == Kind::Beetle {
                 let h = e.pos + off + vec2(0.0, -14.0);
                 draw_circle(h.x, h.y, 6.0, Color::from_rgba(255, 140, 20, 255));
                 draw_rectangle(
@@ -4928,15 +4926,15 @@ impl Game {
                 | BKind::Ice
                 | BKind::Bee
                 | BKind::Hole
-                | BKind::Cow => v3::draw_bullet(b, p, sp, self.time),
+                | BKind::Cow => encounters::draw_bullet(b, p, sp, self.time),
                 BKind::Needle
                 | BKind::Boomerang
                 | BKind::Prism
                 | BKind::Mine
                 | BKind::Nova
                 | BKind::Dust
-                | BKind::Lance => v4::draw_bullet(b, p, self.time),
-                BKind::Charge => v5::draw_charge_bullet(b, p, self.time),
+                | BKind::Lance => rifts::draw_bullet(b, p, self.time),
+                BKind::Charge => arcade::draw_charge_bullet(b, p, self.time),
                 BKind::Flame => {
                     let k = (b.t / 0.45).min(1.0);
                     let c = Color::new(1.0, 0.85 - k * 0.6, 0.3 - k * 0.3, 1.0 - k * 0.7);
@@ -4945,9 +4943,9 @@ impl Game {
             }
         }
 
-        self.v3_draw(off, sp);
-        self.v4_draw(off);
-        self.v5_draw(off);
+        self.enc_draw(off, sp);
+        self.rift_draw(off);
+        self.arcade_draw(off);
         if self.ally_sectors > 0 && self.player.alive() {
             art.ships[1][0].draw(
                 self.ally_pos + off,
@@ -5024,7 +5022,7 @@ impl Game {
                     draw_circle(p.x, p.y, self.hit_r() + 1.5, WHITE);
                     draw_circle(p.x, p.y, self.hit_r() - 1.0, RED);
                 }
-                self.v4_draw_player_fx(p);
+                self.rift_draw_player_fx(p);
                 self.draw_charge(p);
             }
             for d in self.drones.iter().take(self.drones_total() as usize) {
@@ -5093,8 +5091,8 @@ impl Game {
                 }
                 continue;
             }
-            // Tiros inimigos: sempre em cores quentes ou roxas, com contorno escuro
-            // e miolo branco. Cristais são sempre azul-ciano: nunca se confundem.
+            // Enemy shots: always warm or purple colors, with a dark outline
+            // and a white core. Crystals are always cyan-blue: they never get mixed up.
             let (outer, inner) = match b.style {
                 1 => (
                     Color::from_rgba(255, 140, 40, 255),
@@ -5129,7 +5127,7 @@ impl Game {
         self.fx.draw_world(off);
         self.fx.draw_texts();
 
-        self.v3_draw_late();
+        self.enc_draw_late();
         if self.timewarp_t > 0.0 {
             draw_rectangle(0.0, 0.0, W, H, Color::new(0.3, 0.2, 0.8, 0.15));
         }
@@ -5149,7 +5147,7 @@ impl Game {
                 );
             }
             ui::text_c(
-                "ANO 2000",
+                "YEAR 2000",
                 W / 2.0,
                 H * 0.3,
                 40.0,
@@ -5193,10 +5191,10 @@ impl Game {
             self.draw_mini_hud();
         }
         self.draw_overlays(sp);
-        self.v4_draw_top(sp, art);
+        self.rift_draw_top(sp, art);
     }
 
-    /// Só o essencial quando os painéis laterais mostram o resto.
+    /// Only the essentials when the side panels show the rest.
     fn draw_mini_hud(&self) {
         if let Some(b) = &self.boss
             && b.entered()
@@ -5234,7 +5232,7 @@ impl Game {
         }
         ui::text(&format!("{:08}", self.score), 10.0, 23.0, 24.0, WHITE);
         ui::text_r(
-            &format!("REC {:08}", self.cfg.highscore),
+            &format!("HI {:08}", self.cfg.highscore),
             W - 10.0,
             23.0,
             18.0,
@@ -5337,19 +5335,19 @@ impl Game {
     pub fn active_powers(&self) -> Vec<(&'static str, f32, Color)> {
         let mut v = vec![];
         for (label, t, c) in [
-            ("FRENESI", self.frenzy_t, Color::from_rgba(255, 80, 60, 255)),
-            ("INVENCÍVEL", self.star_t, GOLD),
-            ("SUPER ÍMÃ", self.magnet_t, PINK),
-            ("LENTO", self.slowmo_t, Color::from_rgba(120, 160, 255, 255)),
-            ("TEIA", self.web_t, WHITE),
-            ("SOBRECARGA", self.overdrive_t, GOLD),
-            ("MURALHA", self.wall_t, CYAN),
+            ("FRENZY", self.frenzy_t, Color::from_rgba(255, 80, 60, 255)),
+            ("INVINCIBLE", self.star_t, GOLD),
+            ("SUPER MAGNET", self.magnet_t, PINK),
+            ("SLOW", self.slowmo_t, Color::from_rgba(120, 160, 255, 255)),
+            ("WEB", self.web_t, WHITE),
+            ("OVERDRIVE", self.overdrive_t, GOLD),
+            ("BULWARK", self.wall_t, CYAN),
             (
-                "DOBRA",
+                "WARP",
                 self.timewarp_t,
                 Color::from_rgba(170, 140, 255, 255),
             ),
-            ("CANHÃO", self.cannon_t, Color::from_rgba(255, 170, 60, 255)),
+            ("CANNON", self.cannon_t, Color::from_rgba(255, 170, 60, 255)),
         ] {
             if t > 0.0 {
                 v.push((label, t, c));
@@ -5360,14 +5358,14 @@ impl Game {
 
     pub fn stage_label(&self) -> String {
         match (self.cfg.mode, self.wave_kind) {
-            (Mode::Sobrevivencia, _) => format!("ONDA {}", self.wave),
-            (Mode::Chefoes, _) => format!("CHEFE {}/8", self.wave),
-            (Mode::Classico, WaveKind::Challenge) => "BÔNUS".into(),
-            (Mode::Classico, _) => format!("ONDA {}", self.wave),
-            (_, WaveKind::Challenge) => "BÔNUS".into(),
+            (Mode::Survival, _) => format!("WAVE {}", self.wave),
+            (Mode::BossRush, _) => format!("BOSS {}/8", self.wave),
+            (Mode::Classic, WaveKind::Challenge) => "BONUS".into(),
+            (Mode::Classic, _) => format!("WAVE {}", self.wave),
+            (_, WaveKind::Challenge) => "BONUS".into(),
             (_, WaveKind::Golden) => "???".into(),
-            (_, WaveKind::Boss) => "CHEFE".into(),
-            _ => format!("SETOR {}-{}", self.absolute_sector(), self.sub()),
+            (_, WaveKind::Boss) => "BOSS".into(),
+            _ => format!("SECTOR {}-{}", self.absolute_sector(), self.sub()),
         }
     }
 
@@ -5394,32 +5392,32 @@ impl Game {
                 Color::new(0.6, 0.0, 0.1, if on { 0.45 } else { 0.25 }),
             );
             ui::text_outline(
-                "ALERTA!",
+                "WARNING!",
                 W / 2.0,
                 H * 0.4 + 40.0,
                 44.0,
                 if on { RED } else { WHITE },
                 Color::from_rgba(40, 0, 10, 255),
             );
-            ui::text_c("UM CHEFE SE APROXIMA", W / 2.0, H * 0.4 + 66.0, 18.0, WHITE);
+            ui::text_c("A BOSS APPROACHES", W / 2.0, H * 0.4 + 66.0, 18.0, WHITE);
         }
 
         match &self.phase {
             Phase::Intro { t } => {
                 let a = (t * 2.0).min(1.0) * ((2.8 - t) * 2.0).clamp(0.0, 1.0);
                 let (title, sub) = match self.cfg.mode {
-                    Mode::Campanha | Mode::Diario if self.secret_stage => {
-                        ("SETOR ???".to_string(), "DIMENSÃO DOURADA".to_string())
+                    Mode::Campaign | Mode::Daily if self.secret_stage => {
+                        ("SECTOR ???".to_string(), "GOLDEN DIMENSION".to_string())
                     }
-                    Mode::Campanha | Mode::Diario | Mode::Expedicao => (
-                        format!("SETOR {}", self.absolute_sector()),
+                    Mode::Campaign | Mode::Daily | Mode::Expedition => (
+                        format!("SECTOR {}", self.absolute_sector()),
                         self.theme_name().to_string(),
                     ),
-                    Mode::Chefoes => (
-                        format!("CHEFE {} DE 9", self.wave),
+                    Mode::BossRush => (
+                        format!("BOSS {} OF 9", self.wave),
                         self.theme_name().to_string(),
                     ),
-                    _ => (format!("ONDA {}", self.wave), self.theme_name().to_string()),
+                    _ => (format!("WAVE {}", self.wave), self.theme_name().to_string()),
                 };
                 ui::text_outline(
                     &title,
@@ -5439,7 +5437,7 @@ impl Game {
                 let mut y = H * 0.4 + 60.0;
                 if self.cycle > 0 {
                     ui::text_c(
-                        &format!("CICLO {}", self.cycle + 1),
+                        &format!("CYCLE {}", self.cycle + 1),
                         W / 2.0,
                         y,
                         18.0,
@@ -5451,7 +5449,7 @@ impl Game {
                     && self.wave == 1
                 {
                     ui::text_c(
-                        &format!("REGRA DO DIA: {}", d.name()),
+                        &format!("RULE OF THE DAY: {}", d.name()),
                         W / 2.0,
                         y,
                         18.0,
@@ -5469,7 +5467,7 @@ impl Game {
             Phase::WaveClear { t } => {
                 let a = (t * 3.0).min(1.0);
                 ui::text_outline(
-                    "ONDA LIMPA!",
+                    "WAVE CLEAR!",
                     W / 2.0,
                     H * 0.45,
                     36.0,
@@ -5491,16 +5489,16 @@ impl Game {
                     150.0,
                     Color::new(1.0, 0.8, 0.3, a),
                 );
-                ui::text_c("RESULTADO DO BÔNUS", W / 2.0, H * 0.33 + 36.0, 24.0, GOLD);
+                ui::text_c("BONUS RESULT", W / 2.0, H * 0.33 + 36.0, 24.0, GOLD);
                 ui::text_c(
-                    &format!("ACERTOS  {hits} / {total}"),
+                    &format!("HITS  {hits} / {total}"),
                     W / 2.0,
                     H * 0.33 + 72.0,
                     22.0,
                     WHITE,
                 );
                 ui::text_c(
-                    &format!("BÔNUS  {bonus}"),
+                    &format!("BONUS  {bonus}"),
                     W / 2.0,
                     H * 0.33 + 102.0,
                     22.0,
@@ -5512,7 +5510,7 @@ impl Game {
                     } else {
                         PINK
                     };
-                    ui::text_c("PERFEITO!", W / 2.0, H * 0.33 + 134.0, 24.0, c);
+                    ui::text_c("PERFECT!", W / 2.0, H * 0.33 + 134.0, 24.0, c);
                 }
             }
             Phase::SectorClear { t, lines, shown } => {
@@ -5525,10 +5523,10 @@ impl Game {
                     110.0 + lines.len() as f32 * 32.0,
                     Color::new(0.5, 1.0, 0.6, a),
                 );
-                let title = if self.cfg.mode == Mode::Chefoes {
-                    "CHEFE ABATIDO!"
+                let title = if self.cfg.mode == Mode::BossRush {
+                    "BOSS DOWN!"
                 } else {
-                    "SETOR LIMPO!"
+                    "SECTOR CLEAR!"
                 };
                 ui::text_outline(
                     title,
@@ -5550,7 +5548,7 @@ impl Game {
                 }
                 if *shown >= lines.len() && (t * 2.0) as i32 % 2 == 0 {
                     ui::text_c(
-                        "ENTER para continuar",
+                        "ENTER to continue",
                         W / 2.0,
                         y0 + 100.0 + lines.len() as f32 * 32.0,
                         16.0,
@@ -5574,12 +5572,12 @@ impl Game {
                         );
                     }
                 }
-                let (t1, t2) = if self.x.void {
-                    ("O VAZIO SE ABRE", "Aquilo de que o Enxame fugia está aqui.")
+                let (t1, t2) = if self.enc.void {
+                    ("THE VOID OPENS", "What the Swarm was fleeing from is here.")
                 } else {
                     (
-                        "UM PORTAL SE ABRIU",
-                        "Nenhuma nave perdida... o Enxame não te viu chegar.",
+                        "A PORTAL OPENED",
+                        "No ship lost... the Swarm never saw you coming.",
                     )
                 };
                 ui::text_outline(
@@ -5608,40 +5606,40 @@ impl Game {
                     Color::new(0.0, 0.0, 0.0, (t * 0.8).min(0.7)),
                 );
                 ui::text_outline(
-                    "VITÓRIA!",
+                    "VICTORY!",
                     W / 2.0,
                     H * 0.24,
                     60.0,
                     GOLD,
                     Color::from_rgba(60, 20, 0, 255),
                 );
-                let true_end = self.cfg.mode == Mode::Campanha
+                let true_end = self.cfg.mode == Mode::Campaign
                     && self.cfg.diff as u8 >= 2
                     && self.continues_used == 0;
                 let lines: Vec<&str> = match self.cfg.mode {
-                    Mode::Campanha if self.x.void_done => vec![
-                        "O Devorador recuou para o escuro entre as estrelas.",
-                        "A Rainha estava certa: o Enxame só queria passar.",
-                        "Agora a colmeia vive, e você sabe a verdade.",
-                        "Obrigado por jogar até o fim, piloto.",
+                    Mode::Campaign if self.enc.void_done => vec![
+                        "The Devourer retreated into the dark between the stars.",
+                        "The Queen was right: the Swarm only wanted to pass through.",
+                        "Now the hive lives, and you know the truth.",
+                        "Thanks for playing to the very end, pilot.",
                     ],
-                    Mode::Campanha if true_end => vec![
-                        "A Rainha Suprema caiu sem que você recuasse.",
-                        "Nas cinzas da colmeia, uma última verdade:",
-                        "o Enxame nunca foi o inimigo. Ele estava fugindo.",
-                        "Do quê? ...isso fica para o próximo ciclo.",
+                    Mode::Campaign if true_end => vec![
+                        "The Supreme Queen fell without you ever retreating.",
+                        "In the ashes of the hive, one last truth:",
+                        "the Swarm was never the enemy. It was fleeing.",
+                        "From what? ...that's for the next cycle.",
                     ],
-                    Mode::Campanha => vec![
-                        "O coração do Enxame foi destruído.",
-                        "A galáxia respira aliviada... por enquanto.",
-                        "Mas nem todas as perguntas foram respondidas.",
-                        "Obrigado por jogar, piloto.",
+                    Mode::Campaign => vec![
+                        "The heart of the Swarm has been destroyed.",
+                        "The galaxy breathes again... for now.",
+                        "But not every question was answered.",
+                        "Thanks for playing, pilot.",
                     ],
-                    Mode::Chefoes => vec![
-                        "Todos os chefes foram derrotados.",
-                        "Seu tempo ficou registrado.",
+                    Mode::BossRush => vec![
+                        "Every boss has been defeated.",
+                        "Your time has been recorded.",
                     ],
-                    _ => vec!["Desafio completo!", "Volte amanhã para uma nova regra."],
+                    _ => vec!["Challenge complete!", "Come back tomorrow for a new rule."],
                 };
                 for (i, l) in lines.iter().enumerate() {
                     ui::text_c(
@@ -5653,29 +5651,29 @@ impl Game {
                     );
                 }
                 ui::text_c(
-                    &format!("PONTOS {}", self.score),
+                    &format!("SCORE {}", self.score),
                     W / 2.0,
                     H * 0.52,
                     26.0,
                     CYAN,
                 );
-                if self.cfg.mode == Mode::Chefoes {
+                if self.cfg.mode == Mode::BossRush {
                     let t = self.run_time;
                     ui::text_c(
-                        &format!("TEMPO {:02}:{:02}", (t / 60.0) as u32, (t % 60.0) as u32),
+                        &format!("TIME {:02}:{:02}", (t / 60.0) as u32, (t % 60.0) as u32),
                         W / 2.0,
                         H * 0.57,
                         22.0,
                         GOLD,
                     );
                 }
-                let items = if self.cfg.mode == Mode::Campanha {
+                let items = if self.cfg.mode == Mode::Campaign {
                     vec![
-                        format!("CONTINUAR - CICLO {}", self.cycle + 2),
-                        "ENCERRAR A PARTIDA".to_string(),
+                        format!("CONTINUE - CYCLE {}", self.cycle + 2),
+                        "END THE RUN".to_string(),
                     ]
                 } else {
-                    vec!["ENCERRAR A PARTIDA".to_string()]
+                    vec!["END THE RUN".to_string()]
                 };
                 let sel = if items.len() == 1 { 0 } else { *sel };
                 ui::menu(&items, sel, W / 2.0, H * 0.66, 36.0, 22.0, self.time);
@@ -5683,7 +5681,7 @@ impl Game {
             Phase::Continue { t } => {
                 draw_rectangle(0.0, 0.0, W, H, Color::new(0.0, 0.0, 0.0, 0.6));
                 ui::text_outline(
-                    "CONTINUAR?",
+                    "CONTINUE?",
                     W / 2.0,
                     H * 0.36,
                     50.0,
@@ -5701,26 +5699,26 @@ impl Game {
                     Color::from_rgba(40, 0, 10, 255),
                 );
                 ui::text_c(
-                    &format!("CRÉDITOS: {}", self.continues_left),
+                    &format!("CREDITS: {}", self.continues_left),
                     W / 2.0,
                     H * 0.6,
                     20.0,
                     CYAN,
                 );
                 ui::text_c(
-                    "ENTER continua (perde metade dos pontos)",
+                    "ENTER continues (lose half your points)",
                     W / 2.0,
                     H * 0.65,
                     15.0,
                     WHITE,
                 );
-                ui::text_c("ESC desiste", W / 2.0, H * 0.68, 15.0, DIM);
+                ui::text_c("ESC gives up", W / 2.0, H * 0.68, 15.0, DIM);
             }
             Phase::GameOver { t } => {
                 let a = (t * 1.5).min(1.0);
                 draw_rectangle(0.0, 0.0, W, H, Color::new(0.0, 0.0, 0.0, a * 0.5));
                 ui::text_outline(
-                    "FIM DE JOGO",
+                    "GAME OVER",
                     W / 2.0,
                     H * 0.42,
                     52.0,
@@ -5728,7 +5726,7 @@ impl Game {
                     Color::new(0.1, 0.0, 0.0, a),
                 );
                 ui::text_c(
-                    &format!("PONTOS {}", self.score),
+                    &format!("SCORE {}", self.score),
                     W / 2.0,
                     H * 0.42 + 44.0,
                     24.0,
@@ -5768,34 +5766,34 @@ impl Game {
         let lines: &[(&str, f32, Color)] = &[
             ("STARDUST", 54.0, GOLD),
             ("", 20.0, WHITE),
-            ("CRIAÇÃO", 18.0, PINK),
+            ("CREATED BY", 18.0, PINK),
             ("Allan Somensi", 24.0, WHITE),
             ("", 20.0, WHITE),
-            ("TRILHA SONORA", 18.0, PINK),
-            ("Chiptune sintetizado pelo próprio jogo,", 16.0, WHITE),
-            ("nota por nota", 16.0, WHITE),
+            ("SOUNDTRACK", 18.0, PINK),
+            ("Chiptune synthesized by the game itself,", 16.0, WHITE),
+            ("note by note", 16.0, WHITE),
             ("", 20.0, WHITE),
-            ("ARTE", 18.0, PINK),
-            ("Pixel art escrita letra por letra", 16.0, WHITE),
+            ("ART", 18.0, PINK),
+            ("Pixel art written letter by letter", 16.0, WHITE),
             ("", 20.0, WHITE),
-            ("FEITO EM", 18.0, PINK),
+            ("MADE WITH", 18.0, PINK),
             ("Rust + macroquad", 16.0, WHITE),
             ("", 20.0, WHITE),
-            ("INSPIRADO PELOS SHAREWARES", 18.0, PINK),
-            ("que a gente jogava no PC da família", 16.0, WHITE),
+            ("INSPIRED BY THE SHAREWARE GAMES", 18.0, PINK),
+            ("that we used to play on the family PC", 16.0, WHITE),
             ("", 20.0, WHITE),
-            ("ELENCO", 18.0, PINK),
-            ("Zangões, Vespas, Besouros, Atiradores,", 15.0, WHITE),
-            ("Divisores, Kamikazes, Escudeiros, Tecelãs,", 15.0, WHITE),
-            ("Portadoras, Camaleões, Mímicos, Ladrões,", 15.0, WHITE),
-            ("Minadores, Saltadores e um Cometa domado", 15.0, WHITE),
+            ("CAST", 18.0, PINK),
+            ("Drones, Wasps, Beetles, Gunners,", 15.0, WHITE),
+            ("Splitters, Kamikazes, Shieldbearers, Weavers,", 15.0, WHITE),
+            ("Carriers, Chameleons, Mimics, Thieves,", 15.0, WHITE),
+            ("Minelayers, Jumpers and a tamed Comet", 15.0, WHITE),
             ("", 20.0, WHITE),
-            ("EM MEMÓRIA DA SONDA STARDUST", 18.0, PINK),
-            ("Que buscou poeira de cometa", 15.0, WHITE),
-            ("e trouxe de volta uma história", 15.0, WHITE),
+            ("IN MEMORY OF THE STARDUST PROBE", 18.0, PINK),
+            ("It went looking for comet dust", 15.0, WHITE),
+            ("and brought back a story", 15.0, WHITE),
             ("", 20.0, WHITE),
-            ("AGRADECIMENTO ESPECIAL", 18.0, PINK),
-            ("A você, que jogou até aqui.", 18.0, WHITE),
+            ("SPECIAL THANKS", 18.0, PINK),
+            ("To you, who played this far.", 18.0, WHITE),
             ("", 30.0, WHITE),
         ];
         let mut y = H + 20.0 - t * 34.0;
@@ -5806,14 +5804,14 @@ impl Game {
             y += size * 1.6;
         }
         if t > 4.0 {
-            ui::text_c("ENTER pula", W / 2.0, H - 12.0, 13.0, DIM);
+            ui::text_c("ENTER skips", W / 2.0, H - 12.0, 13.0, DIM);
         }
     }
 
     fn draw_shop(&self, sp: &Sprites) {
         draw_rectangle(0.0, 0.0, W, H, Color::new(0.0, 0.0, 0.05, 0.85));
         ui::text_outline(
-            "LOJA",
+            "SHOP",
             W / 2.0,
             60.0,
             44.0,
@@ -5821,9 +5819,9 @@ impl Game {
             Color::from_rgba(50, 20, 0, 255),
         );
         let sub = if self.grudge {
-            "O Mercador te olha torto: preços +30%"
+            "The Merchant glares at you: prices +30%"
         } else {
-            "Gaste seus cristais antes do próximo setor"
+            "Spend your crystals before the next sector"
         };
         ui::text_c(
             sub,
@@ -5875,7 +5873,7 @@ impl Game {
                 );
             }
             match it {
-                Item::Arma(w) => crate::icons::weapon_badge(*w, vec2(44.0, y + 20.0), 14.0, 1.0),
+                Item::Weapon(w) => crate::icons::weapon_badge(*w, vec2(44.0, y + 20.0), 14.0, 1.0),
                 _ => sp
                     .icon(it.icon())
                     .draw(vec2(44.0, y + 20.0), 2.6, 0.0, WHITE, false),
@@ -5898,15 +5896,15 @@ impl Game {
         let y = y0 + n as f32 * row_h + 8.0;
         let rp = self.reroll_price();
         let label = if rp == 0 {
-            "TROCAR OFERTAS (GRÁTIS)".to_string()
+            "REROLL OFFERS (FREE)".to_string()
         } else {
-            format!("TROCAR OFERTAS ({rp})")
+            format!("REROLL OFFERS ({rp})")
         };
         let c = if self.shop_sel == n { GOLD } else { DIM };
         ui::text_c(&label, W / 2.0, y + 14.0, 18.0, c);
         let next = match self.cfg.mode {
-            Mode::Chefoes => format!("ENFRENTAR O CHEFE {}", self.wave + 1),
-            _ => format!("PARTIR PARA O SETOR {}", self.absolute_sector() + 1),
+            Mode::BossRush => format!("FACE THE BOSS {}", self.wave + 1),
+            _ => format!("DEPART FOR SECTOR {}", self.absolute_sector() + 1),
         };
         if self.shop_sel == n + 1 {
             ui::text_c(&format!("> {next} <"), W / 2.0, y + 48.0, 22.0, GOLD);
@@ -5915,7 +5913,7 @@ impl Game {
         }
         let p = &self.player;
         let status = format!(
-            "NAVES {}  BOMBAS {}  {} NV{}  DRONES {}",
+            "SHIPS {}  BOMBS {}  {} LV{}  DRONES {}",
             p.lives,
             p.bombs,
             p.weapon.name(),
@@ -5924,11 +5922,11 @@ impl Game {
         );
         ui::text_c(&status, W / 2.0, H - 30.0, 13.0, DIM);
         let power = format!(
-            "PODER DE FOGO x{:.2}   (arma {} x{:.2} · núcleos {} x{:.2})",
+            "FIREPOWER x{:.2}   (weapon {} x{:.2} · cores {} x{:.2})",
             self.power_mul(),
             "*".repeat(p.weapon.tier() as usize),
             p.weapon.tier_mul(),
-            self.z.core,
+            self.arcade.core,
             self.core_mul()
         );
         ui::text_c(&power, W / 2.0, H - 12.0, 13.0, GOLD);
@@ -5936,7 +5934,7 @@ impl Game {
 }
 
 fn shield_blocks(e: &Enemy, from: Vec2) -> bool {
-    // A placa protege a frente (de baixo para cima) enquanto o inimigo olha para baixo.
+    // The plate protects the front (from below) while the enemy faces down.
     e.shield > 0 && from.y > e.pos.y + 4.0 && (from.x - e.pos.x).abs() < 12.0 && e.rot.abs() < 0.9
 }
 

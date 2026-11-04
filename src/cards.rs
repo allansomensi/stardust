@@ -1,4 +1,4 @@
-//! Cartas colecionáveis: bônus passivos que você equipa antes de cada partida.
+//! Collectible cards: passive bonuses you equip before each run.
 
 use crate::sprites::Icon;
 use macroquad::prelude::Color;
@@ -14,10 +14,10 @@ pub enum Rarity {
 impl Rarity {
     pub fn name(self) -> &'static str {
         match self {
-            Rarity::Common => "COMUM",
-            Rarity::Rare => "RARA",
-            Rarity::Epic => "ÉPICA",
-            Rarity::Legendary => "LENDÁRIA",
+            Rarity::Common => "COMMON",
+            Rarity::Rare => "RARE",
+            Rarity::Epic => "EPIC",
+            Rarity::Legendary => "LEGENDARY",
         }
     }
     pub fn color(self) -> Color {
@@ -35,7 +35,7 @@ pub struct CardDef {
     pub desc: &'static str,
     pub rarity: Rarity,
     pub icon: Icon,
-    /// Cartas secretas não caem por sorteio: só por segredos.
+    /// Secret cards never drop at random: only through secrets.
     pub secret: bool,
 }
 
@@ -63,382 +63,332 @@ use Rarity::*;
 
 pub const CARDS: &[CardDef] = &[
     c(
-        "Casco Reforçado",
-        "+1 vida no início da partida.",
+        "Reinforced Hull",
+        "+1 life at the start of the run.",
         Common,
         Heart,
     ),
     c(
-        "Pólvora Extra",
-        "+1 bomba no início da partida.",
+        "Extra Gunpowder",
+        "+1 bomb at the start of the run.",
         Common,
         Bomb,
     ),
     c(
-        "Ímã Portátil",
-        "Raio do ímã de cristais +60%.",
+        "Portable Magnet",
+        "Crystal magnet radius +60%.",
         Common,
         Magnet,
     ),
-    c("Motor Turbo", "Nave 12% mais rápida.", Common, Engine),
-    c("Gatilho Leve", "Cadência de tiro +10%.", Common, Bolt),
+    c("Turbo Engine", "Ship 12% faster.", Common, Engine),
+    c("Light Trigger", "Fire rate +10%.", Common, Bolt),
     c(
-        "Cristal da Sorte",
-        "Cristais valem 25% a mais.",
+        "Lucky Crystal",
+        "Crystals are worth 25% more.",
         Common,
         Crystal,
     ),
-    c("Começo Forte", "Sua arma começa no nível 2.", Common, Star),
-    c("Cofrinho", "Começa com 40 cristais.", Common, Bag),
     c(
-        "Escudo Inicial",
-        "Começa com um escudo que absorve um golpe.",
+        "Strong Start",
+        "Your weapon starts at level 2.",
+        Common,
+        Star,
+    ),
+    c("Piggy Bank", "Starts with 40 crystals.", Common, Bag),
+    c(
+        "Starting Shield",
+        "Starts with a shield that absorbs one hit.",
         Rare,
         Shield,
     ),
-    c("Combo Longo", "Janela do combo 50% maior.", Rare, Clock),
+    c("Long Combo", "Combo window 50% longer.", Rare, Clock),
+    c("Hunter", "Diving enemies are worth triple.", Rare, Target),
+    c("Card Fisher", "Cards drop twice as often.", Rare, Card),
     c(
-        "Caçador",
-        "Inimigos em mergulho valem o triplo.",
+        "Regular Customer",
+        "Everything in the shop costs 20% less.",
         Rare,
-        Target,
+        Bag,
     ),
+    c("Recharge", "Gain 1 bomb every sector.", Rare, Bomb),
     c(
-        "Pescador de Cartas",
-        "Cartas caem com o dobro de frequência.",
-        Rare,
-        Card,
-    ),
-    c("Freguês", "Tudo na loja custa 20% menos.", Rare, Bag),
-    c("Recarga", "Ganha 1 bomba a cada setor.", Rare, Bomb),
-    c(
-        "Fênix",
-        "Uma vez por partida, renasce ao perder a última vida.",
+        "Phoenix",
+        "Once per run, revives when you lose your last life.",
         Epic,
         Flame,
     ),
-    c("Drones", "Dois drones atiram ao seu lado.", Epic, Drone),
+    c("Drones", "Two drones fire at your side.", Epic, Drone),
+    c("Full Arsenal", "Your weapon starts at level 3.", Epic, Star),
+    c("Lightning Bomb", "Bombs deal double damage.", Epic, Bolt),
+    c("Last Breath", "When hit, drops a free bomb.", Epic, Bomb),
     c(
-        "Arsenal Completo",
-        "Sua arma começa no nível 3.",
-        Epic,
-        Star,
-    ),
-    c(
-        "Bomba Relâmpago",
-        "Bombas causam o dobro de dano.",
-        Epic,
-        Bolt,
-    ),
-    c(
-        "Último Suspiro",
-        "Ao ser atingido, solta uma bomba de graça.",
-        Epic,
-        Bomb,
-    ),
-    c(
-        "Coração do Enxame",
-        "+1 vida e escudo novo a cada setor.",
+        "Heart of the Swarm",
+        "+1 life and a fresh shield every sector.",
         Legendary,
         Heart,
     ),
+    c("Slow Time", "Enemy shots 20% slower.", Legendary, Clock),
     c(
-        "Tempo Lento",
-        "Tiros inimigos 20% mais lentos.",
-        Legendary,
-        Clock,
-    ),
-    c(
-        "Multiplicador Dourado",
-        "Pontos x1,5 e combo máximo x10.",
+        "Golden Multiplier",
+        "Points x1.5 and max combo x10.",
         Legendary,
         Star,
     ),
     c(
-        "Constelação",
-        "A cada 6 disparos, um leque de 6 estrelas.",
+        "Constellation",
+        "Every 6 shots, a fan of 6 stars.",
         Legendary,
         Disc,
     ),
     c(
-        "Asas de Cristal",
-        "Cristais vêm até você de qualquer lugar.",
+        "Crystal Wings",
+        "Crystals come to you from anywhere.",
         Legendary,
         Crystal,
     ),
     c(
-        "Raspão Perigoso",
-        "Raspões valem o dobro de pontos e de energia.",
+        "Dangerous Graze",
+        "Grazes give double points and energy.",
         Rare,
         Target,
     ),
     c(
-        "Bateria Extra",
-        "Começa com a habilidade carregada.",
+        "Spare Battery",
+        "Starts with the ability charged.",
         Common,
         Bolt,
     ),
     c(
-        "Sobrecarga Rápida",
-        "Habilidade carrega 30% mais rápido.",
+        "Quick Overdrive",
+        "Ability charges 30% faster.",
         Rare,
         Engine,
     ),
+    c("Escort", "An escort drone follows you.", Epic, Drone),
     c(
-        "Escolta",
-        "Um drone de escolta acompanha você.",
-        Epic,
-        Drone,
-    ),
-    c(
-        "Arsenal Variado",
-        "Cápsulas alternam entre 4 armas e duram mais.",
+        "Varied Arsenal",
+        "Capsules cycle through 4 weapons and last longer.",
         Common,
         Star,
     ),
+    c("Aim", "Your shots fly 15% faster.", Common, Target),
     c(
-        "Pontaria",
-        "Seus tiros voam 15% mais rápido.",
-        Common,
-        Target,
-    ),
-    c(
-        "Herança",
-        "Perder uma nave não reduz o nível da arma.",
+        "Inheritance",
+        "Losing a ship doesn't lower your weapon level.",
         Rare,
         Shield,
     ),
     c(
-        "Cristal Vivo",
-        "A cada 100 cristais coletados, +1 bomba.",
+        "Living Crystal",
+        "Every 100 crystals collected, +1 bomb.",
         Epic,
         Crystal,
     ),
+    c("Investor", "The first shop reroll is free.", Rare, Bag),
     c(
-        "Investidor",
-        "A primeira troca de ofertas na loja é grátis.",
-        Rare,
-        Bag,
-    ),
-    c(
-        "Contra-Ataque",
-        "Ao ser atingido, todos os inimigos levam dano.",
+        "Counterattack",
+        "When hit, every enemy takes damage.",
         Epic,
         Flame,
     ),
-    c("Ímã de Cartas", "Cartas voam até você.", Legendary, Magnet),
-    c("Sortudo", "Power-ups caem 50% mais.", Common, Star),
+    c("Card Magnet", "Cards fly to you.", Legendary, Magnet),
+    c("Lucky", "Power-ups drop 50% more often.", Common, Star),
     s(
-        "Coroa da Rainha",
-        "Começa cada setor em Frenesi.",
+        "Queen's Crown",
+        "Starts every sector in Frenzy.",
         Legendary,
         Star,
     ),
+    s("Cosmic Cow", "+1 life and +1 bomb. Moo.", Legendary, Heart),
     s(
-        "Vaca Cósmica",
-        "+1 vida e +1 bomba. Muuu.",
+        "Konami Code",
+        "+3 lives. You know what you did.",
         Legendary,
         Heart,
     ),
+    s("Creator", "Crystals x1.5 and points x1.2.", Legendary, Disc),
     s(
-        "Código Konami",
-        "+3 vidas. Você sabe o que fez.",
-        Legendary,
-        Heart,
-    ),
-    s("Criador", "Cristais x1,5 e pontos x1,2.", Legendary, Disc),
-    s(
-        "Dimensão Dourada",
-        "Um Escaravelho Dourado aparece em todo setor.",
+        "Golden Dimension",
+        "A Golden Scarab appears every sector.",
         Legendary,
         Crystal,
     ),
-    s("Pacifista", "Estágios bônus valem o dobro.", Epic, Shield),
+    s("Pacifist", "Bonus stages are worth double.", Epic, Shield),
     c(
-        "Bolso Extra",
-        "Começa a partida com o LASER no nível 2.",
+        "Extra Pocket",
+        "Starts the run with the LASER at level 2.",
         Common,
         Star,
     ),
+    c("Lucrative Contract", "Double contract rewards.", Rare, Bag),
     c(
-        "Contrato Lucrativo",
-        "Recompensas de contratos em dobro.",
-        Rare,
-        Bag,
-    ),
-    c(
-        "Febre Precoce",
-        "A Febre começa com combo 35 em vez de 50.",
+        "Early Fever",
+        "Fever starts at combo 35 instead of 50.",
         Rare,
         Flame,
     ),
-    c("Febre Longa", "A Febre dura 50% mais.", Common, Clock),
+    c("Long Fever", "Fever lasts 50% longer.", Common, Clock),
     c(
-        "Ricochete Afiado",
-        "Tiros que quicam ganham mais 2 quiques.",
+        "Sharp Ricochet",
+        "Bouncing shots get 2 extra bounces.",
         Common,
         Bolt,
     ),
-    c("Estilhaço Térmico", "Explosões 40% maiores.", Rare, Bomb),
+    c("Thermal Shrapnel", "Explosions 40% bigger.", Rare, Bomb),
     c(
-        "Zero Absoluto",
-        "Inimigos ficam congelados o dobro do tempo.",
+        "Absolute Zero",
+        "Enemies stay frozen twice as long.",
         Epic,
         Shield,
     ),
     c(
-        "Rainha das Abelhas",
-        "A Colmeia solta o dobro de abelhas.",
+        "Queen Bee",
+        "The Hive releases twice as many bees.",
         Epic,
         Star,
     ),
     c(
-        "Horizonte de Eventos",
-        "Buracos negros duram o dobro e sugam cristais.",
+        "Event Horizon",
+        "Black holes last twice as long and suck in crystals.",
         Legendary,
         Crystal,
     ),
     c(
-        "Caçador de Elite",
-        "Elites sempre soltam cápsula e às vezes uma carta.",
+        "Elite Hunter",
+        "Elites always drop a capsule and sometimes a card.",
         Rare,
         Target,
     ),
-    c("Mão Leve", "Ladrões ficam 40% mais lentos.", Common, Bag),
+    c("Light Fingers", "Thieves are 40% slower.", Common, Bag),
+    c("Keen Eye", "Mimics show up marked in red.", Common, Target),
+    c("Longing", "+1 continue per run.", Common, Heart),
     c(
-        "Olho Clínico",
-        "Mímicos aparecem marcados em vermelho.",
-        Common,
-        Target,
-    ),
-    c("Saudade", "+1 continue por partida.", Common, Heart),
-    c(
-        "Escudo Reativo",
-        "O escudo volta depois de 25 s sem levar dano.",
+        "Reactive Shield",
+        "The shield comes back after 25 s without taking damage.",
         Epic,
         Shield,
     ),
     c(
-        "Ímã de Cápsulas",
-        "Cápsulas e poderes vêm até você.",
+        "Capsule Magnet",
+        "Capsules and power-ups come to you.",
         Rare,
         Magnet,
     ),
     s(
-        "Bezerro Cósmico",
-        "Um bezerro te acompanha e recolhe cristais. Muuu.",
+        "Cosmic Calf",
+        "A calf follows you and gathers crystals. Moo.",
         Legendary,
         Heart,
     ),
     s(
-        "Disco de Ouro",
-        "A PULSAR cai das cápsulas e as estrelas valem o dobro.",
+        "Golden Record",
+        "PULSAR drops from capsules and its stars are worth double.",
         Epic,
         Disc,
     ),
     s(
-        "Olho do Devorador",
-        "Pontos x1,3 e tiros inimigos 10% mais lentos.",
+        "Eye of the Devourer",
+        "Points x1.3 and enemy shots 10% slower.",
         Legendary,
         Target,
     ),
     c(
-        "Amuleto Antigo",
-        "Metade das maldições não te pega.",
+        "Ancient Amulet",
+        "Half of the curses can't touch you.",
         Rare,
         Shield,
     ),
     c(
-        "Fenda Aberta",
-        "Fendas de minigame caem 2x mais.",
+        "Open Rift",
+        "Minigame rifts drop 2x more often.",
         Rare,
         Target,
     ),
-    c("Sal Grosso", "Maldições caem 50% menos.", Common, Crystal),
+    c("Rock Salt", "Curses drop 50% less often.", Common, Crystal),
     c(
-        "Poeira de Cometa",
-        "Cristais +15% e ímã 20% maior.",
+        "Comet Dust",
+        "Crystals +15% and 20% bigger magnet.",
         Epic,
         Star,
     ),
     s(
-        "Sinal de Contato",
-        "A Nave-Mãe misteriosa aparece com o dobro de frequência.",
+        "Contact Signal",
+        "The mysterious Mothership shows up twice as often.",
         Epic,
         Target,
     ),
 ];
 
-/// Índices das cartas (mesma ordem de CARDS).
+/// Card indices (same order as CARDS).
 pub mod id {
-    pub const CASCO: usize = 0;
-    pub const POLVORA: usize = 1;
-    pub const IMA: usize = 2;
-    pub const MOTOR: usize = 3;
-    pub const GATILHO: usize = 4;
-    pub const SORTE: usize = 5;
-    pub const COMECO: usize = 6;
-    pub const COFRE: usize = 7;
-    pub const ESCUDO: usize = 8;
+    pub const HULL: usize = 0;
+    pub const GUNPOWDER: usize = 1;
+    pub const MAGNET: usize = 2;
+    pub const TURBO: usize = 3;
+    pub const TRIGGER: usize = 4;
+    pub const LUCK: usize = 5;
+    pub const STRONG_START: usize = 6;
+    pub const PIGGY_BANK: usize = 7;
+    pub const SHIELD: usize = 8;
     pub const COMBO: usize = 9;
-    pub const CACADOR: usize = 10;
-    pub const PESCADOR: usize = 11;
-    pub const FREGUES: usize = 12;
-    pub const RECARGA: usize = 13;
-    pub const FENIX: usize = 14;
+    pub const HUNTER: usize = 10;
+    pub const CARD_FISHER: usize = 11;
+    pub const REGULAR: usize = 12;
+    pub const RECHARGE: usize = 13;
+    pub const PHOENIX: usize = 14;
     pub const DRONES: usize = 15;
     pub const ARSENAL: usize = 16;
-    pub const RELAMPAGO: usize = 17;
-    pub const SUSPIRO: usize = 18;
-    pub const CORACAO: usize = 19;
-    pub const LENTO: usize = 20;
-    pub const DOURADO: usize = 21;
-    pub const CONSTELACAO: usize = 22;
-    pub const ASAS: usize = 23;
-    pub const RASPAO: usize = 24;
-    pub const BATERIA: usize = 25;
-    pub const SOBRECARGA: usize = 26;
-    pub const ESCOLTA: usize = 27;
-    pub const VARIADO: usize = 28;
-    pub const PONTARIA: usize = 29;
-    pub const HERANCA: usize = 30;
-    pub const CRISTAL_VIVO: usize = 31;
-    pub const INVESTIDOR: usize = 32;
-    pub const CONTRA: usize = 33;
-    pub const IMA_CARTAS: usize = 34;
-    pub const SORTUDO: usize = 35;
-    pub const COROA: usize = 36;
-    pub const VACA: usize = 37;
+    pub const LIGHTNING_WAVE: usize = 17;
+    pub const LAST_BREATH: usize = 18;
+    pub const HEART: usize = 19;
+    pub const SLOW_TIME: usize = 20;
+    pub const GOLDEN: usize = 21;
+    pub const CONSTELLATION: usize = 22;
+    pub const WINGS: usize = 23;
+    pub const DANGEROUS_GRAZE: usize = 24;
+    pub const BATTERY: usize = 25;
+    pub const QUICK_OVERDRIVE: usize = 26;
+    pub const ESCORT: usize = 27;
+    pub const VARIED: usize = 28;
+    pub const AIM: usize = 29;
+    pub const INHERITANCE: usize = 30;
+    pub const LIVING_CRYSTAL: usize = 31;
+    pub const INVESTOR: usize = 32;
+    pub const COUNTER: usize = 33;
+    pub const CARD_MAGNET: usize = 34;
+    pub const LUCKY: usize = 35;
+    pub const CROWN: usize = 36;
+    pub const COW: usize = 37;
     pub const KONAMI: usize = 38;
-    pub const CRIADOR: usize = 39;
-    pub const DIMENSAO: usize = 40;
-    pub const PACIFISTA: usize = 41;
-    pub const BOLSO: usize = 42;
-    pub const LUCRATIVO: usize = 43;
-    pub const FEBRE_PRECOCE: usize = 44;
-    pub const FEBRE_LONGA: usize = 45;
-    pub const RICOCHETE: usize = 46;
-    pub const TERMICO: usize = 47;
+    pub const CREATOR: usize = 39;
+    pub const DIMENSION: usize = 40;
+    pub const PACIFIST: usize = 41;
+    pub const POCKET: usize = 42;
+    pub const LUCRATIVE: usize = 43;
+    pub const EARLY_FEVER: usize = 44;
+    pub const LONG_FEVER: usize = 45;
+    pub const SHARP_RICOCHET: usize = 46;
+    pub const THERMAL: usize = 47;
     pub const ZERO: usize = 48;
-    pub const ABELHAS: usize = 49;
-    pub const HORIZONTE: usize = 50;
+    pub const BEES: usize = 49;
+    pub const HORIZON: usize = 50;
     pub const ELITE: usize = 51;
-    pub const MAO_LEVE: usize = 52;
-    pub const OLHO_CLINICO: usize = 53;
-    pub const SAUDADE: usize = 54;
-    pub const REATIVO: usize = 55;
-    pub const IMA_CAPSULAS: usize = 56;
-    pub const BEZERRO: usize = 57;
-    pub const DISCO_OURO: usize = 58;
-    pub const DEVORADOR: usize = 59;
-    pub const AMULETO: usize = 60;
-    pub const FENDA: usize = 61;
-    pub const SAL: usize = 62;
-    pub const POEIRA: usize = 63;
-    pub const CONTATO: usize = 64;
+    pub const LIGHT_FINGERS: usize = 52;
+    pub const KEEN_EYE: usize = 53;
+    pub const LONGING: usize = 54;
+    pub const REACTIVE: usize = 55;
+    pub const CAPSULE_MAGNET: usize = 56;
+    pub const CALF: usize = 57;
+    pub const GOLDEN_RECORD: usize = 58;
+    pub const DEVOURER: usize = 59;
+    pub const AMULET: usize = 60;
+    pub const OPEN_RIFT: usize = 61;
+    pub const ROCK_SALT: usize = 62;
+    pub const COMET_DUST: usize = 63;
+    pub const CONTACT: usize = 64;
 }
 
-/// Sorteia uma carta (nunca secreta). `luck` 0 = normal, maior = puxa para raridades altas.
+/// Rolls a card (never a secret one). `luck` 0 = normal, higher = pulls toward rarer cards.
 pub fn roll(luck: u32) -> usize {
     use macroquad::rand::gen_range;
     let mut r = gen_range(0.0f32, 100.0);
@@ -461,7 +411,7 @@ pub fn roll(luck: u32) -> usize {
     pool[gen_range(0, pool.len())]
 }
 
-/// Número de cartas que podem ser equipadas, conforme a coleção cresce.
+/// Number of cards that can be equipped as the collection grows.
 pub fn slots_for(unique: usize) -> usize {
     match unique {
         45.. => 5,
@@ -572,90 +522,90 @@ impl Mods {
         };
         for &c in equipped {
             match c {
-                CASCO => m.extra_lives += 1,
-                POLVORA => m.extra_bombs += 1,
-                IMA => m.magnet_mul = 1.6,
-                MOTOR => m.speed_mul = 1.12,
-                GATILHO => m.fire_mul = 1.1,
-                SORTE => m.crystal_mul *= 1.25,
-                COMECO => m.start_level = m.start_level.max(2),
-                COFRE => m.start_crystals += 40,
-                ESCUDO => m.start_shield = true,
+                HULL => m.extra_lives += 1,
+                GUNPOWDER => m.extra_bombs += 1,
+                MAGNET => m.magnet_mul = 1.6,
+                TURBO => m.speed_mul = 1.12,
+                TRIGGER => m.fire_mul = 1.1,
+                LUCK => m.crystal_mul *= 1.25,
+                STRONG_START => m.start_level = m.start_level.max(2),
+                PIGGY_BANK => m.start_crystals += 40,
+                SHIELD => m.start_shield = true,
                 COMBO => m.combo_mul = 1.5,
-                CACADOR => m.dive_mul = 3,
-                PESCADOR => m.card_mul = 2.0,
-                FREGUES => m.shop_mul = 0.8,
-                RECARGA => m.bomb_per_sector = true,
-                FENIX => m.phoenix = true,
+                HUNTER => m.dive_mul = 3,
+                CARD_FISHER => m.card_mul = 2.0,
+                REGULAR => m.shop_mul = 0.8,
+                RECHARGE => m.bomb_per_sector = true,
+                PHOENIX => m.phoenix = true,
                 DRONES => m.drones += 2,
                 ARSENAL => m.start_level = 3,
-                RELAMPAGO => m.bomb_power = 2.0,
-                SUSPIRO => m.last_breath = true,
-                CORACAO => {
+                LIGHTNING_WAVE => m.bomb_power = 2.0,
+                LAST_BREATH => m.last_breath = true,
+                HEART => {
                     m.extra_lives += 1;
                     m.shield_per_sector = true;
                 }
-                LENTO => m.bullet_speed = 0.8,
-                DOURADO => {
+                SLOW_TIME => m.bullet_speed = 0.8,
+                GOLDEN => {
                     m.score_mul *= 1.5;
                     m.max_combo = 10;
                 }
-                CONSTELACAO => m.star_fan = true,
-                ASAS => m.magnet_all = true,
-                RASPAO => m.graze_mul = 2.0,
-                BATERIA => m.meter_full = true,
-                SOBRECARGA => m.meter_mul = 1.3,
-                ESCOLTA => m.drones += 1,
-                VARIADO => m.capsule_four = true,
-                PONTARIA => m.shot_speed = 1.15,
-                HERANCA => m.keep_level = true,
-                CRISTAL_VIVO => m.crystal_bomb = true,
-                INVESTIDOR => m.free_reroll = true,
-                CONTRA => m.counter = true,
-                IMA_CARTAS => m.card_magnet = true,
-                SORTUDO => m.powerup_mul = 1.5,
-                COROA => m.crown = true,
-                VACA => {
+                CONSTELLATION => m.star_fan = true,
+                WINGS => m.magnet_all = true,
+                DANGEROUS_GRAZE => m.graze_mul = 2.0,
+                BATTERY => m.meter_full = true,
+                QUICK_OVERDRIVE => m.meter_mul = 1.3,
+                ESCORT => m.drones += 1,
+                VARIED => m.capsule_four = true,
+                AIM => m.shot_speed = 1.15,
+                INHERITANCE => m.keep_level = true,
+                LIVING_CRYSTAL => m.crystal_bomb = true,
+                INVESTOR => m.free_reroll = true,
+                COUNTER => m.counter = true,
+                CARD_MAGNET => m.card_magnet = true,
+                LUCKY => m.powerup_mul = 1.5,
+                CROWN => m.crown = true,
+                COW => {
                     m.extra_lives += 1;
                     m.extra_bombs += 1;
                     m.moo = true;
                 }
                 KONAMI => m.extra_lives += 3,
-                CRIADOR => {
+                CREATOR => {
                     m.crystal_mul *= 1.5;
                     m.score_mul *= 1.2;
                 }
-                DIMENSAO => m.golden_every = true,
-                PACIFISTA => m.bonus_mul = 2,
-                BOLSO => m.second_laser = true,
-                LUCRATIVO => m.contract_mul = 2,
-                FEBRE_PRECOCE => m.fever_start = 35,
-                FEBRE_LONGA => m.fever_mul = 1.5,
-                RICOCHETE => m.bounce_extra = 2.0,
-                TERMICO => m.blast_mul = 1.4,
+                DIMENSION => m.golden_every = true,
+                PACIFIST => m.bonus_mul = 2,
+                POCKET => m.second_laser = true,
+                LUCRATIVE => m.contract_mul = 2,
+                EARLY_FEVER => m.fever_start = 35,
+                LONG_FEVER => m.fever_mul = 1.5,
+                SHARP_RICOCHET => m.bounce_extra = 2.0,
+                THERMAL => m.blast_mul = 1.4,
                 ZERO => m.freeze_mul = 2.0,
-                ABELHAS => m.bee_mul = 2.0,
-                HORIZONTE => {
+                BEES => m.bee_mul = 2.0,
+                HORIZON => {
                     m.hole_mul = 2.0;
                     m.hole_magnet = true;
                 }
                 ELITE => m.elite_drop = true,
-                MAO_LEVE => m.thief_slow = true,
-                OLHO_CLINICO => m.mimic_mark = true,
-                SAUDADE => m.extra_continue += 1,
-                REATIVO => m.regen_shield = true,
-                IMA_CAPSULAS => m.capsule_magnet = true,
-                BEZERRO => m.calf = true,
-                DISCO_OURO => m.pulsar_card = true,
-                DEVORADOR => {
+                LIGHT_FINGERS => m.thief_slow = true,
+                KEEN_EYE => m.mimic_mark = true,
+                LONGING => m.extra_continue += 1,
+                REACTIVE => m.regen_shield = true,
+                CAPSULE_MAGNET => m.capsule_magnet = true,
+                CALF => m.calf = true,
+                GOLDEN_RECORD => m.pulsar_card = true,
+                DEVOURER => {
                     m.score_mul *= 1.3;
                     m.bullet_speed *= 0.9;
                 }
-                AMULETO => m.amulet = true,
-                CONTATO => m.ufo_more = true,
-                FENDA => m.rift_mul *= 2.0,
-                SAL => m.curse_mul *= 0.5,
-                POEIRA => {
+                AMULET => m.amulet = true,
+                CONTACT => m.ufo_more = true,
+                OPEN_RIFT => m.rift_mul *= 2.0,
+                ROCK_SALT => m.curse_mul *= 0.5,
+                COMET_DUST => {
                     m.crystal_mul *= 1.15;
                     m.magnet_mul *= 1.2;
                 }
@@ -672,30 +622,30 @@ mod tests {
     use super::*;
 
     #[test]
-    fn toda_raridade_tem_cartas_sorteaveis() {
+    fn every_rarity_has_rollable_cards() {
         for r in [Common, Rare, Epic, Legendary] {
             assert!(CARDS.iter().any(|c| c.rarity == r && !c.secret));
         }
     }
 
     #[test]
-    fn indices_batem_com_nomes() {
-        assert_eq!(CARDS[id::CONSTELACAO].name, "Constelação");
-        assert_eq!(CARDS[id::PACIFISTA].name, "Pacifista");
-        assert_eq!(CARDS[id::VACA].name, "Vaca Cósmica");
+    fn indices_match_names() {
+        assert_eq!(CARDS[id::CONSTELLATION].name, "Constellation");
+        assert_eq!(CARDS[id::PACIFIST].name, "Pacifist");
+        assert_eq!(CARDS[id::COW].name, "Cosmic Cow");
         assert_eq!(CARDS.len(), 65);
-        assert_eq!(CARDS[id::DEVORADOR].name, "Olho do Devorador");
+        assert_eq!(CARDS[id::DEVOURER].name, "Eye of the Devourer");
     }
 
     #[test]
-    fn sorteio_nunca_da_secreta() {
+    fn roll_never_gives_secret() {
         for _ in 0..500 {
             assert!(!CARDS[roll(2)].secret);
         }
     }
 
     #[test]
-    fn espacos_por_colecao() {
+    fn slots_by_collection() {
         assert_eq!(slots_for(0), 1);
         assert_eq!(slots_for(8), 2);
         assert_eq!(slots_for(16), 3);
@@ -703,8 +653,8 @@ mod tests {
     }
 
     #[test]
-    fn efeitos_combinam() {
-        let m = Mods::from_cards(&[id::CASCO, id::CORACAO, id::ARSENAL, id::DRONES, id::ESCOLTA]);
+    fn effects_match() {
+        let m = Mods::from_cards(&[id::HULL, id::HEART, id::ARSENAL, id::DRONES, id::ESCORT]);
         assert_eq!(m.extra_lives, 2);
         assert_eq!(m.start_level, 3);
         assert_eq!(m.drones, 3);

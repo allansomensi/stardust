@@ -1,10 +1,10 @@
-//! Arte da versão 2: naves do hangar, skins, novos inimigos e novos chefes.
+//! Extra art: hangar ships, paints, special enemies and bosses.
 
 use crate::sprites::{Spr, Sprites, beetle, mirror, plain, player_rows, recolor, wasp_a, wasp_b};
 
 pub const SKINS: usize = 7;
 
-/// Trocas de paleta para cada skin (aplicadas sobre c / C / b).
+/// Palette swaps for each paint (applied to c / C / b).
 fn skin_map(skin: usize) -> Option<[(char, char); 3]> {
     Some(match skin {
         1 => [('c', 'p'), ('C', 'r'), ('b', 'R')],
@@ -80,7 +80,7 @@ fn aegis() -> Vec<String> {
     ])
 }
 
-/// Linhas base de cada nave (mesma ordem de ships::SHIPS) + paleta padrão.
+/// Base rows for each ship (same order as ships::SHIPS) + default palette.
 fn ship_rows(i: usize) -> (Vec<String>, Vec<(char, char)>) {
     match i {
         0 => (player_rows(), vec![]),
@@ -106,7 +106,7 @@ pub fn ship_sprite(ship: usize, skin: usize) -> Spr {
 }
 
 pub struct Art {
-    /// [nave][skin]
+    /// [ship][paint]
     pub ships: Vec<Vec<Spr>>,
     pub plate: Spr,
     pub serpent_head: Spr,
@@ -213,7 +213,7 @@ fn jumper(frame: usize) -> Vec<String> {
 
 pub fn build(sp: &mut Sprites) -> Art {
     let pair = |a: Vec<String>, b: Vec<String>| [Spr::new(a), Spr::new(b)];
-    // Novos inimigos, na ordem do enum Kind (a partir do índice 7)
+    // Extra enemies, in the order of the Kind enum (starting at index 7)
     sp.enemies.push(pair(shielder(0), shielder(1)));
     sp.enemies.push(pair(weaver(0), weaver(1)));
     sp.enemies.push(pair(carrier(0), carrier(1)));
@@ -225,7 +225,7 @@ pub fn build(sp: &mut Sprites) -> Art {
         .push(pair(recolor(&beetle(0), &gold), recolor(&beetle(1), &gold)));
     sp.enemies.push(pair(cow(0), cow(1)));
     sp.enemies.push(pair(merchant(0), merchant(1)));
-    // v3: Mímico, Ladrão e Cargueiro
+    // Mimic, Thief and Freighter
     sp.enemies.push(pair(mimic(0), mimic(1)));
     sp.enemies.push(pair(thief(0), thief(1)));
     let cargo = [('c', 'o'), ('w', 'y'), ('g', 's'), ('G', 'n')];
@@ -233,7 +233,7 @@ pub fn build(sp: &mut Sprites) -> Art {
         recolor(&merchant(0), &cargo),
         recolor(&merchant(1), &cargo),
     ));
-    // v5: Minador e Saltador
+    // Minelayer and Jumper
     sp.enemies.push(pair(minelayer(0), minelayer(1)));
     sp.enemies.push(pair(jumper(0), jumper(1)));
 
@@ -316,7 +316,7 @@ mod tests {
     }
 
     #[test]
-    fn naves_e_inimigos_bem_formados() {
+    fn ships_and_enemies_well_formed() {
         for i in 0..10 {
             check(&ship_rows(i).0);
         }

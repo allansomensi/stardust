@@ -1,4 +1,4 @@
-//! Funções de desenho de interface: textos, painéis, logotipo e cartas.
+//! Interface drawing helpers: text, panels, logo and cards.
 
 use crate::W;
 use crate::cards::{CARDS, CardDef};
@@ -12,7 +12,7 @@ pub const PINK: Color = Color::new(1.0, 0.45, 0.7, 1.0);
 pub const GREEN: Color = Color::new(0.5, 0.95, 0.45, 1.0);
 pub const RED: Color = Color::new(1.0, 0.35, 0.35, 1.0);
 
-/// Tamanhos de fonte permitidos (em unidades lógicas). Tudo é arredondado para um deles.
+/// Allowed font sizes (in logical units). Everything is rounded to one of them.
 pub const SIZES: [u16; 22] = [
     12, 13, 14, 15, 16, 17, 18, 19, 20, 22, 24, 26, 28, 30, 34, 38, 44, 48, 52, 60, 84, 96,
 ];
@@ -20,7 +20,7 @@ pub const SIZES: [u16; 22] = [
 static BODY_TTF: &[u8] = include_bytes!("../assets/fonts/PixelifySans.ttf");
 static TITLE_TTF: &[u8] = include_bytes!("../assets/fonts/PressStart2P.ttf");
 
-/// Ajuste de tamanho de cada fonte para casar com o layout em unidades lógicas.
+/// Size adjustment for each font to match the layout in logical units.
 const BODY_SF: f32 = 1.12;
 const TITLE_SF: f32 = 0.6;
 
@@ -48,9 +48,9 @@ fn charset() -> String {
     chars
 }
 
-/// Define quantos pixels físicos existem por unidade lógica (chamado a cada quadro).
-/// Quando a escala muda, as fontes são recriadas (atlas novo) e todos os glifos são
-/// pré-rasterizados no tamanho exato da tela, antes de qualquer desenho do quadro.
+/// Sets how many physical pixels exist per logical unit (called every frame).
+/// When the scale changes, the fonts are recreated (new atlas) and every glyph is
+/// pre-rasterized at the exact screen size, before anything is drawn that frame.
 pub fn set_pixel_scale(k_raw: f32) {
     let k = ((k_raw * 8.0).round() / 8.0).clamp(0.75, 2.5);
     let same = FONTS.with(|f| {
@@ -62,8 +62,8 @@ pub fn set_pixel_scale(k_raw: f32) {
     if same {
         return;
     }
-    let mut body = load_ttf_font_from_bytes(BODY_TTF).expect("fonte embutida");
-    let mut title = load_ttf_font_from_bytes(TITLE_TTF).expect("fonte embutida");
+    let mut body = load_ttf_font_from_bytes(BODY_TTF).expect("embedded font");
+    let mut title = load_ttf_font_from_bytes(TITLE_TTF).expect("embedded font");
     body.set_filter(FilterMode::Linear);
     title.set_filter(FilterMode::Linear);
     let chars = charset();
@@ -151,7 +151,7 @@ pub fn text_r(s: &str, x: f32, y: f32, size: f32, color: Color) {
     text(s, x - width(s, size), y, size, color);
 }
 
-/// Título com a fonte de fliperama e contorno grosso. Encolhe sozinho para caber em `max_w`.
+/// Title with the arcade font and a thick outline. Shrinks itself to fit `max_w`.
 pub fn text_outline_fit(
     s: &str,
     cx: f32,
@@ -188,7 +188,7 @@ pub fn text_outline(s: &str, cx: f32, y: f32, size: f32, color: Color, outline: 
     text_outline_fit(s, cx, y, size, color, outline, W - 24.0);
 }
 
-/// Quebra de linha simples por largura.
+/// Simple word wrapping by width.
 pub fn wrap(s: &str, size: f32, max_w: f32) -> Vec<String> {
     let s = &crate::i18n::tr(s);
     let mut lines = Vec::new();
@@ -275,7 +275,7 @@ pub fn hsl(h: f32, s: f32, l: f32) -> Color {
     Color::new(f(h + 1.0 / 3.0), f(h), f(h - 1.0 / 3.0), 1.0)
 }
 
-/// Lista de menu vertical centralizada.
+/// Centered vertical menu list.
 pub fn menu(items: &[String], sel: usize, x: f32, y: f32, spacing: f32, size: f32, time: f32) {
     for (i, it) in items.iter().enumerate() {
         let yy = y + i as f32 * spacing;
@@ -294,7 +294,7 @@ pub fn menu(items: &[String], sel: usize, x: f32, y: f32, spacing: f32, size: f3
 pub const CARD_W: f32 = 84.0;
 pub const CARD_H: f32 = 112.0;
 
-/// Desenha uma carta (frente) com o canto superior esquerdo em (x, y).
+/// Draws a card (front) with its top-left corner at (x, y).
 pub fn card_face(
     sprites: &Sprites,
     idx: usize,
@@ -336,7 +336,7 @@ pub fn card_face(
         h,
         Color::new(rc.r * 0.25, rc.g * 0.25, rc.b * 0.3, 1.0),
     );
-    // arte
+    // art
     let art_h = h * 0.58;
     draw_rectangle(
         x + 6.0 * scale,
@@ -359,7 +359,7 @@ pub fn card_face(
         WHITE,
         false,
     );
-    // moldura
+    // frame
     draw_rectangle_lines(x, y, w, h, 3.0 * scale, rc);
     draw_rectangle_lines(
         x + 6.0 * scale,
@@ -369,7 +369,7 @@ pub fn card_face(
         1.0,
         Color::new(rc.r, rc.g, rc.b, 0.6),
     );
-    // nome (só quando a carta é grande o bastante para ler)
+    // name (only when the card is big enough to read)
     let lines = if scale >= 0.8 {
         wrap(def.name, 13.0 * scale, w - 8.0)
     } else {
@@ -384,7 +384,7 @@ pub fn card_face(
             WHITE,
         );
     }
-    // gemas de raridade
+    // rarity gems
     let gems = def.rarity as usize + 1;
     for g in 0..gems {
         let gx = x + w / 2.0 + (g as f32 - (gems as f32 - 1.0) / 2.0) * 9.0 * scale;

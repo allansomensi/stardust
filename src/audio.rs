@@ -1,6 +1,6 @@
-//! Som: efeitos e músicas chiptune sintetizados na inicialização.
-//! Para usar músicas próprias, coloque arquivos .ogg ou .wav na pasta `musica/` ao lado do jogo:
-//! titulo, fase, chefe, loja (ex.: `musica/fase.ogg`).
+//! Sound: chiptune effects and songs synthesized at startup.
+//! To use your own music, put .ogg or .wav files in a `music/` folder next to the game:
+//! title, stage, boss, shop, final, credits (e.g. `music/stage.ogg`).
 
 use macroquad::audio::{
     PlaySoundParams, Sound, load_sound_from_bytes, play_sound, set_sound_volume, stop_sound,
@@ -32,7 +32,7 @@ pub fn wav_bytes(samples: &[f32]) -> Vec<u8> {
 }
 
 // ---------------------------------------------------------------------------
-// Osciladores
+// Oscillators
 // ---------------------------------------------------------------------------
 
 struct Rng(u32);
@@ -96,7 +96,7 @@ fn freq_midi(f: f32) -> f32 {
 }
 
 // ---------------------------------------------------------------------------
-// Efeitos sonoros
+// Sound effects
 // ---------------------------------------------------------------------------
 
 fn sweep(f0: f32, f1: f32, dur: f32, vol: f32, duty: f32) -> Vec<f32> {
@@ -437,7 +437,7 @@ fn sfx_samples(s: Sfx) -> Vec<f32> {
 }
 
 fn sparkle() -> Vec<f32> {
-    // Cintilar de poeira estelar: arpejo brilhante que sobe e se espalha.
+    // Stardust sparkle: a bright arpeggio that rises and spreads out.
     let seq: [f32; 10] = [72.0, 76.0, 79.0, 84.0, 88.0, 91.0, 96.0, 91.0, 96.0, 100.0];
     let mut out = Vec::new();
     for (i, m) in seq.iter().enumerate() {
@@ -461,7 +461,7 @@ fn sparkle() -> Vec<f32> {
 }
 
 // ---------------------------------------------------------------------------
-// Músicas (mini-sequenciador)
+// Songs (mini sequencer)
 // ---------------------------------------------------------------------------
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -612,7 +612,7 @@ fn chord_tones(name: &str) -> [f32; 3] {
     [root, root + if minor { 3.0 } else { 4.0 }, root + 7.0]
 }
 
-/// Uma voz tocando uma nota: escreve no buffer.
+/// One voice playing one note: writes into the buffer.
 fn voice(
     buf: &mut [f32],
     start: usize,
@@ -636,7 +636,7 @@ fn voice(
         if i >= len {
             env *= 1.0 - (i - len) as f32 / release as f32;
         }
-        // vibrato leve em notas longas
+        // light vibrato on long notes
         let vib = if t > 0.18 {
             1.0 + (t * 34.0).sin() * 0.004
         } else {
@@ -660,13 +660,13 @@ fn render_song(song: &Song) -> Vec<f32> {
     let mut lead_buf = vec![0.0f32; buf.len()];
     let mut rng = Rng(12345);
 
-    // Duas passadas: a segunda com melodia harmonizada e bateria mais cheia.
+    // Two passes: the second with a harmonized melody and fuller drums.
     for pass in 0..2usize {
         for (bar, chord) in song.chords.iter().enumerate() {
             let tones = chord_tones(chord);
             let bar_start = (pass * bars + bar) * 16 * step_n;
 
-            // Baixo
+            // Bass
             for s in 0..16 {
                 let (play, oct) = if song.bass_octaves {
                     (s % 2 == 0, if s % 4 == 2 { 12.0 } else { 0.0 })
@@ -683,7 +683,7 @@ fn render_song(song: &Song) -> Vec<f32> {
                     voice(&mut buf, bar_start + s * step_n, len, f, 0.22, 1, 0.5, 6.0);
                 }
             }
-            // Arpejo
+            // Arpeggio
             for s in 0..16 {
                 let m = tones[s % 3] + 12.0 + if (s / 3) % 2 == 1 { 12.0 } else { 0.0 };
                 voice(
@@ -697,7 +697,7 @@ fn render_song(song: &Song) -> Vec<f32> {
                     18.0,
                 );
             }
-            // Bateria
+            // Drums
             for (s, c) in song.drums.chars().enumerate() {
                 let at = bar_start + s * step_n;
                 let c = if pass == 1 && c == '.' && s % 2 == 0 {
@@ -727,7 +727,7 @@ fn render_song(song: &Song) -> Vec<f32> {
                     _ => {}
                 }
             }
-            // Melodia
+            // Melody
             let toks: Vec<&str> = song.lead[bar % song.lead.len()]
                 .split_whitespace()
                 .collect();
@@ -749,7 +749,7 @@ fn render_song(song: &Song) -> Vec<f32> {
                         3.0,
                     );
                     if pass == 1 {
-                        // terça abaixo (aproximada pela sexta menor) para engrossar a melodia
+                        // third below (approximated by a minor sixth) to thicken the melody
                         voice(
                             &mut lead_buf,
                             bar_start + s * step_n,
@@ -769,7 +769,7 @@ fn render_song(song: &Song) -> Vec<f32> {
         }
     }
 
-    // Eco na melodia e mixagem final
+    // Melody echo and final mix
     let delay = step_n * 3;
     for i in delay..lead_buf.len() {
         lead_buf[i] += lead_buf[i - delay] * 0.28;
@@ -777,7 +777,7 @@ fn render_song(song: &Song) -> Vec<f32> {
     for i in 0..buf.len() {
         buf[i] += lead_buf[i];
     }
-    // A cauda depois do fim volta para o começo (loop sem emenda)
+    // The tail after the end wraps to the start (seamless loop)
     let (main, tail) = buf.split_at_mut(total);
     for (i, s) in tail.iter().enumerate() {
         if i < main.len() {
@@ -797,7 +797,7 @@ fn hat(dur: f32, vol: f32, rng: &mut Rng) -> Vec<f32> {
     (0..n)
         .map(|i| {
             let x = rng.next();
-            let hp = x - last; // passa-altas simples
+            let hp = x - last; // simple high-pass
             last = x;
             hp * vol * (1.0 - i as f32 / n as f32).powf(2.0)
         })
@@ -813,7 +813,7 @@ fn mix_into(buf: &mut [f32], s: &[f32], at: usize) {
 }
 
 // ---------------------------------------------------------------------------
-// Gerenciador
+// Manager
 // ---------------------------------------------------------------------------
 
 pub struct Audio {
@@ -887,29 +887,24 @@ impl Audio {
             progress(i as f32 / SFX_COUNT as f32 * 0.3);
         }
         let mut music = Vec::new();
-        // Nome em português e em inglês: titulo/title, fase/stage, chefe/boss...
+        // Custom music file names.
         let list = [
-            (Music::Title, &TITLE, "titulo", "title"),
-            (Music::Stage, &STAGE, "fase", "stage"),
-            (Music::Boss, &BOSS, "chefe", "boss"),
-            (Music::Shop, &SHOP, "loja", "shop"),
-            (Music::Final, &FINAL, "final", "final"),
-            (Music::Credits, &CREDITS, "creditos", "credits"),
+            (Music::Title, &TITLE, "title"),
+            (Music::Stage, &STAGE, "stage"),
+            (Music::Boss, &BOSS, "boss"),
+            (Music::Shop, &SHOP, "shop"),
+            (Music::Final, &FINAL, "final"),
+            (Music::Credits, &CREDITS, "credits"),
         ];
-        for (i, (id, song, file, file_en)) in list.iter().enumerate() {
+        for (i, (id, song, file)) in list.iter().enumerate() {
             let mut snd = None;
-            'busca: for dir in music_dirs() {
-                for (name, ext) in [
-                    (file, "ogg"),
-                    (file, "wav"),
-                    (file_en, "ogg"),
-                    (file_en, "wav"),
-                ] {
-                    let path = dir.join(format!("{name}.{ext}"));
+            'search: for dir in music_dirs() {
+                for ext in ["ogg", "wav"] {
+                    let path = dir.join(format!("{file}.{ext}"));
                     if let Ok(bytes) = std::fs::read(&path) {
                         snd = load_sound_from_bytes(&bytes).await.ok();
                         if snd.is_some() {
-                            break 'busca;
+                            break 'search;
                         }
                     }
                 }
@@ -942,7 +937,7 @@ impl Audio {
 
     pub fn play_vol(&mut self, s: Sfx, vol: f32) {
         let i = ALL_SFX.iter().position(|x| *x == s).unwrap_or(0);
-        // evita empilhar o mesmo som muitas vezes no mesmo quadro
+        // avoids stacking the same sound many times in the same frame
         if self.played_this_frame[i] >= 2 || self.sfx_vol <= 0.0 {
             return;
         }
@@ -991,36 +986,33 @@ impl Audio {
     }
 }
 
-/// Usado pela ferramenta de exportação (`--exportar-musicas`).
+/// Used by the export tool (`--export-music`).
 pub fn export_music(dir: &str) -> std::io::Result<()> {
     std::fs::create_dir_all(dir)?;
     for (song, name) in [
-        (&TITLE, "titulo"),
-        (&STAGE, "fase"),
-        (&BOSS, "chefe"),
-        (&SHOP, "loja"),
+        (&TITLE, "title"),
+        (&STAGE, "stage"),
+        (&BOSS, "boss"),
+        (&SHOP, "shop"),
         (&FINAL, "final"),
-        (&CREDITS, "creditos"),
+        (&CREDITS, "credits"),
     ] {
         std::fs::write(format!("{dir}/{name}.wav"), wav_bytes(&render_song(song)))?;
     }
     Ok(())
 }
 
-/// Pastas onde o jogo procura músicas personalizadas, em ordem de prioridade:
-/// pasta de dados do usuário, pasta do executável e pasta atual.
+/// Folders where the game looks for custom music, in priority order:
+/// user data folder, executable folder and current folder.
 fn music_dirs() -> Vec<std::path::PathBuf> {
-    let mut dirs = vec![];
-    for name in ["musica", "music"] {
-        dirs.push(crate::save::data_dir().join(name));
-        if let Some(exe_dir) = std::env::current_exe()
-            .ok()
-            .and_then(|p| p.parent().map(|d| d.to_path_buf()))
-        {
-            dirs.push(exe_dir.join(name));
-        }
-        dirs.push(std::path::PathBuf::from(name));
+    let mut dirs = vec![crate::save::data_dir().join("music")];
+    if let Some(exe_dir) = std::env::current_exe()
+        .ok()
+        .and_then(|p| p.parent().map(|d| d.to_path_buf()))
+    {
+        dirs.push(exe_dir.join("music"));
     }
+    dirs.push(std::path::PathBuf::from("music"));
     dirs
 }
 
@@ -1029,7 +1021,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn notas_conhecidas() {
+    fn known_notes() {
         assert!((note_freq("A4").unwrap() - 440.0).abs() < 0.01);
         assert!((note_freq("C#5").unwrap() - 554.37).abs() < 0.1);
         assert!((note_freq("Bb3").unwrap() - 233.08).abs() < 0.1);
@@ -1037,19 +1029,19 @@ mod tests {
     }
 
     #[test]
-    fn todo_compasso_tem_16_passos_e_notas_validas() {
+    fn every_bar_has_16_steps_and_valid_notes() {
         for (name, song) in [
-            ("titulo", &TITLE),
-            ("fase", &STAGE),
-            ("chefe", &BOSS),
-            ("loja", &SHOP),
+            ("title", &TITLE),
+            ("stage", &STAGE),
+            ("boss", &BOSS),
+            ("shop", &SHOP),
             ("final", &FINAL),
-            ("creditos", &CREDITS),
+            ("credits", &CREDITS),
         ] {
             assert_eq!(
                 song.lead.len(),
                 song.chords.len(),
-                "{name}: melodia e acordes com tamanhos diferentes"
+                "{name}: melody and chords have different lengths"
             );
             assert_eq!(song.drums.chars().count(), 16, "{name}: bateria");
             for (i, bar) in song.lead.iter().enumerate() {
@@ -1064,7 +1056,7 @@ mod tests {
                 for t in toks {
                     assert!(
                         t == "-" || t == "." || note_freq(t).is_some(),
-                        "{name}: nota inválida {t}"
+                        "{name}: invalid note {t}"
                     );
                 }
             }
@@ -1072,7 +1064,7 @@ mod tests {
     }
 
     #[test]
-    fn musica_sem_estouro() {
+    fn music_does_not_clip() {
         let s = render_song(&STAGE);
         assert!(s.iter().all(|x| x.abs() <= 1.0));
         assert!(s.iter().map(|x| x.abs()).fold(0.0, f32::max) > 0.3);

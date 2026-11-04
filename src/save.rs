@@ -1,4 +1,4 @@
-//! Salvamento em texto simples na pasta de dados do usuário.
+//! Plain-text save in the user's data folder.
 
 use crate::cards::CARDS;
 use crate::progress::{ACHS, BESTIARY, MODES, Mode};
@@ -17,27 +17,27 @@ pub struct ScoreEntry {
 
 #[derive(Clone)]
 pub struct Save {
-    // opções
+    // settings
     pub music: u8,
     pub sfx: u8,
     pub fullscreen: bool,
     pub crt: bool,
     pub shake: bool,
-    // escolhas
+    // choices
     pub ship: usize,
     pub skin: usize,
     pub mode: u8,
     pub diff: u8,
     pub equipped: Vec<usize>,
     pub last_name: String,
-    // progresso
+    // progress
     pub xp: u64,
     pub achs: Vec<bool>,
     pub seen: Vec<bool>,
     pub cards: Vec<u32>,
     pub mastery: Vec<bool>,
     pub scores: Vec<ScoreEntry>,
-    // estatísticas
+    // stats
     pub runs: u32,
     pub kills: u32,
     pub play_time: f64,
@@ -57,7 +57,7 @@ pub struct Save {
     pub daily_done: u32,
     pub daily_last: i64,
     pub daily_best: u32,
-    // v3
+    // encounters
     pub logs: Vec<bool>,
     pub contracts_done: u32,
     pub mimics: u32,
@@ -66,7 +66,7 @@ pub struct Save {
     pub absorbed_total: u32,
     pub cows: u32,
     pub events_seen: Vec<bool>,
-    // v4: configurações extras
+    // extra settings
     pub particles: u8,
     pub flashes: bool,
     pub show_fps: bool,
@@ -77,7 +77,7 @@ pub struct Save {
     pub show_hitbox: bool,
     pub hints: bool,
     pub trail: usize,
-    // v4: progresso
+    // more progress
     pub relics: Vec<bool>,
     pub curses_taken: u32,
     pub curses_shot: u32,
@@ -89,23 +89,23 @@ pub struct Save {
     pub seen_intro: bool,
     pub words: u32,
     pub ufos: u32,
-    /// 0 = português, 1 = inglês.
+    /// 0 = English, 1 = Portuguese.
     pub lang: u8,
 }
 
 fn default_scores() -> Vec<ScoreEntry> {
     let names = [
-        "ÁS", "COMETA", "NEBULA", "ORION", "VEGA", "PULSAR", "QUASAR", "LUNA", "TITAN", "ASTRO",
+        "ACE", "COMET", "NEBULA", "ORION", "VEGA", "PULSAR", "QUASAR", "LUNA", "TITAN", "ASTRO",
     ];
     let mut v = vec![];
     for m in MODES {
         let base: u32 = match m {
-            Mode::Campanha => 60_000,
-            Mode::Classico => 30_000,
-            Mode::Diario => 25_000,
-            Mode::Sobrevivencia => 40_000,
-            Mode::Chefoes => 50_000,
-            Mode::Expedicao => 80_000,
+            Mode::Campaign => 60_000,
+            Mode::Classic => 30_000,
+            Mode::Daily => 25_000,
+            Mode::Survival => 40_000,
+            Mode::BossRush => 50_000,
+            Mode::Expedition => 80_000,
         };
         for (i, n) in names.iter().enumerate() {
             v.push(ScoreEntry {
@@ -133,7 +133,7 @@ impl Default for Save {
             mode: 0,
             diff: 1,
             equipped: vec![],
-            last_name: "PILOTO".into(),
+            last_name: "PILOT".into(),
             xp: 0,
             achs: vec![false; ACHS.len()],
             seen: vec![false; BESTIARY.len()],
@@ -193,10 +193,10 @@ impl Default for Save {
     }
 }
 
-/// Língua do sistema na primeira vez: português se o sistema estiver em português, senão inglês.
+/// System language on first launch: Portuguese if the system is in Portuguese, otherwise English.
 pub fn system_lang() -> u8 {
     let loc = sys_locale::get_locale().unwrap_or_default().to_lowercase();
-    if loc.starts_with("pt") { 0 } else { 1 }
+    if loc.starts_with("pt") { 1 } else { 0 }
 }
 
 pub fn data_dir() -> PathBuf {
@@ -219,46 +219,6 @@ pub fn data_dir() -> PathBuf {
 
 fn file() -> PathBuf {
     data_dir().join("save.txt")
-}
-
-/// Pasta usada quando o jogo ainda se chamava "Enxame" (versões 1 a 3).
-fn legacy_dir() -> Option<PathBuf> {
-    #[cfg(target_os = "windows")]
-    if let Ok(a) = std::env::var("APPDATA") {
-        return Some(PathBuf::from(a).join("Enxame"));
-    }
-    #[cfg(target_os = "macos")]
-    if let Ok(h) = std::env::var("HOME") {
-        return Some(PathBuf::from(h).join("Library/Application Support/Enxame"));
-    }
-    if let Ok(x) = std::env::var("XDG_DATA_HOME") {
-        return Some(PathBuf::from(x).join("enxame"));
-    }
-    std::env::var("HOME")
-        .ok()
-        .map(|h| PathBuf::from(h).join(".local/share/enxame"))
-}
-
-/// Traz o progresso (e a pasta de músicas) da época do "Enxame", uma única vez.
-pub fn migrate_legacy() {
-    if file().exists() {
-        return;
-    }
-    let Some(old) = legacy_dir() else { return };
-    if !old.join("save.txt").exists() {
-        return;
-    }
-    let new = data_dir();
-    if std::fs::create_dir_all(&new).is_err() {
-        return;
-    }
-    let _ = std::fs::copy(old.join("save.txt"), new.join("save.txt"));
-    if let Ok(rd) = std::fs::read_dir(old.join("musica")) {
-        let _ = std::fs::create_dir_all(new.join("musica"));
-        for e in rd.flatten() {
-            let _ = std::fs::copy(e.path(), new.join("musica").join(e.file_name()));
-        }
-    }
 }
 
 fn parse_list<T: std::str::FromStr + Copy>(v: &str, out: &mut [T]) {
@@ -292,7 +252,6 @@ fn bits(v: &[bool]) -> String {
 
 impl Save {
     pub fn load() -> Save {
-        migrate_legacy();
         let mut s = Save::default();
         let Ok(text) = std::fs::read_to_string(file()) else {
             return s;
@@ -368,7 +327,7 @@ impl Save {
                 "expedition_best" => s.expedition_best = num(0),
                 "seen_intro" => s.seen_intro = v == "1",
                 "words" => s.words = num(0),
-                "lang" => s.lang = (num(1) as u8).min(1),
+                "lang" => s.lang = if v == "pt" { 1 } else { 0 },
                 "ufos" => s.ufos = num(0),
                 "curses_taken" => s.curses_taken = num(0),
                 "curses_shot" => s.curses_shot = num(0),
@@ -396,7 +355,7 @@ impl Save {
             }
         }
         if !scores.is_empty() {
-            // Modos sem recordes salvos ganham a tabela padrão.
+            // Modes without saved scores get the default table.
             for m in MODES {
                 if !scores.iter().any(|e| e.mode == m.tag()) {
                     scores.extend(default_scores().into_iter().filter(|e| e.mode == m.tag()));
@@ -431,7 +390,7 @@ impl Save {
 
     pub fn write(&self) {
         let mut o = String::new();
-        o.push_str("# Stardust - arquivo de progresso\nversion=2\n");
+        o.push_str("# Stardust save file\nversion=1\n");
         let mut kv = |k: &str, v: String| {
             o.push_str(k);
             o.push('=');
@@ -496,7 +455,7 @@ impl Save {
         kv("expedition_best", self.expedition_best.to_string());
         kv("seen_intro", b(self.seen_intro));
         kv("words", self.words.to_string());
-        kv("lang", self.lang.to_string());
+        kv("lang", if self.lang == 1 { "pt" } else { "en" }.to_string());
         kv("ufos", self.ufos.to_string());
         kv("curses_taken", self.curses_taken.to_string());
         kv("curses_shot", self.curses_shot.to_string());
@@ -539,7 +498,7 @@ impl Save {
         score > 0 && (list.len() < 10 || score > list.last().map(|e| e.score).unwrap_or(0))
     }
 
-    /// Insere e retorna a posição dentro do modo (0 = primeiro).
+    /// Inserts and returns the position within the mode (0 = first).
     pub fn add_score(&mut self, name: &str, score: u32, sector: u32, mode: u8, ship: u8) -> usize {
         let e = ScoreEntry {
             name: clean_name(name),
@@ -564,7 +523,7 @@ pub fn clean_name(s: &str) -> String {
         .take(NAME_MAX)
         .collect();
     let n = n.trim().to_string();
-    if n.is_empty() { "PILOTO".into() } else { n }
+    if n.is_empty() { "PILOT".into() } else { n }
 }
 
 #[cfg(test)]
@@ -572,9 +531,9 @@ mod tests {
     use super::*;
 
     #[test]
-    fn salva_e_carrega() {
+    fn saves_and_loads() {
         let dir = std::env::temp_dir().join(format!("stardust-teste-{}", std::process::id()));
-        // SAFETY: único teste que mexe nessa variável.
+        // SAFETY: the only test that touches this variable.
         unsafe { std::env::set_var("XDG_DATA_HOME", &dir) };
         let mut s = Save::default();
         s.music = 3;
@@ -611,6 +570,6 @@ mod tests {
         assert_eq!(s.add_score("X", 1_000_000, 5, 0, 0), 0);
         assert_eq!(s.scores_for(0).len(), 10);
         assert_eq!(clean_name("  a;b=c\n "), "abc");
-        assert_eq!(clean_name(""), "PILOTO");
+        assert_eq!(clean_name(""), "PILOT");
     }
 }

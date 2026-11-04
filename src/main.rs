@@ -1,5 +1,5 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
-//! STARDUST — um shoot 'em up de formações com cara de shareware dos anos 2000.
+//! STARDUST — a formation shoot 'em up with the look of 2000s shareware.
 
 mod art;
 mod audio;
@@ -31,8 +31,8 @@ use ui::{CYAN, DIM, GOLD, GREEN, PINK, RED};
 
 pub const W: f32 = 480.0;
 pub const H: f32 = 720.0;
-/// Variáveis de teste (robô, modo deus, telas diretas...). Só existem no build de
-/// desenvolvimento: `cargo run --release --features dev`.
+/// Test variables (bot, god mode, direct screens...). They only exist in the
+/// development build: `cargo run --release --features dev`.
 pub fn dev_env(k: &str) -> Option<String> {
     if cfg!(feature = "dev") {
         std::env::var(k).ok()
@@ -64,7 +64,7 @@ fn window_conf() -> Conf {
 }
 
 // ---------------------------------------------------------------------------
-// Entrada
+// Input
 // ---------------------------------------------------------------------------
 
 #[derive(Default)]
@@ -165,7 +165,7 @@ fn poll_input(rep: &mut Repeat, dt: f32) -> Input {
 }
 
 // ---------------------------------------------------------------------------
-// Telas
+// Screens
 // ---------------------------------------------------------------------------
 
 enum Screen {
@@ -262,51 +262,51 @@ struct App {
 }
 
 const TITLE_ITEMS: [&str; 8] = [
-    "JOGAR",
+    "PLAY",
     "HANGAR",
-    "CARTAS",
-    "ARQUIVOS",
-    "RECORDES",
-    "CONFIGURAÇÕES",
-    "COMO JOGAR",
-    "SAIR",
+    "CARDS",
+    "ARCHIVES",
+    "HIGH SCORES",
+    "SETTINGS",
+    "HOW TO PLAY",
+    "QUIT",
 ];
 
 const PROLOGUE: [&str; 9] = [
-    "Ano 2097.",
-    "A sonda STARDUST voltava de um cometa distante",
-    "trazendo amostras de poeira estelar... e algo mais.",
-    "Na poeira havia um sinal. E o sinal chamou o ENXAME.",
-    "Milhões de insetos estelares cercaram a Terra em formação de ataque.",
-    "A frota caiu em horas. Sobrou um hangar escondido, uma nave e você.",
-    "Cada cristal recolhido vira armas melhores no hangar móvel.",
-    "Atravesse os 8 setores. Chegue ao Coração da Colmeia.",
-    "Ninguém sabe o que o Enxame quer. Boa sorte, piloto.",
+    "Year 2097.",
+    "The STARDUST probe was coming back from a distant comet",
+    "carrying samples of stardust... and something more.",
+    "In the dust there was a signal. And the signal called the SWARM.",
+    "Millions of star insects surrounded Earth in attack formation.",
+    "The fleet fell in hours. What's left: a hidden hangar, one ship and you.",
+    "Every crystal you collect turns into better weapons at the mobile hangar.",
+    "Cross all 8 sectors. Reach the Heart of the Hive.",
+    "Nobody knows what the Swarm wants. Good luck, pilot.",
 ];
 
 const TIPS: [&str; 22] = [
-    "Raspar nos tiros inimigos enche a barra de habilidade.",
-    "Segure SHIFT para ver exatamente onde a nave pode ser atingida.",
-    "Escudeiros só protegem a frente. Tiros em diagonal passam.",
-    "O Olho só sente dor com a pálpebra aberta.",
-    "No Cinturão de Gelo, sua nave escorrega. Antecipe-se.",
-    "Tecelãs não machucam: elas te deixam lento. O que é pior.",
-    "Cristais compram armas melhores. Guarde para o chefe.",
-    "O NÚCLEO DE DANO da loja deixa todas as armas mais fortes.",
-    "Armas mais caras na loja batem muito mais forte.",
-    "Segure o tiro e solte: o tiro carregado atravessa a formação.",
-    "Caveiras caem devagar e te seguem. Três tiros acabam com elas.",
-    "Minas piscam cada vez mais rápido antes de explodir.",
-    "Inimigos em mergulho valem o dobro de pontos.",
-    "Combos altos multiplicam os pontos. Não deixe esfriar.",
-    "Pegar a mesma arma de novo sobe o nível dela.",
-    "Inimigos congelados levam dano em dobro.",
-    "Ladrões fogem com o que cai. Derrube-os antes que sumam.",
-    "Limpar uma onda rápido rende bônus de tempo.",
-    "Contratos cumpridos dão XP extra no fim da partida.",
-    "A cauda do Cometa Wild solta poeira. Fique na frente dele.",
-    "Na Expedição, cada bênção muda a sua estratégia.",
-    "Bombas apagam os tiros na tela. Use antes de ser atingido.",
+    "Grazing enemy shots fills the ability bar.",
+    "Hold SHIFT to see exactly where your ship can be hit.",
+    "Shieldbearers only protect their front. Diagonal shots get through.",
+    "The Eye only feels pain with its eyelid open.",
+    "In the Ice Belt your ship slides. Plan ahead.",
+    "Weavers don't hurt: they slow you down. Which is worse.",
+    "Crystals buy better weapons. Save up for the boss.",
+    "The shop's DAMAGE CORE makes every weapon stronger.",
+    "Pricier weapons in the shop hit much harder.",
+    "Hold fire and release: the charged shot pierces the formation.",
+    "Skulls fall slowly and follow you. Three shots finish them.",
+    "Mines blink faster and faster before exploding.",
+    "Diving enemies are worth double points.",
+    "High combos multiply your points. Don't let them cool down.",
+    "Picking up the same weapon again raises its level.",
+    "Frozen enemies take double damage.",
+    "Thieves run off with falling items. Shoot them before they vanish.",
+    "Clearing a wave quickly earns a time bonus.",
+    "Completed contracts give extra XP at the end of the run.",
+    "The Wild Comet's tail sheds dust. Stay in front of it.",
+    "In Expedition, every blessing changes your strategy.",
+    "Bombs wipe the shots on screen. Use one before you get hit.",
 ];
 
 const KONAMI: [KeyCode; 10] = [
@@ -333,11 +333,9 @@ impl App {
 
     fn diff_unlocked(&self, d: Difficulty) -> bool {
         match d {
-            Difficulty::Facil | Difficulty::Normal => true,
-            Difficulty::Dificil => self.rank() >= 5,
-            Difficulty::Pesadelo => {
-                self.save.achs[ach::FINAL_VERDADEIRO] || self.save.victories >= 3
-            }
+            Difficulty::Easy | Difficulty::Normal => true,
+            Difficulty::Hard => self.rank() >= 5,
+            Difficulty::Nightmare => self.save.achs[ach::TRUE_ENDING] || self.save.victories >= 3,
         }
     }
 
@@ -365,14 +363,14 @@ impl App {
             g.cfg.achs[a] = true;
         }
         self.toast(
-            format!("CONQUISTA: {}", ACHS[a].name),
+            format!("ACHIEVEMENT: {}", ACHS[a].name),
             format!("{}  (+{} XP)", ACHS[a].desc, ACHS[a].xp),
             GOLD,
         );
         self.audio.play(Sfx::Achievement);
         if self.rank() > old_rank {
             self.toast(
-                format!("PROMOÇÃO: {}", RANKS[self.rank()]),
+                format!("PROMOTION: {}", RANKS[self.rank()]),
                 progress::unlock_text(self.rank()),
                 CYAN,
             );
@@ -387,66 +385,66 @@ impl App {
         }
     }
 
-    /// Conquistas que dependem do progresso acumulado.
+    /// Achievements that depend on accumulated progress.
     fn check_meta(&mut self) {
         let s = &self.save;
         let mut list = vec![];
         if s.unique_cards() >= 20 {
-            list.push(ach::COLECIONADOR);
+            list.push(ach::COLLECTOR);
         }
         if CARDS
             .iter()
             .enumerate()
             .all(|(i, c)| c.secret || s.cards[i] > 0)
         {
-            list.push(ach::COMPLETISTA);
+            list.push(ach::COMPLETIONIST);
         }
         if s.runs >= 25 {
-            list.push(ach::INSISTENTE);
+            list.push(ach::PERSISTENT);
         }
         if s.play_time >= 7200.0 {
-            list.push(ach::MARATONA);
+            list.push(ach::MARATHON);
         }
         if s.kills_kind[Kind::Kamikaze.index()] >= 150 {
             list.push(ach::ANTI_KAMIKAZE);
         }
         if s.bombs_used >= 50 {
-            list.push(ach::BOMBARDEIRO);
+            list.push(ach::BOMBER);
         }
-        if s.weapon_kills[Weapon::Chama.index()] >= 300 {
-            list.push(ach::PIROMANIACO);
+        if s.weapon_kills[Weapon::Flame.index()] >= 300 {
+            list.push(ach::PYROMANIAC);
         }
         if s.mastery.iter().filter(|m| **m).count() >= 5 {
-            list.push(ach::MESTRE_ARMAS);
+            list.push(ach::WEAPON_MASTER);
         }
         if s.merchants_spared >= 3 {
-            list.push(ach::SAMARITANO);
+            list.push(ach::SAMARITAN);
         }
         if s.daily_done >= 3 {
-            list.push(ach::ROTINA);
+            list.push(ach::ROUTINE);
         }
         let logs = s.logs.iter().filter(|l| **l).count();
         for (cond, a) in [
-            (s.contracts_done >= 30, ach::MERCENARIO),
-            (logs >= 6, ach::ARQUEOLOGO),
-            (logs >= progress::LOGS.len(), ach::HISTORIADOR),
-            (s.mimics >= 10, ach::DESCONFIADO),
+            (s.contracts_done >= 30, ach::ELITE_MERCENARY),
+            (logs >= 6, ach::ARCHAEOLOGIST),
+            (logs >= progress::LOGS.len(), ach::HISTORIAN),
+            (s.mimics >= 10, ach::SUSPICIOUS),
             (s.elites >= 50, ach::ELITE),
-            (s.frozen_total >= 150, ach::GELO),
-            (s.absorbed_total >= 300, ach::HORIZONTE),
+            (s.frozen_total >= 150, ach::ICE_AGE),
+            (s.absorbed_total >= 300, ach::HORIZON),
             (
                 s.mastery.iter().filter(|m| **m).count() >= 12,
-                ach::MESTRE_SUPREMO,
+                ach::SUPREME_MASTER,
             ),
-            (s.cows >= 3, ach::FAZENDEIRO),
-            (s.events_seen.iter().all(|e| *e), ach::TURISTA),
-            (s.minigames_won >= 10, ach::FLIPERAMISTA),
-            (s.curses_shot >= 25, ach::EXORCISTA),
-            (s.curses_taken >= 10, ach::AZARADO),
-            (s.perfects >= 5, ach::PERFECCIONISTA),
-            (s.relics.iter().all(|r| *r), ach::RELIQUIAS),
-            (s.rooms_found >= 5, ach::TESOUREIRO),
-            (s.expedition_best >= 10, ach::EXPEDICIONARIO),
+            (s.cows >= 3, ach::FARMER),
+            (s.events_seen.iter().all(|e| *e), ach::TOURIST),
+            (s.minigames_won >= 10, ach::ARCADE_MASTER),
+            (s.curses_shot >= 25, ach::EXORCIST),
+            (s.curses_taken >= 10, ach::JINXED),
+            (s.perfects >= 5, ach::PERFECTIONIST),
+            (s.relics.iter().all(|r| *r), ach::ALL_RELICS),
+            (s.rooms_found >= 5, ach::TREASURER),
+            (s.expedition_best >= 10, ach::EXPEDITIONARY),
         ] {
             if cond {
                 list.push(a);
@@ -457,17 +455,13 @@ impl App {
             list.push(ach::HANGAR);
         }
         if (0..SHIPS.len()).all(|i| ships::ship_unlocked(i, rank, &s.achs)) {
-            list.push(ach::FROTA);
+            list.push(ach::FULL_FLEET);
         }
         for a in list {
             if !self.save.achs[a] {
-                if a == ach::FAZENDEIRO {
-                    self.add_card(cards::id::BEZERRO);
-                    self.toast(
-                        "UM BEZERRO TE SEGUE",
-                        "Carta secreta: Bezerro Cósmico.",
-                        PINK,
-                    );
+                if a == ach::FARMER {
+                    self.add_card(cards::id::CALF);
+                    self.toast("A CALF FOLLOWS YOU", "Secret card: Cosmic Calf.", PINK);
                 }
                 self.unlock(a);
             }
@@ -479,7 +473,7 @@ impl App {
         if !ships::ship_unlocked(ship, self.rank(), &self.save.achs) {
             ship = 0;
         }
-        let daily = if mode == Mode::Diario {
+        let daily = if mode == Mode::Daily {
             let day = progress::today_number();
             macroquad::rand::srand(day as u64 * 7919);
             Some(progress::daily_for(day))
@@ -526,8 +520,8 @@ impl App {
         if let Some(k) = dev_env("STARDUST_MINIGAME").and_then(|v| v.parse::<usize>().ok()) {
             g.debug_minigame(k);
         }
-        if dev_env("STARDUST_V5").is_some() {
-            g.debug_v5();
+        if dev_env("STARDUST_LETTERS").is_some() {
+            g.debug_letters();
         }
         if dev_env("STARDUST_BLESS").is_some() {
             g.debug_bless();
@@ -562,19 +556,19 @@ impl App {
         s.absorbed_total += g.absorbed;
         let mode = g.cfg.mode;
         match mode {
-            Mode::Classico if g.score >= 60_000 => {
-                self.unlock(ach::FLIPERAMA);
+            Mode::Classic if g.score >= 60_000 => {
+                self.unlock(ach::ARCADE_SCORE);
             }
-            Mode::Chefoes if g.victory => {
+            Mode::BossRush if g.victory => {
                 let t = g.run_time;
                 if self.save.best_rush == 0.0 || t < self.save.best_rush {
                     self.save.best_rush = t;
                 }
             }
-            Mode::Expedicao => {
+            Mode::Expedition => {
                 self.save.expedition_best = self.save.expedition_best.max(g.sector());
             }
-            Mode::Diario => {
+            Mode::Daily => {
                 self.save.daily_last = progress::today_number();
                 self.save.daily_best = self.save.daily_best.max(g.score);
                 if g.victory {
@@ -588,7 +582,7 @@ impl App {
             + g.bosses_killed as f64 * 150.0
             + g.sectors_cleared as f64 * 100.0
             + g.new_cards.len() as f64 * 50.0
-            + g.x.contract_xp as f64;
+            + g.enc.contract_xp as f64;
         let gain = (base * g.cfg.diff.xp_mul() as f64).round() as u64;
         let from_xp = self.save.xp;
         self.save.xp += gain;
@@ -619,9 +613,9 @@ impl App {
         self.audio.set_music_volume(self.save.music as f32 / 10.0);
         self.audio.sfx_vol = self.save.sfx as f32 / 10.0;
         i18n::set_lang(if self.save.lang == 1 {
-            i18n::Lang::En
-        } else {
             i18n::Lang::Pt
+        } else {
+            i18n::Lang::En
         });
         fx::set_quality(
             [0.35, 0.7, 1.0][self.save.particles.min(2) as usize],
@@ -653,7 +647,7 @@ impl App {
                     if i < self.save.seen.len() && !self.save.seen[i] {
                         self.save.seen[i] = true;
                         dirty = true;
-                        self.toast("NOVO REGISTRO NO BESTIÁRIO", BESTIARY[i].name, CYAN);
+                        self.toast("NEW BESTIARY ENTRY", BESTIARY[i].name, CYAN);
                     }
                 }
                 Event::Kill(kind, weapon) => {
@@ -686,19 +680,19 @@ impl App {
                 Event::SurvivalWave(w) => {
                     self.save.best_survival = self.save.best_survival.max(w);
                     if w >= 30 {
-                        self.unlock(ach::SOBREVIVENTE);
+                        self.unlock(ach::SURVIVOR);
                     }
                 }
                 Event::Contract => {
                     self.save.contracts_done += 1;
-                    self.unlock(ach::CONTRATADO);
+                    self.unlock(ach::HIRED);
                     dirty = true;
                 }
                 Event::Log(i) => {
                     if i < self.save.logs.len() && !self.save.logs[i] {
                         self.save.logs[i] = true;
                         self.toast(
-                            "NOVO REGISTRO DE BORDO",
+                            "NEW FLIGHT LOG",
                             progress::LOGS[i].0,
                             Color::from_rgba(120, 255, 220, 255),
                         );
@@ -728,9 +722,9 @@ impl App {
                 Event::Relic(i) => {
                     if i < self.save.relics.len() && !self.save.relics[i] {
                         self.save.relics[i] = true;
-                        self.toast("RELÍQUIA DESCOBERTA!", ships::RELICS[i].name(), GOLD);
+                        self.toast("RELIC DISCOVERED!", ships::RELICS[i].name(), GOLD);
                     }
-                    self.unlock(ach::RELICARIO);
+                    self.unlock(ach::RELIQUARY);
                     dirty = true;
                 }
                 Event::Minigame(grade) => {
@@ -753,7 +747,7 @@ impl App {
                 }
                 Event::Room => {
                     self.save.rooms_found += 1;
-                    self.unlock(ach::SALA_SECRETA);
+                    self.unlock(ach::SECRET_ROOM);
                     dirty = true;
                 }
             }
@@ -773,7 +767,7 @@ impl App {
         for t in &mut self.toasts {
             t.t += dt;
         }
-        // uma de cada vez: só a primeira anda
+        // one at a time: only the first one advances
         if let Some(first) = self.toasts.first()
             && first.t > first.dur
         {
@@ -821,7 +815,7 @@ impl App {
                 if self.demo {
                     self.demo_t += dt;
                     if self.demo_t > 60.0 {
-                        self.unlock(ach::INSONE);
+                        self.unlock(ach::SLEEPLESS);
                     }
                     if (inp.any && !self.autoplay)
                         || self.demo_t > 90.0
@@ -839,7 +833,7 @@ impl App {
                     self.screen = Screen::Playing;
                     return;
                 }
-                let g = self.game.as_mut().expect("jogo ativo");
+                let g = self.game.as_mut().expect("game in progress");
                 let blocked = matches!(
                     g.phase,
                     game::Phase::Shop | game::Phase::Continue { .. } | game::Phase::Credits { .. }
@@ -1011,22 +1005,22 @@ impl App {
         let up = n.to_uppercase();
         match up.as_str() {
             "ALLAN" => {
-                if !self.save.achs[ach::CRIADOR] {
-                    self.add_card(cards::id::CRIADOR);
+                if !self.save.achs[ach::CREATOR] {
+                    self.add_card(cards::id::CREATOR);
                 }
-                self.unlock(ach::CRIADOR);
-                self.toast("OLÁ, CRIADOR!", "Obrigado por fazer este jogo.", PINK);
+                self.unlock(ach::CREATOR);
+                self.toast("HELLO, CREATOR!", "Thanks for making this game.", PINK);
             }
             "VOYAGER" | "VOYAGER 1" | "VOYAGER 2" | "VOYAGER1" | "VOYAGER2" => {
                 self.audio.play(Sfx::Sparkle);
-                self.unlock(ach::DISCO_OURO);
+                self.unlock(ach::GOLDEN_RECORD);
                 self.toast(
-                    "DISCO DE OURO",
-                    "A arma PULSAR agora cai das cápsulas.",
+                    "GOLDEN RECORD",
+                    "The PULSAR weapon now drops from capsules.",
                     GOLD,
                 );
             }
-            "MUUU" | "VACA" | "MOO" => self.audio.play(Sfx::Moo),
+            "MUUU" | "COW" | "VACA" | "MOO" => self.audio.play(Sfx::Moo),
             _ => {}
         }
     }
@@ -1052,8 +1046,8 @@ impl App {
                     self.add_card(cards::id::KONAMI);
                     self.audio.play(Sfx::Fanfare);
                     self.toast(
-                        "CÓDIGO ACEITO",
-                        "Nave PROTÓTIPO liberada no Hangar. +1 carta secreta.",
+                        "CODE ACCEPTED",
+                        "PROTOTYPE ship unlocked in the Hangar. +1 secret card.",
                         GREEN,
                     );
                 }
@@ -1061,7 +1055,7 @@ impl App {
                 self.logo_party = 4.0;
             }
         }
-        // digitar STARDUST
+        // typing STARDUST
         for c in &inp.chars {
             self.typed.extend(c.to_uppercase());
             if self.typed.chars().count() > 12 {
@@ -1079,10 +1073,10 @@ impl App {
                         260.0,
                     );
                 }
-                self.unlock(ach::CURIOSO);
+                self.unlock(ach::CURIOUS);
             }
         }
-        // demonstração
+        // demo
         if inp.any || inp.up || inp.down {
             self.idle = 0.0;
         } else {
@@ -1090,7 +1084,7 @@ impl App {
         }
         if self.idle > 25.0 {
             self.idle = 0.0;
-            self.new_game(Mode::Campanha, Difficulty::Normal, true);
+            self.new_game(Mode::Campaign, Difficulty::Normal, true);
             return Screen::Playing;
         }
         if inp.up_p {
@@ -1193,7 +1187,7 @@ impl App {
                 self.save.mode = m.tag();
                 self.save.diff = diff as u8;
                 self.save.write();
-                if m == Mode::Campanha && !self.save.seen_intro {
+                if m == Mode::Campaign && !self.save.seen_intro {
                     return Screen::Prologue {
                         t: 0.0,
                         start: Some((m, d)),
@@ -1240,7 +1234,7 @@ impl App {
                 self.save.trail = self.hangar_trail;
                 self.save.write();
                 self.audio.play(Sfx::Buy);
-                self.toast("RASTRO EQUIPADO", progress::TRAILS[self.hangar_trail], CYAN);
+                self.toast("TRAIL EQUIPPED", progress::TRAILS[self.hangar_trail], CYAN);
             } else {
                 self.audio.play(Sfx::Deny);
             }
@@ -1253,7 +1247,7 @@ impl App {
                 self.save.write();
                 self.audio.play(Sfx::Buy);
                 self.toast(
-                    format!("{} PRONTA PARA DECOLAR", SHIPS[sel].name),
+                    format!("{} READY FOR LAUNCH", SHIPS[sel].name),
                     progress::SKIN_NAMES[skin],
                     CYAN,
                 );
@@ -1269,7 +1263,7 @@ impl App {
     }
 
     fn skin_ok(&self, k: usize) -> bool {
-        self.rank() >= progress::skin_rank(k) || (k == 6 && self.save.achs[ach::RELIQUIAS])
+        self.rank() >= progress::skin_rank(k) || (k == 6 && self.save.achs[ach::ALL_RELICS])
     }
 
     fn update_album(&mut self, mut sel: usize, inp: &Input) -> Screen {
@@ -1306,7 +1300,7 @@ impl App {
                 self.audio.play(Sfx::Deny);
                 self.fx.text(
                     vec2(W / 2.0, H - 60.0),
-                    "SEM ESPAÇO: DESEQUIPE OUTRA",
+                    "NO SLOT: UNEQUIP ANOTHER",
                     RED,
                     16.0,
                 );
@@ -1354,43 +1348,43 @@ impl App {
     }
 
     fn opt_rows(&self, tab: usize) -> Vec<(String, String)> {
-        let yes = |b: bool| if b { "SIM" } else { "NÃO" }.to_string();
+        let yes = |b: bool| if b { "YES" } else { "NO" }.to_string();
         let bar = |v: u8| format!("{}{}", "|".repeat(v as usize), "·".repeat(10 - v as usize));
         let s = &self.save;
         let mut v: Vec<(String, String)> = match tab {
             0 => vec![
-                ("TELA CHEIA".into(), yes(s.fullscreen)),
-                ("FILTRO CRT".into(), yes(s.crt)),
-                ("TREMOR DE TELA".into(), yes(s.shake)),
+                ("FULLSCREEN".into(), yes(s.fullscreen)),
+                ("CRT FILTER".into(), yes(s.crt)),
+                ("SCREEN SHAKE".into(), yes(s.shake)),
                 (
-                    "PARTÍCULAS".into(),
-                    ["BAIXO", "MÉDIO", "ALTO"][s.particles as usize].into(),
+                    "PARTICLES".into(),
+                    ["LOW", "MEDIUM", "HIGH"][s.particles as usize].into(),
                 ),
                 (
-                    "CLARÕES".into(),
-                    if s.flashes { "NORMAIS" } else { "SUAVES" }.into(),
+                    "FLASHES".into(),
+                    if s.flashes { "NORMAL" } else { "SOFT" }.into(),
                 ),
-                ("PAINÉIS LATERAIS".into(), yes(s.panels)),
-                ("FUNDO ANIMADO".into(), yes(s.bg_anim)),
-                ("MOSTRAR FPS".into(), yes(s.show_fps)),
+                ("SIDE PANELS".into(), yes(s.panels)),
+                ("ANIMATED BACKGROUND".into(), yes(s.bg_anim)),
+                ("SHOW FPS".into(), yes(s.show_fps)),
             ],
             1 => vec![
-                ("MÚSICA".into(), bar(s.music)),
-                ("EFEITOS".into(), bar(s.sfx)),
-                ("TESTAR EFEITOS".into(), "ENTER".into()),
+                ("MUSIC".into(), bar(s.music)),
+                ("SOUND FX".into(), bar(s.sfx)),
+                ("TEST SOUND FX".into(), "ENTER".into()),
             ],
             2 => vec![
                 (
-                    "IDIOMA / LANGUAGE".into(),
-                    if s.lang == 1 { "ENGLISH" } else { "PORTUGUÊS" }.into(),
+                    "LANGUAGE".into(),
+                    if s.lang == 1 { "PORTUGUÊS" } else { "ENGLISH" }.into(),
                 ),
-                ("HITBOX SEMPRE VISÍVEL".into(), yes(s.show_hitbox)),
-                ("DICAS NA PAUSA".into(), yes(s.hints)),
-                ("REVER O PRÓLOGO".into(), "ENTER".into()),
+                ("ALWAYS SHOW HITBOX".into(), yes(s.show_hitbox)),
+                ("TIPS ON PAUSE".into(), yes(s.hints)),
+                ("REPLAY THE PROLOGUE".into(), "ENTER".into()),
                 (
-                    "APAGAR PROGRESSO".into(),
+                    "ERASE PROGRESS".into(),
                     if self.reset_armed > 0.0 {
-                        "CONFIRMA?".into()
+                        "CONFIRM?".into()
                     } else {
                         "ENTER".into()
                     },
@@ -1398,14 +1392,14 @@ impl App {
             ],
             _ => vec![],
         };
-        v.push(("VOLTAR".into(), String::new()));
+        v.push(("BACK".into(), String::new()));
         v
     }
 
     fn update_options(&mut self, sel: usize, from_pause: bool, inp: &Input) -> Screen {
         let mut tab = (sel / 100).min(3);
         let mut row = sel % 100;
-        let n = self.opt_rows(tab).len() + 1; // linha 0 = abas
+        let n = self.opt_rows(tab).len() + 1; // row 0 = tabs
         self.reset_armed = (self.reset_armed - get_frame_time()).max(0.0);
         if inp.up_p {
             row = (row + n - 1) % n;
@@ -1526,7 +1520,7 @@ impl App {
                         self.save.write();
                         self.reset_armed = 0.0;
                         self.audio.play(Sfx::GameOver);
-                        self.toast("PROGRESSO APAGADO", "Um novo começo, piloto.", RED);
+                        self.toast("PROGRESS ERASED", "A fresh start, pilot.", RED);
                     } else {
                         self.reset_armed = 3.0;
                         self.audio.play(Sfx::Warning);
@@ -1555,7 +1549,7 @@ impl App {
     }
 
     // -----------------------------------------------------------------------
-    // Desenho
+    // Drawing
     // -----------------------------------------------------------------------
 
     fn draw(&self) {
@@ -1567,13 +1561,7 @@ impl App {
                 if self.demo {
                     draw_rectangle(0.0, H - 80.0, W, 40.0, Color::new(0.0, 0.0, 0.0, 0.5));
                     if (self.time * 2.0) as i32 % 2 == 0 {
-                        ui::text_c(
-                            "DEMONSTRAÇÃO  -  APERTE QUALQUER TECLA",
-                            W / 2.0,
-                            H - 54.0,
-                            16.0,
-                            GOLD,
-                        );
+                        ui::text_c("DEMO  -  PRESS ANY KEY", W / 2.0, H - 54.0, 16.0, GOLD);
                     }
                 }
             }
@@ -1583,30 +1571,30 @@ impl App {
                 }
                 draw_rectangle(0.0, 0.0, W, H, Color::new(0.0, 0.0, 0.05, 0.75));
                 ui::text_outline(
-                    "PAUSA",
+                    "PAUSE",
                     W / 2.0,
                     H * 0.28,
                     52.0,
                     GOLD,
                     Color::from_rgba(40, 20, 0, 255),
                 );
-                let items: Vec<String> = ["CONTINUAR", "OPÇÕES", "ENCERRAR PARTIDA"]
+                let items: Vec<String> = ["CONTINUE", "OPTIONS", "END RUN"]
                     .iter()
                     .map(|s| s.to_string())
                     .collect();
                 ui::menu(&items, *sel, W / 2.0, H * 0.4, 40.0, 24.0, self.time);
                 if self.save.hints {
                     ui::panel(30.0, H * 0.6, W - 60.0, 70.0, CYAN);
-                    ui::text_c("DICA", W / 2.0, H * 0.6 + 22.0, 14.0, CYAN);
+                    ui::text_c("TIP", W / 2.0, H * 0.6 + 22.0, 14.0, CYAN);
                     for (i, l) in ui::wrap(TIPS[*tip], 15.0, W - 90.0).iter().enumerate() {
                         ui::text_c(l, W / 2.0, H * 0.6 + 44.0 + i as f32 * 17.0, 15.0, WHITE);
                     }
                 }
                 if let Some(g) = &self.game
-                    && !g.x.contracts.is_empty()
+                    && !g.enc.contracts.is_empty()
                     && !self.panels
                 {
-                    for (i, c) in g.x.contracts.iter().enumerate() {
+                    for (i, c) in g.enc.contracts.iter().enumerate() {
                         let col = if c.done { GREEN } else { WHITE };
                         let txt = format!(
                             "{} {}  ({}/{})",
@@ -1619,7 +1607,7 @@ impl App {
                     }
                 }
                 if !self.save.equipped.is_empty() {
-                    ui::text_c("CARTAS EQUIPADAS", W / 2.0, H * 0.78, 14.0, DIM);
+                    ui::text_c("EQUIPPED CARDS", W / 2.0, H * 0.78, 14.0, DIM);
                     for (i, &c) in self.save.equipped.iter().enumerate() {
                         ui::text_c(
                             CARDS[c].name,
@@ -1702,7 +1690,7 @@ impl App {
                 0.0
             };
         ui::logo(y, if party { self.time * 6.0 } else { self.time });
-        ui::text_c("um shoot 'em up de formações", W / 2.0, 200.0, 15.0, DIM);
+        ui::text_c("a formation shoot 'em up", W / 2.0, 200.0, 15.0, DIM);
 
         let p = vec2(W / 2.0, 254.0 + (self.time * 2.0).sin() * 5.0);
         let flame = 6.0 + (self.time * 40.0).sin().abs() * 7.0;
@@ -1720,15 +1708,15 @@ impl App {
             .title_visible()
             .iter()
             .map(|&i| match i {
-                2 => format!("CARTAS {}/{}", self.save.unique_cards(), CARDS.len()),
-                3 => format!("ARQUIVOS {}/{}", done, ACHS.len()),
+                2 => format!("CARDS {}/{}", self.save.unique_cards(), CARDS.len()),
+                3 => format!("ARCHIVES {}/{}", done, ACHS.len()),
                 _ => TITLE_ITEMS[i].to_string(),
             })
             .collect();
         let spacing = if items.len() > 8 { 29.0 } else { 32.0 };
         ui::menu(&items, sel, W / 2.0, 322.0, spacing, 22.0, self.time);
 
-        // patente
+        // rank
         let r = self.rank();
         progress::draw_insignia(r, 46.0, 620.0, 1.3);
         ui::text(RANKS[r], 72.0, 616.0, 16.0, GOLD);
@@ -1745,13 +1733,13 @@ impl App {
         draw_rectangle(72.0, 624.0, 180.0 * frac.min(1.0), 6.0, GOLD);
         ui::text(&format!("{} XP", self.save.xp), 72.0, 644.0, 13.0, DIM);
         let best = self.save.best_for(0);
-        ui::text_r("RECORDE", W - 20.0, 616.0, 13.0, DIM);
+        ui::text_r("HIGH SCORE", W - 20.0, 616.0, 13.0, DIM);
         ui::text_r(&format!("{:08}", best), W - 20.0, 638.0, 18.0, GOLD);
-        if progress::season() == progress::Season::Natal {
-            ui::text_c("FELIZ NATAL, PILOTO!", W / 2.0, 676.0, 14.0, GREEN);
+        if progress::season() == progress::Season::Christmas {
+            ui::text_c("MERRY CHRISTMAS, PILOT!", W / 2.0, 676.0, 14.0, GREEN);
         } else if progress::season() == progress::Season::Halloween {
             ui::text_c(
-                "Os Besouros estão... diferentes hoje.",
+                "The Beetles look... different today.",
                 W / 2.0,
                 676.0,
                 14.0,
@@ -1766,7 +1754,7 @@ impl App {
             Color::new(0.4, 0.4, 0.5, 1.0),
         );
         ui::text_r(
-            "SETAS · ENTER · ESC",
+            "ARROWS · ENTER · ESC",
             W - 8.0,
             H - 10.0,
             13.0,
@@ -1776,7 +1764,7 @@ impl App {
 
     fn draw_mode_select(&self, sel: usize, diff: usize, row: usize) {
         ui::text_outline(
-            "MODO DE JOGO",
+            "GAME MODE",
             W / 2.0,
             90.0,
             40.0,
@@ -1817,17 +1805,17 @@ impl App {
                 );
             }
             ui::text_c(
-                &format!("RECORDE {:08}", self.save.best_for(m.tag())),
+                &format!("HIGH SCORE {:08}", self.save.best_for(m.tag())),
                 W / 2.0,
                 290.0,
                 16.0,
                 GOLD,
             );
             match m {
-                Mode::Diario => {
+                Mode::Daily => {
                     let d = progress::daily_for(progress::today_number());
                     ui::text_c(
-                        &format!("HOJE: {}", d.name()),
+                        &format!("TODAY: {}", d.name()),
                         W / 2.0,
                         320.0,
                         17.0,
@@ -1835,25 +1823,25 @@ impl App {
                     );
                     ui::text_c(d.desc(), W / 2.0, 342.0, 14.0, WHITE);
                 }
-                Mode::Sobrevivencia => ui::text_c(
-                    &format!("MELHOR ONDA: {}", self.save.best_survival),
+                Mode::Survival => ui::text_c(
+                    &format!("BEST WAVE: {}", self.save.best_survival),
                     W / 2.0,
                     320.0,
                     15.0,
                     CYAN,
                 ),
-                Mode::Expedicao => ui::text_c(
-                    &format!("MAIS LONGE: SETOR {}", self.save.expedition_best),
+                Mode::Expedition => ui::text_c(
+                    &format!("FARTHEST: SECTOR {}", self.save.expedition_best),
                     W / 2.0,
                     320.0,
                     15.0,
                     CYAN,
                 ),
-                Mode::Chefoes if self.save.best_rush > 0.0 => {
+                Mode::BossRush if self.save.best_rush > 0.0 => {
                     let t = self.save.best_rush;
                     ui::text_c(
                         &format!(
-                            "MELHOR TEMPO {:02}:{:02}",
+                            "BEST TIME {:02}:{:02}",
                             (t / 60.0) as u32,
                             (t % 60.0) as u32
                         ),
@@ -1866,16 +1854,16 @@ impl App {
                 _ => {}
             }
         } else {
-            ui::text_c("BLOQUEADO", W / 2.0, 230.0, 22.0, RED);
+            ui::text_c("LOCKED", W / 2.0, 230.0, 22.0, RED);
             ui::text_c(
-                &format!("Alcance a patente {}", RANKS[m.unlock_rank()]),
+                &format!("Reach the rank {}", RANKS[m.unlock_rank()]),
                 W / 2.0,
                 260.0,
                 16.0,
                 DIM,
             );
         }
-        // dificuldade
+        // difficulty
         let d = DIFFS[diff];
         let ok = self.diff_unlocked(d);
         ui::panel(
@@ -1885,7 +1873,7 @@ impl App {
             160.0,
             if row == 1 { GOLD } else { DIM },
         );
-        ui::text_c("DIFICULDADE", W / 2.0, 418.0, 15.0, DIM);
+        ui::text_c("DIFFICULTY", W / 2.0, 418.0, 15.0, DIM);
         let arrows = if row == 1 && (self.time * 3.0) as i32 % 2 == 0 {
             GOLD
         } else {
@@ -1902,34 +1890,34 @@ impl App {
         );
         if ok {
             let info = format!(
-                "vidas {:+}  ·  tiros x{:.2}  ·  XP x{:.1}  ·  continues {}",
+                "lives {:+}  ·  shots x{:.2}  ·  XP x{:.1}  ·  continues {}",
                 d.lives(),
                 d.fire_rate(),
                 d.xp_mul(),
                 d.continues()
             );
             ui::text_c(&info, W / 2.0, 494.0, 13.0, WHITE);
-            if d == Difficulty::Dificil {
+            if d == Difficulty::Hard {
                 ui::text_c(
-                    "Vença aqui sem continues para ver o final verdadeiro.",
+                    "Win here without continues to see the true ending.",
                     W / 2.0,
                     520.0,
                     13.0,
                     GOLD,
                 );
             }
-        } else if d == Difficulty::Pesadelo {
+        } else if d == Difficulty::Nightmare {
             ui::text_c(
-                "Vença a campanha 3 vezes para liberar.",
+                "Win the campaign 3 times to unlock.",
                 W / 2.0,
                 494.0,
                 14.0,
                 RED,
             );
         } else {
-            ui::text_c("Alcance a patente SARGENTO.", W / 2.0, 494.0, 14.0, RED);
+            ui::text_c("Reach the rank SERGEANT.", W / 2.0, 494.0, 14.0, RED);
         }
-        // resumo da nave
+        // ship summary
         let s = &SHIPS[self.save.ship];
         self.art.ships[self.save.ship][self.save.skin].draw(
             vec2(60.0, 600.0),
@@ -1938,16 +1926,10 @@ impl App {
             WHITE,
             false,
         );
-        ui::text(&format!("NAVE: {}", s.name), 96.0, 594.0, 18.0, CYAN);
-        ui::text(
-            &format!("HABILIDADE: {}", s.ab_name),
-            96.0,
-            616.0,
-            14.0,
-            DIM,
-        );
+        ui::text(&format!("SHIP: {}", s.name), 96.0, 594.0, 18.0, CYAN);
+        ui::text(&format!("ABILITY: {}", s.ab_name), 96.0, 616.0, 14.0, DIM);
         let eq = if self.save.equipped.is_empty() {
-            "nenhuma carta equipada".to_string()
+            "no card equipped".to_string()
         } else {
             self.save
                 .equipped
@@ -1960,7 +1942,7 @@ impl App {
             ui::text(l, 96.0, 638.0 + i as f32 * 16.0, 13.0, PINK);
         }
         ui::text_c(
-            "SETAS escolhem  ·  ENTER decola  ·  ESC volta",
+            "ARROWS choose  ·  ENTER launch  ·  ESC back",
             W / 2.0,
             H - 14.0,
             13.0,
@@ -1980,7 +1962,7 @@ impl App {
         let rank = self.rank();
         let s = &SHIPS[sel];
         let unlocked = ships::ship_unlocked(sel, rank, &self.save.achs);
-        // plataforma
+        // platform
         let c = vec2(W / 2.0, 200.0);
         draw_ellipse(
             c.x,
@@ -2041,11 +2023,11 @@ impl App {
                 Color::new(0.85, 0.85, 1.0, 1.0),
             );
             let stats = [
-                ("VELOCIDADE", s.speed / 1.3),
-                ("CADÊNCIA", s.fire / 1.2),
-                ("DANO", s.dmg / 1.7),
-                ("BLINDAGEM", (3 + s.lives) as f32 / 5.0),
-                ("TAMANHO DO ALVO", 1.0 - (s.hit_r - 3.0) / 3.5),
+                ("SPEED", s.speed / 1.3),
+                ("FIRE RATE", s.fire / 1.2),
+                ("DAMAGE", s.dmg / 1.7),
+                ("ARMOR", (3 + s.lives) as f32 / 5.0),
+                ("TARGET SIZE", 1.0 - (s.hit_r - 3.0) / 3.5),
             ];
             for (i, (label, v)) in stats.iter().enumerate() {
                 let y = 352.0 + i as f32 * 24.0;
@@ -2054,13 +2036,7 @@ impl App {
                 draw_rectangle(210.0, y, 200.0 * v.clamp(0.05, 1.0), 10.0, CYAN);
             }
             ui::panel(40.0, 480.0, W - 80.0, 74.0, PINK);
-            ui::text(
-                &format!("HABILIDADE: {}", s.ab_name),
-                56.0,
-                504.0,
-                16.0,
-                PINK,
-            );
+            ui::text(&format!("ABILITY: {}", s.ab_name), 56.0, 504.0, 16.0, PINK);
             for (i, l) in ui::wrap(s.ab_desc, 14.0, W - 120.0)
                 .iter()
                 .take(2)
@@ -2069,10 +2045,10 @@ impl App {
                 ui::text(l, 56.0, 526.0 + i as f32 * 16.0, 14.0, WHITE);
             }
         } else {
-            ui::text_c("BLOQUEADA", W / 2.0, 360.0, 22.0, RED);
+            ui::text_c("SHIP LOCKED", W / 2.0, 360.0, 22.0, RED);
             ui::text_c(&ships::unlock_hint(sel), W / 2.0, 390.0, 16.0, DIM);
         }
-        // pinturas
+        // paints
         let srank = progress::skin_rank(skin);
         let skin_ok = self.skin_ok(skin);
         let blink = (self.time * 3.0) as i32 % 2 == 0;
@@ -2080,20 +2056,14 @@ impl App {
         ui::text("<", 60.0, 584.0, 20.0, arrows);
         ui::text_r(">", W - 60.0, 584.0, 20.0, arrows);
         ui::text_c(
-            &format!("PINTURA: {}", progress::SKIN_NAMES[skin]),
+            &format!("PAINT: {}", progress::SKIN_NAMES[skin]),
             W / 2.0,
             584.0,
             17.0,
             if skin_ok { GOLD } else { DIM },
         );
         if !skin_ok {
-            ui::text_c(
-                &format!("Patente {}", RANKS[srank]),
-                W / 2.0,
-                600.0,
-                12.0,
-                RED,
-            );
+            ui::text_c(&format!("Rank {}", RANKS[srank]), W / 2.0, 600.0, 12.0, RED);
         }
         for k in 0..art::SKINS {
             let x = W / 2.0 + (k as f32 - 3.0) * 30.0;
@@ -2107,16 +2077,16 @@ impl App {
                 draw_rectangle_lines(x - 12.0, 612.0, 24.0, 24.0, 1.0, GOLD);
             }
         }
-        // rastro
+        // trail
         let t = self.hangar_trail;
         let t_ok = progress::trail_unlocked(t, &self.save);
         let arrows = if row == 2 && blink { GOLD } else { DIM };
         ui::text("<", 60.0, 664.0, 20.0, arrows);
         ui::text_r(">", W - 60.0, 664.0, 20.0, arrows);
         let label = if self.save.trail == t {
-            format!("RASTRO: {} (EM USO)", progress::TRAILS[t])
+            format!("TRAIL: {} (IN USE)", progress::TRAILS[t])
         } else {
-            format!("RASTRO: {}", progress::TRAILS[t])
+            format!("TRAIL: {}", progress::TRAILS[t])
         };
         ui::text_c(&label, W / 2.0, 664.0, 17.0, if t_ok { CYAN } else { DIM });
         if !t_ok {
@@ -2131,7 +2101,7 @@ impl App {
         } else if t > 0 {
             for k in 0..12 {
                 let age = k as f32 * 0.04;
-                let col = game::v4::trail_color(t, self.time, age);
+                let col = game::rifts::trail_color(t, self.time, age);
                 let y = c.y + 40.0 + bob + k as f32 * 7.0;
                 let a = 1.0 - k as f32 / 12.0;
                 draw_circle(
@@ -2143,14 +2113,14 @@ impl App {
             }
         }
         let current = if row == 2 {
-            "ENTER equipa o rastro"
+            "ENTER equips the trail"
         } else if self.save.ship == sel && self.save.skin == skin {
-            "EQUIPADA"
+            "EQUIPPED"
         } else {
-            "ENTER equipa"
+            "ENTER equips"
         };
         ui::text_c(
-            &format!("{current}  ·  CIMA/BAIXO: nave, pintura, rastro"),
+            &format!("{current}  ·  UP/DOWN: ship, paint, trail"),
             W / 2.0,
             H - 12.0,
             12.0,
@@ -2160,7 +2130,7 @@ impl App {
 
     fn draw_summary(&self, t: f32, gain: u64, from_xp: u64) {
         ui::text_outline(
-            "RELATÓRIO DE VOO",
+            "FLIGHT REPORT",
             W / 2.0,
             110.0,
             38.0,
@@ -2186,7 +2156,7 @@ impl App {
         ui::text_c(&format!("+{gain} XP"), W / 2.0, 380.0, 26.0, CYAN);
         if r + 1 < RANKS.len() {
             ui::text_c(
-                &format!("Próxima: {} ({} XP)", RANKS[r + 1], b.saturating_sub(shown)),
+                &format!("Next: {} ({} XP)", RANKS[r + 1], b.saturating_sub(shown)),
                 W / 2.0,
                 410.0,
                 14.0,
@@ -2196,7 +2166,7 @@ impl App {
         let from_r = progress::rank_of(from_xp);
         if r > from_r {
             ui::text_c(
-                "PROMOVIDO!",
+                "PROMOTED!",
                 W / 2.0,
                 460.0,
                 30.0,
@@ -2206,7 +2176,7 @@ impl App {
                 let txt = progress::unlock_text(rr);
                 if !txt.is_empty() {
                     ui::text_c(
-                        &format!("NOVO: {txt}"),
+                        &format!("NEW: {txt}"),
                         W / 2.0,
                         496.0 + i as f32 * 22.0,
                         16.0,
@@ -2216,13 +2186,13 @@ impl App {
             }
         }
         if t > 3.0 && (t * 2.0) as i32 % 2 == 0 {
-            ui::text_c("ENTER continua", W / 2.0, H - 40.0, 16.0, DIM);
+            ui::text_c("ENTER continues", W / 2.0, H - 40.0, 16.0, DIM);
         }
     }
 
     fn draw_name_entry(&self, name: &str, score: u32, sector: u32) {
         ui::text_outline(
-            "NOVO RECORDE!",
+            "NEW HIGH SCORE!",
             W / 2.0,
             170.0,
             46.0,
@@ -2230,13 +2200,13 @@ impl App {
             Color::from_rgba(50, 20, 0, 255),
         );
         ui::text_c(
-            &format!("{score} PONTOS  ·  {sector}"),
+            &format!("{score} POINTS  ·  {sector}"),
             W / 2.0,
             214.0,
             20.0,
             WHITE,
         );
-        ui::text_c("Digite seu nome:", W / 2.0, 300.0, 20.0, DIM);
+        ui::text_c("Enter your name:", W / 2.0, 300.0, 20.0, DIM);
         ui::panel(70.0, 320.0, W - 140.0, 64.0, CYAN);
         let cursor = if (self.time * 3.0) as i32 % 2 == 0 {
             "_"
@@ -2245,7 +2215,7 @@ impl App {
         };
         ui::text_c(&format!("{name}{cursor}"), W / 2.0, 364.0, 34.0, WHITE);
         ui::text_c(
-            "ENTER confirma  ·  BACKSPACE apaga",
+            "ENTER confirms  ·  BACKSPACE deletes",
             W / 2.0,
             420.0,
             15.0,
@@ -2255,7 +2225,7 @@ impl App {
 
     fn draw_scores(&self, mode: usize, highlight: Option<usize>) {
         ui::text_outline(
-            "RECORDES",
+            "HIGH SCORES",
             W / 2.0,
             80.0,
             44.0,
@@ -2266,20 +2236,20 @@ impl App {
         ui::text_c(&format!("<  {}  >", m.name()), W / 2.0, 118.0, 20.0, CYAN);
         ui::panel(24.0, 136.0, W - 48.0, 430.0, GOLD);
         ui::text("#", 40.0, 172.0, 15.0, DIM);
-        ui::text("NOME", 70.0, 172.0, 15.0, DIM);
-        ui::text("NAVE", 220.0, 172.0, 15.0, DIM);
+        ui::text("NAME", 70.0, 172.0, 15.0, DIM);
+        ui::text("SHIP", 220.0, 172.0, 15.0, DIM);
         ui::text_r(
-            if matches!(m, Mode::Campanha | Mode::Diario | Mode::Expedicao) {
-                "SETOR"
+            if matches!(m, Mode::Campaign | Mode::Daily | Mode::Expedition) {
+                "SECTOR"
             } else {
-                "ONDA"
+                "WAVE"
             },
             336.0,
             172.0,
             15.0,
             DIM,
         );
-        ui::text_r("PONTOS", W - 40.0, 172.0, 15.0, DIM);
+        ui::text_r("SCORE", W - 40.0, 172.0, 15.0, DIM);
         let legend = self.rank() >= 19;
         for (i, e) in self.save.scores_for(m.tag()).iter().enumerate() {
             let y = 208.0 + i as f32 * 34.0;
@@ -2314,7 +2284,7 @@ impl App {
             ui::text_r(&format!("{:08}", e.score), W - 40.0, y, 19.0, c);
         }
         ui::text_c(
-            "ESQ/DIR troca o modo  ·  ENTER volta",
+            "LEFT/RIGHT change mode  ·  ENTER back",
             W / 2.0,
             600.0,
             14.0,
@@ -2324,7 +2294,7 @@ impl App {
 
     fn draw_album(&self, sel: usize) {
         ui::text_outline(
-            "COLEÇÃO",
+            "COLLECTION",
             W / 2.0,
             50.0,
             38.0,
@@ -2333,7 +2303,7 @@ impl App {
         );
         let unique = self.save.unique_cards();
         ui::text_c(
-            &format!("{} de {} cartas", unique, CARDS.len()),
+            &format!("{} of {} cards", unique, CARDS.len()),
             W / 2.0,
             74.0,
             14.0,
@@ -2379,7 +2349,7 @@ impl App {
         }
         let rows = 5;
         ui::text_r(
-            &format!("PÁGINA {}/{}", page + 1, pages),
+            &format!("PAGE {}/{}", page + 1, pages),
             W - 14.0,
             y0 + rows as f32 * (chh + gap) - 2.0,
             12.0,
@@ -2397,7 +2367,7 @@ impl App {
                 &format!(
                     "{}{}",
                     c.rarity.name(),
-                    if c.secret { "  ·  SECRETA" } else { "" }
+                    if c.secret { "  ·  SECRET" } else { "" }
                 ),
                 tx,
                 dy + 48.0,
@@ -2414,7 +2384,7 @@ impl App {
                 );
             }
             ui::text(
-                &format!("cópias: {}", self.save.cards[sel]),
+                &format!("copies: {}", self.save.cards[sel]),
                 tx,
                 dy + 120.0,
                 12.0,
@@ -2422,7 +2392,7 @@ impl App {
             );
             let eq = self.save.equipped.contains(&sel);
             ui::text_r(
-                if eq { "EQUIPADA" } else { "ENTER equipa" },
+                if eq { "EQUIPPED" } else { "ENTER equips" },
                 W - 24.0,
                 dy + 120.0,
                 13.0,
@@ -2431,24 +2401,24 @@ impl App {
         } else {
             ui::text("???", tx, dy + 30.0, 22.0, DIM);
             ui::text(c.rarity.name(), tx, dy + 52.0, 14.0, c.rarity.color());
-            let hint = "Ainda não encontrada. Continue jogando.";
+            let hint = "Not found yet. Keep playing.";
             for (i, l) in ui::wrap(hint, 14.0, W - tx - 24.0).iter().enumerate() {
                 ui::text(l, tx, dy + 78.0 + i as f32 * 16.0, 14.0, DIM);
             }
         }
         let slots = cards::slots_for(unique);
         let sy = dy + 150.0;
-        ui::text("ESPAÇOS:", 16.0, sy, 14.0, DIM);
+        ui::text("SLOTS:", 16.0, sy, 14.0, DIM);
         for s in 0..4 {
             let x = 90.0 + s as f32 * 96.0;
             let (label, col) = if s < slots {
                 match self.save.equipped.get(s) {
                     Some(&ci) => (CARDS[ci].name.to_string(), PINK),
-                    None => ("vazio".to_string(), DIM),
+                    None => ("empty".to_string(), DIM),
                 }
             } else {
                 (
-                    ["", "8 cartas", "16 cartas", "30 cartas"][s].to_string(),
+                    ["", "8 cards", "16 cards", "30 cards"][s].to_string(),
                     Color::new(0.35, 0.35, 0.45, 1.0),
                 )
             };
@@ -2464,15 +2434,15 @@ impl App {
 
     fn draw_archives(&self, tab: usize, sel: usize) {
         let tabs = [
-            "CONQUISTAS",
-            "BESTIÁRIO",
-            "NÚMEROS",
-            "PATENTES",
-            "REGISTROS",
-            "HONRAS",
+            "ACHIEVEMENTS",
+            "BESTIARY",
+            "STATS",
+            "RANKS",
+            "LOGS",
+            "HONORS",
         ];
         ui::text_outline(
-            "ARQUIVOS",
+            "ARCHIVES",
             W / 2.0,
             54.0,
             38.0,
@@ -2539,7 +2509,7 @@ impl App {
                     let (name, desc) = if got || !a.hidden {
                         (a.name, a.desc)
                     } else {
-                        ("???", "Conquista secreta.")
+                        ("???", "Secret achievement.")
                     };
                     ui::text(name, 52.0, y + 12.0, 16.0, if got { WHITE } else { DIM });
                     ui::text(desc, 52.0, y + 29.0, 12.0, DIM);
@@ -2553,7 +2523,7 @@ impl App {
                 }
                 let done = self.save.achs.iter().filter(|a| **a).count();
                 ui::text_c(
-                    &format!("{done} de {} conquistas", ACHS.len()),
+                    &format!("{done} of {} achievements", ACHS.len()),
                     W / 2.0,
                     H - 34.0,
                     15.0,
@@ -2600,11 +2570,11 @@ impl App {
                 let sprite_pos = vec2(cx, top + 90.0);
                 if sel < progress::LORE_BOSS_START {
                     self.sp.enemies[sel][f].draw(sprite_pos, 5.0, 0.0, tint, false);
-                } else if (progress::LORE_V3..progress::LORE_TWINS).contains(&sel) {
-                    self.sp.enemies[progress::LORE_BOSS_START + sel - progress::LORE_V3][f]
+                } else if (progress::LORE_SPECIAL..progress::LORE_TWINS).contains(&sel) {
+                    self.sp.enemies[progress::LORE_BOSS_START + sel - progress::LORE_SPECIAL][f]
                         .draw(sprite_pos, 5.0, 0.0, tint, false);
-                } else if sel >= progress::LORE_V5 {
-                    self.sp.enemies[progress::KIND_V5 + sel - progress::LORE_V5][f]
+                } else if sel >= progress::LORE_LATE {
+                    self.sp.enemies[progress::KIND_LATE + sel - progress::LORE_LATE][f]
                         .draw(sprite_pos, 5.0, 0.0, tint, false);
                 } else if sel == progress::LORE_TWINS {
                     self.sp.queen[f].draw(
@@ -2690,16 +2660,16 @@ impl App {
                     }
                     let kind = if sel < progress::LORE_BOSS_START {
                         Some(sel)
-                    } else if (progress::LORE_V3..progress::LORE_TWINS).contains(&sel) {
-                        Some(progress::LORE_BOSS_START + sel - progress::LORE_V3)
-                    } else if sel >= progress::LORE_V5 {
-                        Some(progress::KIND_V5 + sel - progress::LORE_V5)
+                    } else if (progress::LORE_SPECIAL..progress::LORE_TWINS).contains(&sel) {
+                        Some(progress::LORE_BOSS_START + sel - progress::LORE_SPECIAL)
+                    } else if sel >= progress::LORE_LATE {
+                        Some(progress::KIND_LATE + sel - progress::LORE_LATE)
                     } else {
                         None
                     };
                     if let Some(k) = kind {
                         ui::text_c(
-                            &format!("abatidos: {}", self.save.kills_kind[k]),
+                            &format!("shot down: {}", self.save.kills_kind[k]),
                             cx,
                             top + 420.0,
                             13.0,
@@ -2707,11 +2677,11 @@ impl App {
                         );
                     }
                 } else {
-                    ui::text_c("Abata um para registrar.", cx, top + 220.0, 14.0, DIM);
+                    ui::text_c("Shoot one down to record it.", cx, top + 220.0, 14.0, DIM);
                 }
                 let n = self.save.seen.iter().filter(|s| **s).count();
                 ui::text_c(
-                    &format!("{n} de {} registros", BESTIARY.len()),
+                    &format!("{n} of {} logs", BESTIARY.len()),
                     W / 2.0,
                     H - 34.0,
                     15.0,
@@ -2731,48 +2701,48 @@ impl App {
                     .unwrap_or("-");
                 let lines = [
                     (
-                        "Tempo de jogo",
+                        "Play time",
                         format!("{}h {:02}min", t / 3600, (t / 60) % 60),
                     ),
-                    ("Partidas", s.runs.to_string()),
-                    ("Inimigos abatidos", s.kills.to_string()),
-                    ("Chefes derrotados", s.bosses.to_string()),
-                    ("Vitórias", s.victories.to_string()),
-                    ("Melhor setor", s.best_sector.to_string()),
-                    ("Maior combo", s.best_combo.to_string()),
-                    ("Raspões", s.grazes.to_string()),
-                    ("Bombas usadas", s.bombs_used.to_string()),
-                    ("Naves perdidas", s.deaths.to_string()),
-                    ("Cristais coletados", s.crystals_total.to_string()),
-                    ("Arma favorita", fav.to_string()),
+                    ("Runs", s.runs.to_string()),
+                    ("Enemies shot down", s.kills.to_string()),
+                    ("Bosses defeated", s.bosses.to_string()),
+                    ("Victories", s.victories.to_string()),
+                    ("Best sector", s.best_sector.to_string()),
+                    ("Best combo", s.best_combo.to_string()),
+                    ("Grazes", s.grazes.to_string()),
+                    ("Bombs used", s.bombs_used.to_string()),
+                    ("Ships lost", s.deaths.to_string()),
+                    ("Crystals collected", s.crystals_total.to_string()),
+                    ("Favorite weapon", fav.to_string()),
                     (
-                        "Armas dominadas",
+                        "Weapons mastered",
                         format!(
                             "{}/{}",
                             s.mastery.iter().filter(|m| **m).count(),
                             WEAPONS.len()
                         ),
                     ),
-                    ("Mercadores poupados", s.merchants_spared.to_string()),
-                    ("Melhor onda (sobrevivência)", s.best_survival.to_string()),
-                    ("Desafios diários vencidos", s.daily_done.to_string()),
+                    ("Merchants spared", s.merchants_spared.to_string()),
+                    ("Best wave (survival)", s.best_survival.to_string()),
+                    ("Daily challenges won", s.daily_done.to_string()),
                     (
-                        "Mais longe na Expedição",
-                        format!("setor {}", s.expedition_best),
+                        "Farthest in Expedition",
+                        format!("sector {}", s.expedition_best),
                     ),
                     (
-                        "Minigames vencidos",
-                        format!("{} ({} perfeitos)", s.minigames_won, s.perfects),
+                        "Minigames won",
+                        format!("{} ({} perfect)", s.minigames_won, s.perfects),
                     ),
                     (
-                        "Maldições exorcizadas / pegas",
+                        "Curses exorcised / taken",
                         format!("{} / {}", s.curses_shot, s.curses_taken),
                     ),
                     (
-                        "Palavras STARDUST / Naves-Mãe",
+                        "STARDUST words / Motherships",
                         format!("{} / {}", s.words, s.ufos),
                     ),
-                    ("Experiência total", format!("{} XP", s.xp)),
+                    ("Total experience", format!("{} XP", s.xp)),
                 ];
                 for (i, (k, v)) in lines.iter().enumerate() {
                     let y = top + 10.0 + i as f32 * 23.5;
@@ -2794,7 +2764,7 @@ impl App {
                         );
                     }
                     ui::text(
-                        if found { title } else { "REGISTRO ???" },
+                        if found { title } else { "LOG ???" },
                         26.0,
                         y,
                         15.0,
@@ -2822,24 +2792,24 @@ impl App {
                     }
                 } else {
                     ui::text(
-                        "Registros caem dos chefes da campanha e de",
+                        "Logs drop from campaign bosses and from",
                         30.0,
                         py + 30.0,
                         14.0,
                         DIM,
                     );
                     ui::text(
-                        "encontros raros. Cada um conta um pedaço",
+                        "rare encounters. Each one tells a piece",
                         30.0,
                         py + 50.0,
                         14.0,
                         DIM,
                     );
-                    ui::text("da verdade sobre o Enxame.", 30.0, py + 70.0, 14.0, DIM);
+                    ui::text("of the truth about the Swarm.", 30.0, py + 70.0, 14.0, DIM);
                 }
                 let n = self.save.logs.iter().filter(|l| **l).count();
                 ui::text_c(
-                    &format!("{n} de {} registros", progress::LOGS.len()),
+                    &format!("{n} of {} logs", progress::LOGS.len()),
                     W / 2.0,
                     H - 34.0,
                     15.0,
@@ -2889,7 +2859,7 @@ impl App {
             }
         }
         ui::text_c(
-            "ESQ/DIR abas  ·  CIMA/BAIXO navega  ·  ESC volta",
+            "LEFT/RIGHT tabs  ·  UP/DOWN browse  ·  ESC back",
             W / 2.0,
             H - 12.0,
             13.0,
@@ -2901,7 +2871,7 @@ impl App {
         let tab = (sel / 100).min(3);
         let row = sel % 100;
         ui::text_outline_fit(
-            "CONFIGURAÇÕES",
+            "SETTINGS",
             W / 2.0,
             70.0,
             36.0,
@@ -2909,7 +2879,7 @@ impl App {
             Color::from_rgba(50, 20, 0, 255),
             W - 30.0,
         );
-        let tabs = ["GRÁFICOS", "ÁUDIO", "JOGO", "CONTROLES"];
+        let tabs = ["GRAPHICS", "AUDIO", "GAME", "CONTROLS"];
         let tw = (W - 40.0) / 4.0;
         for (i, t) in tabs.iter().enumerate() {
             let x = 20.0 + i as f32 * tw;
@@ -2957,7 +2927,7 @@ impl App {
                 ui::text_c(label, W / 2.0, y, 18.0, c);
             } else {
                 ui::text(label, 46.0, y, 16.0, c);
-                let vc = if label == "APAGAR PROGRESSO" && self.reset_armed > 0.0 {
+                let vc = if label == "ERASE PROGRESS" && self.reset_armed > 0.0 {
                     RED
                 } else if on {
                     WHITE
@@ -2969,15 +2939,15 @@ impl App {
         }
         if tab == 3 {
             let keys = [
-                ("Mover", "Setas ou A/D"),
-                ("Atirar", "Aperte Espaço, Z ou J"),
-                ("Bomba", "X ou K"),
-                ("Habilidade", "C, L ou V"),
-                ("Tiro carregado", "Segure o tiro e solte"),
-                ("Modo preciso", "Shift"),
-                ("Pausa", "Esc ou P"),
-                ("Tela cheia", "F11 ou Alt+Enter"),
-                ("Minigames", "Setas e Espaço"),
+                ("Move", "Arrows or A/D"),
+                ("Fire", "Tap Space, Z or J"),
+                ("Bomb", "X or K"),
+                ("Ability", "C, L or V"),
+                ("Charged shot", "Hold fire and release"),
+                ("Precision mode", "Shift"),
+                ("Pause", "Esc or P"),
+                ("Fullscreen", "F11 or Alt+Enter"),
+                ("Minigames", "Arrows and Space"),
             ];
             let y = 250.0;
             ui::panel(
@@ -2994,15 +2964,15 @@ impl App {
             }
         }
         let hint = match (tab, row) {
-            (_, 0) => "ESQ/DIR troca de aba",
-            (0, 4) => "Menos partículas deixa o jogo mais leve.",
-            (0, 5) => "Suaves: clarões de explosão bem mais fracos.",
-            (0, 6) => "Painéis com pontos e arma nas laterais (telas largas).",
-            (0, 7) => "Desligado: o fundo quase não se mexe.",
-            (2, 1) => "Português ou inglês.",
-            (2, 2) => "Mostra sempre o ponto vulnerável da nave.",
-            (2, 5) => "Apaga patentes, cartas e conquistas. Aperte 2x.",
-            _ => "Q/TAB troca de aba  ·  ESQ/DIR ajusta  ·  ESC volta",
+            (_, 0) => "LEFT/RIGHT switch tab",
+            (0, 4) => "Fewer particles make the game lighter.",
+            (0, 5) => "Soft: explosion flashes much weaker.",
+            (0, 6) => "Panels with score and weapon on the sides (wide screens).",
+            (0, 7) => "Off: the background barely moves.",
+            (2, 1) => "Portuguese or English.",
+            (2, 2) => "Always shows your ship's weak spot.",
+            (2, 5) => "Erases ranks, cards and achievements. Press twice.",
+            _ => "Q/TAB switch tab  ·  LEFT/RIGHT adjust  ·  ESC back",
         };
         ui::text_c(hint, W / 2.0, H - 70.0, 13.0, DIM);
         let path = save::data_dir();
@@ -3013,7 +2983,7 @@ impl App {
             p
         };
         ui::text_c(
-            &format!("Progresso: {p}"),
+            &format!("Progress: {p}"),
             W / 2.0,
             H - 30.0,
             11.0,
@@ -3030,7 +3000,7 @@ impl App {
             .map(|(_, w)| *w)
             .collect();
         if !found.is_empty() {
-            ui::text_c("RELÍQUIAS", W / 2.0, top + 8.0, 15.0, GOLD);
+            ui::text_c("RELICS", W / 2.0, top + 8.0, 15.0, GOLD);
             let cw = (W - 30.0) / 4.0;
             let x0 = W / 2.0 - cw * found.len() as f32 / 2.0;
             for (i, w) in found.iter().enumerate() {
@@ -3055,7 +3025,7 @@ impl App {
             }
         } else {
             ui::text_c(
-                "Feitos raros são lembrados aqui.",
+                "Rare feats are remembered here.",
                 W / 2.0,
                 top + 60.0,
                 13.0,
@@ -3064,14 +3034,14 @@ impl App {
         }
         let earned = progress::honors_earned(&self.save.achs);
         ui::text_c(
-            &format!("INSÍGNIAS DE HONRA  {}/{}", earned, progress::HONORS.len()),
+            &format!("HONOR INSIGNIAS  {}/{}", earned, progress::HONORS.len()),
             W / 2.0,
             top + 166.0,
             15.0,
             GOLD,
         );
         ui::text_c(
-            "Patentes que não vêm de XP: vêm de feitos.",
+            "Ranks that don't come from XP: they come from feats.",
             W / 2.0,
             top + 184.0,
             11.0,
@@ -3129,14 +3099,14 @@ impl App {
             let py = y0 + progress::HONORS.len() as f32 * 27.0 + 6.0;
             ui::panel(20.0, py, W - 40.0, 56.0, if got { GOLD } else { DIM });
             ui::text(
-                &format!("FEITO: {}", h.shown_feat(&self.save.achs)),
+                &format!("FEAT: {}", h.shown_feat(&self.save.achs)),
                 32.0,
                 py + 22.0,
                 12.0,
                 WHITE,
             );
             ui::text(
-                &format!("PRÊMIO: {}", h.shown_reward(&self.save.achs)),
+                &format!("REWARD: {}", h.shown_reward(&self.save.achs)),
                 32.0,
                 py + 42.0,
                 12.0,
@@ -3158,7 +3128,7 @@ impl App {
                 Color::new(1.0, 1.0, 1.0, tw),
             );
         }
-        // a sonda cruzando a tela
+        // the probe crossing the screen
         let sx = -40.0 + (t * 18.0) % (W + 80.0);
         let sy = 120.0 + (t * 0.5).sin() * 10.0;
         self.art.ships[7][0].draw(vec2(sx, sy), 2.0, std::f32::consts::FRAC_PI_2, WHITE, false);
@@ -3201,13 +3171,13 @@ impl App {
             Color::from_rgba(40, 20, 0, 255),
         );
         if t > 1.0 {
-            ui::text_c("ENTER para pular", W / 2.0, H - 16.0, 12.0, DIM);
+            ui::text_c("ENTER to skip", W / 2.0, H - 16.0, 12.0, DIM);
         }
     }
 
     fn draw_howto(&self, page: usize) {
         ui::text_outline(
-            "COMO JOGAR",
+            "HOW TO PLAY",
             W / 2.0,
             80.0,
             40.0,
@@ -3218,7 +3188,7 @@ impl App {
         if page == 1 {
             self.draw_weapons_page();
             ui::text_c(
-                &format!("< {} / 6 >   ·   ESC volta", page + 1),
+                &format!("< {} / 6 >   ·   ESC back", page + 1),
                 W / 2.0,
                 690.0,
                 15.0,
@@ -3228,107 +3198,122 @@ impl App {
         }
         let lines: Vec<(String, Color)> = match page {
             0 => vec![
-                ("CONTROLES".into(), GOLD),
-                ("Setas / A D ........ mover para os lados".into(), WHITE),
-                ("Espaço / Z / J ..... atirar (aperte)".into(), WHITE),
-                ("Segure e solte ..... tiro carregado".into(), WHITE),
-                ("X / K .............. bomba".into(), WHITE),
-                ("C / L / V .......... habilidade da nave".into(), WHITE),
-                ("Shift .............. modo preciso".into(), WHITE),
-                ("Esc / P ............ pausa".into(), WHITE),
-                ("F11 / Alt+Enter .... tela cheia".into(), WHITE),
+                ("CONTROLS".into(), GOLD),
+                ("Arrows / A D ....... move sideways".into(), WHITE),
+                ("Space / Z / J ...... fire (tap)".into(), WHITE),
+                ("Hold and release . charged shot".into(), WHITE),
+                ("X / K .............. bomb".into(), WHITE),
+                ("C / L / V .......... ship ability".into(), WHITE),
+                ("Shift .............. precision mode".into(), WHITE),
+                ("Esc / P ............ pause".into(), WHITE),
+                ("F11 / Alt+Enter .... fullscreen".into(), WHITE),
                 ("".into(), WHITE),
-                ("O OBJETIVO".into(), GOLD),
-                ("Atravesse 8 setores e derrote a Rainha".into(), WHITE),
-                ("Suprema. Cada setor tem 3 ondas, um".into(), WHITE),
-                ("estágio bônus e um chefe. Depois, loja.".into(), WHITE),
+                ("THE GOAL".into(), GOLD),
+                ("Cross 8 sectors and defeat the Supreme".into(), WHITE),
+                ("Queen. Each sector has 3 waves, a".into(), WHITE),
+                ("bonus stage and a boss. Then, the shop.".into(), WHITE),
                 ("".into(), WHITE),
-                ("Só o centro da nave é vulnerável.".into(), CYAN),
-                ("TIRO AUTOMÁTICO se compra na loja.".into(), GOLD),
+                ("Only the center of your ship is vulnerable.".into(), CYAN),
+                ("AUTOFIRE is sold in the shop.".into(), GOLD),
             ],
             2 => vec![
-                ("PODERES (bolinhas que caem)".into(), GOLD),
+                ("POWER-UPS (falling orbs)".into(), GOLD),
                 (
-                    "F  Frenesi: atira o dobro".into(),
+                    "F  Frenzy: fires twice as fast".into(),
                     Color::from_rgba(255, 80, 60, 255),
                 ),
-                ("*  Estrela: invencível e atropela".into(), GOLD),
-                ("U  Super ímã: puxa todos os cristais".into(), PINK),
+                ("*  Star: invincible, rams through".into(), GOLD),
+                ("U  Super magnet: pulls every crystal".into(), PINK),
                 (
-                    "Z  Câmera lenta para o mundo".into(),
+                    "Z  Slow motion for the world".into(),
                     Color::from_rgba(120, 160, 255, 255),
                 ),
-                ("S  Escudo   B  Bomba   $  Cristais".into(), CYAN),
-                ("1UP  Vida extra (rara!)".into(), GREEN),
+                ("S  Shield   B  Bomb   $  Crystals".into(), CYAN),
+                ("1UP  Extra life (rare!)".into(), GREEN),
                 ("".into(), WHITE),
-                ("HABILIDADES".into(), GOLD),
-                ("Cada nave tem a sua. A barra enche".into(), WHITE),
-                ("abatendo, raspando e com o tempo.".into(), WHITE),
-                ("Troque de nave no HANGAR.".into(), WHITE),
+                ("ABILITIES".into(), GOLD),
+                ("Each ship has its own. The bar fills".into(), WHITE),
+                ("by shooting down, grazing, and over time.".into(), WHITE),
+                ("Change ships in the HANGAR.".into(), WHITE),
                 ("".into(), WHITE),
-                ("PATENTES".into(), GOLD),
-                ("Toda partida dá XP. Subir de patente".into(), WHITE),
-                ("libera naves, armas, modos e pinturas.".into(), WHITE),
+                ("RANKS".into(), GOLD),
+                ("Every run gives XP. Ranking up".into(), WHITE),
+                ("unlocks ships, weapons, modes and paints.".into(), WHITE),
             ],
             3 => vec![
-                ("FEBRE".into(), GOLD),
-                ("Combo 50 = Febre: pontos em dobro e um".into(), WHITE),
-                ("cristal em cada abate.".into(), WHITE),
-                ("CONTRATOS".into(), GOLD),
-                ("3 missões por partida. Cumpra e ganhe XP".into(), WHITE),
-                ("e cristais. Veja na pausa ou no painel.".into(), WHITE),
-                ("EVENTOS DE SETOR".into(), GOLD),
-                ("Eclipse, meteoros, emboscadas, comboios...".into(), WHITE),
-                ("CUIDADO COM".into(), GOLD),
+                ("FEVER".into(), GOLD),
+                ("Combo 50 = Fever: double points and a".into(), WHITE),
+                ("crystal on every kill.".into(), WHITE),
+                ("CONTRACTS".into(), GOLD),
+                ("3 missions per run. Complete them for XP".into(), WHITE),
                 (
-                    "Mímicos: cápsulas que mordem.".into(),
+                    "and crystals. See them on pause or in the panel.".into(),
+                    WHITE,
+                ),
+                ("SECTOR EVENTS".into(), GOLD),
+                ("Eclipse, meteors, ambushes, convoys...".into(), WHITE),
+                ("WATCH OUT FOR".into(), GOLD),
+                (
+                    "Mimics: capsules that bite.".into(),
                     Color::from_rgba(255, 120, 120, 255),
                 ),
                 (
-                    "Ladrões: roubam o que cai. Derrube-os!".into(),
+                    "Thieves: they steal falling items. Shoot them!".into(),
                     Color::from_rgba(190, 140, 255, 255),
                 ),
-                ("Elites (borda dourada): fortes e ricos.".into(), GOLD),
-                ("REGISTROS DE BORDO".into(), GOLD),
+                ("Elites (gold outline): tough and rich.".into(), GOLD),
+                ("FLIGHT LOGS".into(), GOLD),
                 (
-                    "Caem dos chefes. Contam a verdade.".into(),
+                    "Dropped by bosses. They tell the truth.".into(),
                     Color::from_rgba(120, 255, 220, 255),
                 ),
             ],
             4 => vec![
-                ("CAVEIRAS (bolhas vermelhas): desvie!".into(), RED),
-                ("Tiram sua arma, níveis ou travam a nave.".into(), WHITE),
-                ("3 tiros destroem uma maldição.".into(), WHITE),
-                ("FENDAS (hexágono com ?)".into(), CYAN),
-                ("Abrem um minigame rápido. Vença e ganhe".into(), WHITE),
-                ("cristais, níveis, poderes e cartas.".into(), WHITE),
-                ("LETRAS S-T-A-R-D-U-S-T".into(), GOLD),
-                ("Junte as 8: vida extra e muitos pontos.".into(), WHITE),
-                ("TIRO CARREGADO".into(), GOLD),
-                ("Segure o tiro e solte: atravessa tudo.".into(), WHITE),
-                ("MINAS".into(), GOLD),
-                ("Minadores largam minas: atire nelas.".into(), WHITE),
-                ("INSÍGNIAS DE HONRA".into(), GOLD),
-                ("Feitos liberam naves e rastros. Veja nos".into(), WHITE),
-                ("ARQUIVOS, aba HONRAS.".into(), WHITE),
+                ("SKULLS (red bubbles): dodge them!".into(), RED),
+                (
+                    "They take your weapon, levels, or jam your ship.".into(),
+                    WHITE,
+                ),
+                ("3 shots destroy a curse.".into(), WHITE),
+                ("RIFTS (hexagon with ?)".into(), CYAN),
+                ("They open a quick minigame. Win to earn".into(), WHITE),
+                ("crystals, levels, power-ups and cards.".into(), WHITE),
+                ("LETTERS S-T-A-R-D-U-S-T".into(), GOLD),
+                (
+                    "Collect all 8: extra life and tons of points.".into(),
+                    WHITE,
+                ),
+                ("CHARGED SHOT".into(), GOLD),
+                (
+                    "Hold fire and release: it pierces everything.".into(),
+                    WHITE,
+                ),
+                ("MINES".into(), GOLD),
+                ("Minelayers drop mines: shoot them.".into(), WHITE),
+                ("HONOR INSIGNIAS".into(), GOLD),
+                ("Feats unlock ships and trails. See the".into(), WHITE),
+                ("ARCHIVES, HONORS tab.".into(), WHITE),
             ],
             _ => vec![
-                ("CARTAS".into(), GOLD),
-                ("Caem raramente; chefes sempre soltam.".into(), WHITE),
-                ("Equipe no menu CARTAS. Com 8, 16 e 30".into(), WHITE),
-                ("cartas você ganha mais espaços.".into(), WHITE),
+                ("CARDS".into(), GOLD),
+                ("Rare drops; bosses always drop one.".into(), WHITE),
+                (
+                    "Equip them in the CARDS menu. With 8, 16 and 30".into(),
+                    WHITE,
+                ),
+                ("cards you unlock more slots.".into(), WHITE),
                 ("".into(), WHITE),
-                ("LOJA E PODER".into(), GOLD),
-                ("Entre os setores, gaste cristais em armas".into(), WHITE),
-                ("melhores, Núcleos de Dano, cadência,".into(), WHITE),
-                ("drones e no TIRO AUTOMÁTICO.".into(), WHITE),
-                ("Quanto mais cara a arma, mais forte.".into(), WHITE),
+                ("SHOP AND POWER".into(), GOLD),
+                ("Between sectors, spend crystals on better".into(), WHITE),
+                ("weapons, Damage Cores, fire rate,".into(), WHITE),
+                ("drones and AUTOFIRE.".into(), WHITE),
+                ("The pricier the weapon, the stronger it is.".into(), WHITE),
                 ("".into(), WHITE),
-                ("PATENTES".into(), GOLD),
-                ("Cada partida dá XP e libera naves,".into(), WHITE),
-                ("armas, modos e pinturas.".into(), WHITE),
+                ("RANKS".into(), GOLD),
+                ("Every run gives XP and unlocks ships,".into(), WHITE),
+                ("weapons, modes and paints.".into(), WHITE),
                 ("".into(), WHITE),
-                ("Boa sorte, piloto.".into(), PINK),
+                ("Good luck, pilot.".into(), PINK),
             ],
         };
         for (i, (l, c)) in lines.iter().enumerate() {
@@ -3341,7 +3326,7 @@ impl App {
             ui::text(l, 38.0, 140.0 + i as f32 * step, size, *c);
         }
         ui::text_c(
-            &format!("< {} / 6 >   ·   ESC volta", page + 1),
+            &format!("< {} / 6 >   ·   ESC back", page + 1),
             W / 2.0,
             690.0,
             15.0,
@@ -3350,9 +3335,9 @@ impl App {
     }
 
     fn draw_weapons_page(&self) {
-        ui::text_c("ARMAS", W / 2.0, 136.0, 19.0, GOLD);
+        ui::text_c("WEAPONS", W / 2.0, 136.0, 19.0, GOLD);
         ui::text_c(
-            "Mesma arma sobe de nível · outra arma substitui a atual",
+            "Same weapon levels up · a new one replaces it",
             W / 2.0,
             156.0,
             11.0,
@@ -3393,14 +3378,14 @@ impl App {
             );
             let sub = match w.unlock_rank() {
                 Some(r) if r > rank => {
-                    let full = format!("patente {}", RANKS[r]);
+                    let full = format!("rank {}", RANKS[r]);
                     if ui::width(&full, 10.0) > col_w - 40.0 {
-                        format!("patente nº {}", r + 1)
+                        format!("rank #{}", r + 1)
                     } else {
                         full
                     }
                 }
-                _ if w.is_relic() => "RELÍQUIA".to_string(),
+                _ if w.is_relic() => "RELIC".to_string(),
                 _ => String::new(),
             };
             if !sub.is_empty() {
@@ -3458,7 +3443,7 @@ impl App {
     }
 
     // -----------------------------------------------------------------------
-    // Painéis laterais (tela larga / tela cheia)
+    // Side panels (wide screen / fullscreen)
     // -----------------------------------------------------------------------
 
     fn draw_panels(&self, total_w: f32) {
@@ -3472,7 +3457,7 @@ impl App {
         let lc = lx + cw / 2.0;
         let rc = rx + cw / 2.0;
 
-        // esquerda: logotipo, pontos e patente
+        // left: logo, score and rank
         let title_size = (cw / 5.0).clamp(26.0, 54.0);
         ui::text_outline_fit(
             "STARDUST",
@@ -3500,8 +3485,8 @@ impl App {
         draw_rectangle(lx, ry + 60.0, cw * frac.min(1.0), 6.0, GOLD);
 
         let Some(g) = &self.game else {
-            // nos menus: dicas e um desfile de inimigos
-            ui::text_c("DICA DO DIA", lc, 160.0, 15.0, CYAN);
+            // in menus: tips and a parade of enemies
+            ui::text_c("TIP OF THE DAY", lc, 160.0, 15.0, CYAN);
             let tip = TIPS[((self.time / 8.0) as usize) % TIPS.len()];
             for (i, l) in ui::wrap(tip, 15.0, cw).iter().enumerate() {
                 ui::text_c(l, lc, 186.0 + i as f32 * 18.0, 15.0, WHITE);
@@ -3519,7 +3504,7 @@ impl App {
                 );
             }
             ui::text_c(
-                &format!("CARTAS {}/{}", self.save.unique_cards(), CARDS.len()),
+                &format!("CARDS {}/{}", self.save.unique_cards(), CARDS.len()),
                 rc,
                 H - 70.0,
                 15.0,
@@ -3527,7 +3512,7 @@ impl App {
             );
             ui::text_c(
                 &format!(
-                    "CONQUISTAS {}/{}",
+                    "ACHIEVEMENTS {}/{}",
                     self.save.achs.iter().filter(|a| **a).count(),
                     ACHS.len()
                 ),
@@ -3540,7 +3525,7 @@ impl App {
         };
 
         let mut y = 130.0;
-        ui::text("PONTOS", lx, y, 14.0, DIM);
+        ui::text("SCORE", lx, y, 14.0, DIM);
         y += 30.0;
         ui::text(
             &format!("{:08}", g.score),
@@ -3550,7 +3535,7 @@ impl App {
             WHITE,
         );
         y += 30.0;
-        ui::text("RECORDE", lx, y, 14.0, DIM);
+        ui::text("HIGH SCORE", lx, y, 14.0, DIM);
         ui::text_r(&format!("{:08}", g.cfg.highscore), lx + cw, y, 16.0, GOLD);
         y += 40.0;
         let mult = g.multiplier();
@@ -3572,7 +3557,7 @@ impl App {
         if let Some(d) = g.cfg.daily {
             y += 26.0;
             ui::text(
-                &format!("REGRA: {}", d.name()),
+                &format!("RULE: {}", d.name()),
                 lx,
                 y,
                 13.0,
@@ -3581,34 +3566,34 @@ impl App {
         }
         if g.cycle > 0 {
             y += 22.0;
-            ui::text(&format!("CICLO {}", g.cycle + 1), lx, y, 13.0, PINK);
+            ui::text(&format!("CYCLE {}", g.cycle + 1), lx, y, 13.0, PINK);
         }
-        if let Some(ev) = g.x.event {
+        if let Some(ev) = g.enc.event {
             y += 22.0;
             ui::text(
-                &format!("EVENTO: {}", ev.name()),
+                &format!("EVENT: {}", ev.name()),
                 lx,
                 y,
                 13.0,
                 Color::from_rgba(255, 140, 80, 255),
             );
         }
-        if g.x.fever_t > 0.0 {
+        if g.enc.fever_t > 0.0 {
             y += 26.0;
             ui::text(
-                &format!("FEBRE x2   {:.0}s", g.x.fever_t.ceil()),
+                &format!("FEVER x2   {:.0}s", g.enc.fever_t.ceil()),
                 lx,
                 y,
                 18.0,
                 ui::hsl(self.time * 0.6, 0.9, 0.6),
             );
         }
-        // contratos
+        // contracts
         let mut cy = (y + 40.0).max(400.0);
-        if !g.x.contracts.is_empty() {
-            ui::text("CONTRATOS", lx, cy, 14.0, DIM);
+        if !g.enc.contracts.is_empty() {
+            ui::text("CONTRACTS", lx, cy, 14.0, DIM);
             cy += 20.0;
-            for c in &g.x.contracts {
+            for c in &g.enc.contracts {
                 let col = if c.done { GREEN } else { WHITE };
                 ui::text(&c.text(), lx, cy, 13.0, col);
                 let frac = (c.progress as f32 / c.target.max(1) as f32).min(1.0);
@@ -3624,9 +3609,9 @@ impl App {
                 cy += 28.0;
             }
         }
-        // letras S-T-A-R-D-U-S-T
+        // S-T-A-R-D-U-S-T letters
         cy += 8.0;
-        ui::text("LETRAS", lx, cy, 14.0, DIM);
+        ui::text("LETTERS", lx, cy, 14.0, DIM);
         let letters = g.letters_line();
         let step = (cw / 8.0).min(30.0);
         for (i, (ch, got)) in letters.iter().enumerate() {
@@ -3655,10 +3640,10 @@ impl App {
             );
         }
 
-        // direita: nave, arma, habilidade, poderes e cartas
+        // right: ship, weapon, ability, power-ups and cards
         let p = &g.player;
         let mut y = 60.0;
-        ui::text("NAVES", rx, y, 14.0, DIM);
+        ui::text("SHIPS", rx, y, 14.0, DIM);
         let ship = &self.art.ships[g.cfg.ship][g.cfg.skin];
         for i in 0..p.lives.max(0).min(7) {
             ship.draw(
@@ -3670,7 +3655,7 @@ impl App {
             );
         }
         y += 54.0;
-        ui::text("BOMBAS", rx, y, 14.0, DIM);
+        ui::text("BOMBS", rx, y, 14.0, DIM);
         for i in 0..p.bombs.max(0).min(7) {
             self.sp.icon(sprites::Icon::Bomb).draw(
                 vec2(rx + 10.0 + i as f32 * 22.0, y + 18.0),
@@ -3692,7 +3677,7 @@ impl App {
         }
         y += 56.0;
         let w = p.weapon;
-        ui::text("ARMA", rx, y, 14.0, DIM);
+        ui::text("WEAPON", rx, y, 14.0, DIM);
         icons::weapon_badge(w, vec2(rx + 58.0, y - 5.0), 11.0, 1.0);
         ui::text_r(w.name(), rx + cw, y, 18.0, w.color());
         y += 12.0;
@@ -3710,17 +3695,17 @@ impl App {
             ui::text(l, rx, y + i as f32 * 15.0, 13.0, DIM);
         }
         y += 36.0;
-        ui::text("PODER DE FOGO", rx, y, 13.0, DIM);
+        ui::text("FIREPOWER", rx, y, 13.0, DIM);
         ui::text_r(&format!("x{:.2}", g.power_mul()), rx + cw, y, 15.0, GOLD);
         y += 26.0;
         y += 28.0;
         for (t, c) in g.curse_status() {
-            ui::text(&format!("MALDIÇÃO: {t}"), rx, y - 8.0, 13.0, c);
+            ui::text(&format!("CURSE: {t}"), rx, y - 8.0, 13.0, c);
             y += 16.0;
         }
-        if g.cfg.mode != Mode::Classico {
+        if g.cfg.mode != Mode::Classic {
             let s = g.ship();
-            ui::text("HABILIDADE  [C]", rx, y, 14.0, DIM);
+            ui::text("ABILITY  [C]", rx, y, 14.0, DIM);
             ui::text_r(s.ab_name, rx + cw, y, 15.0, PINK);
             y += 10.0;
             draw_rectangle(rx, y, cw, 10.0, Color::new(0.2, 0.2, 0.3, 1.0));
@@ -3742,7 +3727,7 @@ impl App {
                 );
             }
             y += 28.0;
-            ui::text(&format!("RASPÕES {}", g.grazes), rx, y, 13.0, DIM);
+            ui::text(&format!("GRAZES {}", g.grazes), rx, y, 13.0, DIM);
             ui::text_r(
                 &format!("DRONES {}", g.drones_total()),
                 rx + cw,
@@ -3757,9 +3742,9 @@ impl App {
             ui::text_r(&format!("{:.0}s", t.ceil()), rx + cw, y, 15.0, c);
             y += 20.0;
         }
-        if !g.cfg.equipped.is_empty() && g.cfg.mode != Mode::Classico {
+        if !g.cfg.equipped.is_empty() && g.cfg.mode != Mode::Classic {
             let cy = H - 230.0;
-            ui::text("CARTAS", rx, cy, 14.0, DIM);
+            ui::text("CARDS", rx, cy, 14.0, DIM);
             let n = g.cfg.equipped.len();
             let scale = ((cw - (n as f32 - 1.0) * 8.0) / n as f32 / ui::CARD_W).min(0.75);
             for (i, &c) in g.cfg.equipped.iter().enumerate() {
@@ -3778,7 +3763,7 @@ impl App {
 }
 
 // ---------------------------------------------------------------------------
-// Robô (demonstração e testes)
+// Bot (demo and tests)
 // ---------------------------------------------------------------------------
 
 fn bot_input(g: &Game, t: f32) -> Input {
@@ -3827,7 +3812,7 @@ fn bot_input(g: &Game, t: f32) -> Input {
 }
 
 // ---------------------------------------------------------------------------
-// Tela final (escala, painéis e filtro CRT)
+// Final screen pass (scaling, panels and CRT filter)
 // ---------------------------------------------------------------------------
 
 const CRT_VS: &str = r#"#version 100
@@ -3858,8 +3843,8 @@ void main() {
 }
 "#;
 
-/// Layout da tela: tudo é desenhado em unidades lógicas (altura 720) direto num
-/// alvo de renderização do tamanho real da tela em pixels físicos (respeita o DPI).
+/// Screen layout: everything is drawn in logical units (height 720) straight into a
+/// render target the size of the real screen in physical pixels (DPI aware).
 struct Layout {
     ww: f32,
     k: f32,
@@ -3960,10 +3945,7 @@ impl Screens {
 #[macroquad::main(window_conf)]
 async fn main() {
     let args: Vec<String> = std::env::args().collect();
-    if let Some(i) = args
-        .iter()
-        .position(|a| a == "--exportar-icone" || a == "--export-icon")
-    {
+    if let Some(i) = args.iter().position(|a| a == "--export-icon") {
         let dir = args.get(i + 1).cloned().unwrap_or_else(|| ".".into());
         for n in [16usize, 24, 32, 48, 64, 128, 256] {
             let img = Image {
@@ -3975,11 +3957,8 @@ async fn main() {
         }
         return;
     }
-    if args
-        .iter()
-        .any(|a| a == "--exportar-musicas" || a == "--export-music")
-    {
-        let _ = audio::export_music("musica_exportada");
+    if args.iter().any(|a| a == "--export-music") {
+        let _ = audio::export_music("exported_music");
         return;
     }
     macroquad::rand::srand(miniquad::date::now() as u64);
@@ -4001,7 +3980,7 @@ async fn main() {
             Color::from_rgba(20, 8, 40, 255),
         );
         ui::text_c(
-            "compondo a trilha sonora...",
+            "composing the soundtrack...",
             W / 2.0,
             H / 2.0 + 24.0,
             16.0,
@@ -4059,39 +4038,39 @@ async fn main() {
         app.screen = Screen::Sheet;
     }
     match env("STARDUST_SCREEN").as_deref() {
-        Some("cartas") => app.screen = Screen::Album { sel: 9 },
-        Some("opcoes") => {
+        Some("cards") => app.screen = Screen::Album { sel: 9 },
+        Some("options") => {
             app.screen = Screen::Options {
                 sel: 0,
                 from_pause: false,
             }
         }
-        Some("ajuda") => app.screen = Screen::HowTo { page: 1 },
-        Some("registros") => app.screen = Screen::Archives { tab: 4, sel: 0 },
-        Some("honras") => app.screen = Screen::Archives { tab: 5, sel: 2 },
-        Some("config") => {
+        Some("help") => app.screen = Screen::HowTo { page: 1 },
+        Some("logs") => app.screen = Screen::Archives { tab: 4, sel: 0 },
+        Some("honors") => app.screen = Screen::Archives { tab: 5, sel: 2 },
+        Some("settings") => {
             app.screen = Screen::Options {
                 sel: 4,
                 from_pause: false,
             }
         }
-        Some("config3") => {
+        Some("controls") => {
             app.screen = Screen::Options {
                 sel: 300,
                 from_pause: false,
             }
         }
-        Some("prologo") => {
+        Some("prologue") => {
             app.screen = Screen::Prologue {
                 t: 20.0,
                 start: None,
             }
         }
-        Some("bestiario") => app.screen = Screen::Archives { tab: 1, sel: 24 },
+        Some("bestiary") => app.screen = Screen::Archives { tab: 1, sel: 24 },
         Some("album2") => app.screen = Screen::Album { sel: 45 },
-        Some("ajuda2") => app.screen = Screen::HowTo { page: 1 },
-        Some("ajuda4") => app.screen = Screen::HowTo { page: 3 },
-        Some("ajuda5") => app.screen = Screen::HowTo { page: 4 },
+        Some("help2") => app.screen = Screen::HowTo { page: 1 },
+        Some("help4") => app.screen = Screen::HowTo { page: 3 },
+        Some("help5") => app.screen = Screen::HowTo { page: 4 },
         Some("hangar") => {
             app.screen = Screen::Hangar {
                 sel: 3,
@@ -4099,17 +4078,17 @@ async fn main() {
                 row: 0,
             }
         }
-        Some("modo") => {
+        Some("mode") => {
             app.screen = Screen::ModeSelect {
                 sel: 2,
                 diff: 1,
                 row: 0,
             }
         }
-        Some("arquivos") => app.screen = Screen::Archives { tab: 1, sel: 14 },
-        Some("conquistas") => app.screen = Screen::Archives { tab: 0, sel: 0 },
-        Some("patentes") => app.screen = Screen::Archives { tab: 3, sel: 5 },
-        Some("resumo") => {
+        Some("archives") => app.screen = Screen::Archives { tab: 1, sel: 14 },
+        Some("achievements") => app.screen = Screen::Archives { tab: 0, sel: 0 },
+        Some("ranks") => app.screen = Screen::Archives { tab: 3, sel: 5 },
+        Some("summary") => {
             app.screen = Screen::Summary {
                 t: 0.0,
                 gain: 2400,
@@ -4118,7 +4097,7 @@ async fn main() {
                 next: Box::new(Screen::Title { sel: 0 }),
             };
         }
-        Some("nome") => {
+        Some("name") => {
             app.screen = Screen::NameEntry {
                 name: "ALLAN".into(),
                 score: 123_450,

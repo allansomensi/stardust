@@ -50,12 +50,12 @@ cargo build --release --target x86_64-pc-windows-gnu
 |---|---|
 | `src/main.rs` | window, input, menus, settings, prologue, side panels, achievements and ranks |
 | `src/game.rs` | the run itself: modes, waves, dives, weapons, abilities, power-ups, shop, continues |
-| `src/game/v3.rs` | sector events, contracts, fever, special enemies and flight logs |
-| `src/game/v4.rs` | curses, advanced weapons, rifts, ships and trails, Expedition blessings |
-| `src/game/v5.rs` | tap-to-fire trigger, charged shot, firepower, shop items, letters and bonuses |
+| `src/game/encounters.rs` | sector events, contracts, fever, special enemies and flight logs |
+| `src/game/rifts.rs` | curses, advanced weapons, rifts, ships and trails, Expedition blessings |
+| `src/game/arcade.rs` | tap-to-fire trigger, charged shot, firepower, shop items, letters and bonuses |
 | `src/game/minigame.rs` | the rift minigames |
 | `src/boss.rs` | bosses, with destructible parts and bullet patterns |
-| `src/i18n.rs` | English translation table (the game text is written in Portuguese) |
+| `src/i18n.rs` | Brazilian Portuguese translation table (the game text is written in English) |
 | `src/icons.rs` | hand-drawn weapon icons |
 | `src/progress.rs` | modes, difficulties, ranks, insignias, achievements, bestiary and logs |
 | `src/ships.rs` | ships and weapons (power tiers) |
@@ -71,12 +71,13 @@ cargo build --release --target x86_64-pc-windows-gnu
 - **Difficulty:** `Difficulty` in `progress.rs` (pace, fire rate and bullet speed).
 - **Boss health:** `Boss::new` (`boss.rs`).
 - **Shop prices:** `Item::price` (`game.rs`); weapon tiers in `Weapon::tier` (`ships.rs`).
-- **Translations:** `src/i18n.rs`. Every string drawn on screen goes through `i18n::tr`.
+- **Translations:** `src/i18n.rs`. Every string drawn on screen goes through `i18n::tr`, which maps the
+  English text (or a template such as `SECTOR {}`) to Portuguese.
 - **Music:** constants in `audio.rs`. Each bar has 16 steps; `-` holds the note and `.` is a rest.
 
 ## Command line options
 
-- `--export-music` writes the soundtrack to `musica_exportada/*.wav`.
+- `--export-music` writes the soundtrack to `exported_music/*.wav`.
 - `--export-icon <folder>` writes the icon as PNG (16 to 256 px).
 
 ## Custom music
@@ -101,9 +102,10 @@ cargo run --release --features dev
 | `STARDUST_XP=N` | start with N experience |
 | `STARDUST_MODE=0..5` / `STARDUST_DIFF=0..3` | mode and difficulty used by the bot |
 | `STARDUST_WEAPON=N` / `STARDUST_SHIP=N` | starting weapon and ship |
-| `STARDUST_SCREEN=...` | open a screen directly (see `main.rs`) |
+| `STARDUST_SCREEN=...` | open a screen directly (`help`, `cards`, `settings`, `hangar`, `archives`, ...) |
 
-With `dev`, any on-screen text missing from the translation table is printed to stderr as `I18N-MISS`.
+With `dev`, any on-screen text missing from the translation table is printed to stderr as `I18N-MISS`
+while the game runs in Portuguese.
 
 ## Credits
 

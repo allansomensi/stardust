@@ -1,5 +1,5 @@
-//! Pixel art do jogo, desenhada em texto. Cada letra é uma cor da paleta.
-//! Sprites "espelhados" são escritos só pela metade esquerda + coluna central.
+//! The game's pixel art, drawn as text. Each letter is a palette color.
+//! "Mirrored" sprites are written as the left half + center column only.
 
 use macroquad::prelude::*;
 
@@ -66,7 +66,7 @@ pub(crate) fn recolor(rows: &[String], map: &[(char, char)]) -> Vec<String> {
         .collect()
 }
 
-/// Converte linhas de texto em RGBA. Retorna (largura, altura, bytes).
+/// Converts text rows into RGBA. Returns (width, height, bytes).
 pub fn rasterize(rows: &[String]) -> (u16, u16, Vec<u8>) {
     let h = rows.len();
     let w = rows.iter().map(|r| r.chars().count()).max().unwrap_or(0);
@@ -113,7 +113,7 @@ impl Spr {
         }
     }
 
-    /// Desenha centralizado em `pos`.
+    /// Draws centered at `pos`.
     pub fn draw(&self, pos: Vec2, scale: f32, rot: f32, color: Color, flash: bool) {
         let size = vec2(self.w, self.h) * scale;
         let tex = if flash { &self.white } else { &self.tex };
@@ -151,7 +151,7 @@ pub enum Icon {
 }
 
 pub struct Sprites {
-    /// [tipo][quadro]
+    /// [type][frame]
     pub enemies: Vec<[Spr; 2]>,
     pub queen: [Spr; 2],
     pub claw: Spr,
@@ -627,7 +627,7 @@ pub fn build() -> Sprites {
     }
 }
 
-/// Ícone da janela gerado a partir da nave do jogador.
+/// Window icon generated from the player's ship.
 pub fn window_icon_rgba(size: usize) -> Vec<u8> {
     let (w, h, src) = rasterize(&player_rows());
     let (w, h) = (w as usize, h as usize);
@@ -638,7 +638,7 @@ pub fn window_icon_rgba(size: usize) -> Vec<u8> {
     let oy = (size as f32 - h as f32 * scale) / 2.0;
     for y in 0..size {
         for x in 0..size {
-            // fundo arredondado
+            // rounded background
             let cx = x as f32 + 0.5 - size as f32 / 2.0;
             let cy = y as f32 + 0.5 - size as f32 / 2.0;
             let r = size as f32 / 2.0;
@@ -673,7 +673,7 @@ mod tests {
             assert_eq!(
                 r.chars().count(),
                 w,
-                "{name}: linha {i} com largura diferente"
+                "{name}: row {i} has a different width"
             );
             for c in r.chars() {
                 assert!(
@@ -685,10 +685,10 @@ mod tests {
     }
 
     #[test]
-    fn sprites_bem_formados() {
+    fn sprites_well_formed() {
         check("jogador", &player_rows());
-        check("zangão", &bug_a());
-        check("zangão b", &bug_b());
+        check("drone", &bug_a());
+        check("drone b", &bug_b());
         check("vespa", &wasp_a());
         check("vespa b", &wasp_b());
         for f in 0..2 {
@@ -698,11 +698,11 @@ mod tests {
             check("mini", &mini(f));
             check("rainha", &queen(f));
         }
-        check("couraçado", &warship());
+        check("warship", &warship());
     }
 
     #[test]
-    fn icone_tem_tamanho_certo() {
+    fn icon_has_right_size() {
         for n in [16, 32, 64] {
             assert_eq!(window_icon_rgba(n).len(), n * n * 4);
         }

@@ -1,103 +1,103 @@
-//! Progressão permanente: patentes, conquistas, bestiário, modos e dificuldades.
+//! Permanent progression: ranks, achievements, bestiary, modes and difficulties.
 
 use macroquad::prelude::*;
 
 // ---------------------------------------------------------------------------
-// Modos e dificuldades
+// Modes and difficulties
 // ---------------------------------------------------------------------------
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Mode {
-    Campanha,
-    Classico,
-    Diario,
-    Sobrevivencia,
-    Chefoes,
-    Expedicao,
+    Campaign,
+    Classic,
+    Daily,
+    Survival,
+    BossRush,
+    Expedition,
 }
 
 pub const MODES: [Mode; 6] = [
-    Mode::Campanha,
-    Mode::Classico,
-    Mode::Diario,
-    Mode::Sobrevivencia,
-    Mode::Chefoes,
-    Mode::Expedicao,
+    Mode::Campaign,
+    Mode::Classic,
+    Mode::Daily,
+    Mode::Survival,
+    Mode::BossRush,
+    Mode::Expedition,
 ];
 
 impl Mode {
     pub fn name(self) -> &'static str {
         match self {
-            Mode::Campanha => "CAMPANHA",
-            Mode::Classico => "CLÁSSICO",
-            Mode::Diario => "DESAFIO DIÁRIO",
-            Mode::Sobrevivencia => "SOBREVIVÊNCIA",
-            Mode::Chefoes => "CHEFÕES",
-            Mode::Expedicao => "EXPEDIÇÃO",
+            Mode::Campaign => "CAMPAIGN",
+            Mode::Classic => "CLASSIC",
+            Mode::Daily => "DAILY CHALLENGE",
+            Mode::Survival => "SURVIVAL",
+            Mode::BossRush => "BOSS RUSH",
+            Mode::Expedition => "EXPEDITION",
         }
     }
     pub fn desc(self) -> &'static str {
         match self {
-            Mode::Campanha => "8 setores, chefes, loja e cartas. A aventura completa.",
-            Mode::Classico => {
-                "Como nos fliperamas: só a Rajada, sem loja, sem cartas. Ondas sem fim."
+            Mode::Campaign => "8 sectors, bosses, shop and cards. The full adventure.",
+            Mode::Classic => {
+                "Like the arcades: only the Blaster, no shop, no cards. Endless waves."
             }
-            Mode::Diario => "3 setores com uma regra maluca que muda todo dia. Igual para todos.",
-            Mode::Sobrevivencia => "Ondas sem pausa, cada vez mais rápidas. Quanto você aguenta?",
-            Mode::Chefoes => "Todos os chefes em sequência, contra o relógio.",
-            Mode::Expedicao => {
-                "Setores sem fim. A cada setor, escolha 1 de 3 bênçãos. Até onde você vai?"
+            Mode::Daily => "3 sectors with a crazy rule that changes daily. Same for everyone.",
+            Mode::Survival => "Non-stop waves, faster and faster. How long can you last?",
+            Mode::BossRush => "Every boss in a row, against the clock.",
+            Mode::Expedition => {
+                "Endless sectors. Every sector, pick 1 of 3 blessings. How far can you go?"
             }
         }
     }
     pub fn unlock_rank(self) -> usize {
         match self {
-            Mode::Campanha => 0,
-            Mode::Classico => 1,
-            Mode::Diario => 3,
-            Mode::Sobrevivencia => 4,
-            Mode::Chefoes => 7,
-            Mode::Expedicao => 6,
+            Mode::Campaign => 0,
+            Mode::Classic => 1,
+            Mode::Daily => 3,
+            Mode::Survival => 4,
+            Mode::BossRush => 7,
+            Mode::Expedition => 6,
         }
     }
     pub fn tag(self) -> u8 {
         self as u8
     }
     pub fn from_tag(t: u8) -> Mode {
-        MODES.get(t as usize).copied().unwrap_or(Mode::Campanha)
+        MODES.get(t as usize).copied().unwrap_or(Mode::Campaign)
     }
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Difficulty {
-    Facil,
+    Easy,
     Normal,
-    Dificil,
-    Pesadelo,
+    Hard,
+    Nightmare,
 }
 
 pub const DIFFS: [Difficulty; 4] = [
-    Difficulty::Facil,
+    Difficulty::Easy,
     Difficulty::Normal,
-    Difficulty::Dificil,
-    Difficulty::Pesadelo,
+    Difficulty::Hard,
+    Difficulty::Nightmare,
 ];
 
 impl Difficulty {
     pub fn name(self) -> &'static str {
         match self {
-            Difficulty::Facil => "FÁCIL",
+            Difficulty::Easy => "EASY",
             Difficulty::Normal => "NORMAL",
-            Difficulty::Dificil => "DIFÍCIL",
-            Difficulty::Pesadelo => "PESADELO",
+            Difficulty::Hard => "HARD",
+            Difficulty::Nightmare => "NIGHTMARE",
         }
     }
     pub fn color(self) -> Color {
         match self {
-            Difficulty::Facil => Color::from_rgba(120, 230, 120, 255),
+            Difficulty::Easy => Color::from_rgba(120, 230, 120, 255),
             Difficulty::Normal => Color::from_rgba(120, 200, 255, 255),
-            Difficulty::Dificil => Color::from_rgba(255, 170, 60, 255),
-            Difficulty::Pesadelo => Color::from_rgba(255, 60, 90, 255),
+            Difficulty::Hard => Color::from_rgba(255, 170, 60, 255),
+            Difficulty::Nightmare => Color::from_rgba(255, 60, 90, 255),
         }
     }
     pub fn bullet_speed(self) -> f32 {
@@ -106,7 +106,7 @@ impl Difficulty {
     pub fn fire_rate(self) -> f32 {
         [0.55, 1.0, 1.25, 1.5][self as usize]
     }
-    /// Ritmo dos inimigos (movimento, mergulhos e chefes).
+    /// Enemy pace (movement, dives and bosses).
     pub fn pace(self) -> f32 {
         [0.8, 1.0, 1.15, 1.3][self as usize]
     }
@@ -127,67 +127,67 @@ impl Difficulty {
     }
 }
 
-/// Regras do desafio diário.
+/// Daily challenge rules.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Daily {
-    TirosDobrados,
-    InimigosVelozes,
-    SoLaser,
-    CristaisEmDobro,
-    Neblina,
-    Espelho,
-    VidroFino,
-    ChuvaDeCapsulas,
+    DoubleShots,
+    FastEnemies,
+    LaserOnly,
+    DoubleCrystals,
+    Fog,
+    Mirror,
+    ThinGlass,
+    CapsuleRain,
 }
 
 pub const DAILIES: [Daily; 8] = [
-    Daily::TirosDobrados,
-    Daily::InimigosVelozes,
-    Daily::SoLaser,
-    Daily::CristaisEmDobro,
-    Daily::Neblina,
-    Daily::Espelho,
-    Daily::VidroFino,
-    Daily::ChuvaDeCapsulas,
+    Daily::DoubleShots,
+    Daily::FastEnemies,
+    Daily::LaserOnly,
+    Daily::DoubleCrystals,
+    Daily::Fog,
+    Daily::Mirror,
+    Daily::ThinGlass,
+    Daily::CapsuleRain,
 ];
 
 impl Daily {
     pub fn name(self) -> &'static str {
         match self {
-            Daily::TirosDobrados => "TIROS DOBRADOS",
-            Daily::InimigosVelozes => "INIMIGOS VELOZES",
-            Daily::SoLaser => "SÓ LASER",
-            Daily::CristaisEmDobro => "CRISTAIS EM DOBRO",
-            Daily::Neblina => "NEBLINA",
-            Daily::Espelho => "ESPELHO",
-            Daily::VidroFino => "VIDRO FINO",
-            Daily::ChuvaDeCapsulas => "CHUVA DE CÁPSULAS",
+            Daily::DoubleShots => "DOUBLE SHOTS",
+            Daily::FastEnemies => "FAST ENEMIES",
+            Daily::LaserOnly => "LASER ONLY",
+            Daily::DoubleCrystals => "DOUBLE CRYSTALS",
+            Daily::Fog => "FOG",
+            Daily::Mirror => "MIRROR",
+            Daily::ThinGlass => "THIN GLASS",
+            Daily::CapsuleRain => "CAPSULE RAIN",
         }
     }
     pub fn desc(self) -> &'static str {
         match self {
-            Daily::TirosDobrados => "Você e os inimigos atiram o dobro.",
-            Daily::InimigosVelozes => "Mergulhos 40% mais rápidos, pontos x2.",
-            Daily::SoLaser => "Só existe Laser, mas ele começa no nível 3.",
-            Daily::CristaisEmDobro => "Cristais em dobro, loja 50% mais cara.",
-            Daily::Neblina => "Você só enxerga perto da nave.",
-            Daily::Espelho => "Esquerda vira direita. Boa sorte.",
-            Daily::VidroFino => "Uma vida só, mas pontos x3.",
-            Daily::ChuvaDeCapsulas => "Cápsulas e power-ups por toda parte.",
+            Daily::DoubleShots => "You and the enemies fire twice as much.",
+            Daily::FastEnemies => "Dives 40% faster, points x2.",
+            Daily::LaserOnly => "Only the Laser exists, but it starts at level 3.",
+            Daily::DoubleCrystals => "Double crystals, shop 50% more expensive.",
+            Daily::Fog => "You can only see near your ship.",
+            Daily::Mirror => "Left becomes right. Good luck.",
+            Daily::ThinGlass => "Only one life, but points x3.",
+            Daily::CapsuleRain => "Capsules and power-ups everywhere.",
         }
     }
 }
 
 // ---------------------------------------------------------------------------
-// Datas (sem dependências externas)
+// Dates (no external dependencies)
 // ---------------------------------------------------------------------------
 
-/// Dias desde 1970-01-01 (horário local aproximado pelo UTC).
+/// Days since 1970-01-01 (local time approximated by UTC).
 pub fn today_number() -> i64 {
     (miniquad::date::now() / 86_400.0).floor() as i64
 }
 
-/// Converte número de dias em (ano, mês, dia).
+/// Converts a day number into (year, month, day).
 pub fn civil(days: i64) -> (i64, u32, u32) {
     let z = days + 719_468;
     let era = z.div_euclid(146_097);
@@ -210,49 +210,49 @@ pub fn daily_for(day: i64) -> Daily {
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub enum Season {
     None,
-    Natal,
+    Christmas,
     Halloween,
-    AnoNovo,
+    NewYear,
 }
 
 pub fn season() -> Season {
     let (_, m, d) = civil(today_number());
     match (m, d) {
-        (12, 20..=31) => Season::Natal,
-        (1, 1..=2) => Season::AnoNovo,
+        (12, 20..=31) => Season::Christmas,
+        (1, 1..=2) => Season::NewYear,
         (10, 25..=31) | (11, 1..=2) => Season::Halloween,
         _ => Season::None,
     }
 }
 
 // ---------------------------------------------------------------------------
-// Patentes
+// Ranks
 // ---------------------------------------------------------------------------
 
 pub const RANKS: [&str; 20] = [
-    "RECRUTA",
-    "CADETE",
-    "ASPIRANTE",
-    "PILOTO",
-    "PILOTO DE ELITE",
-    "SARGENTO",
-    "SUBOFICIAL",
-    "TENENTE",
-    "CAPITÃO",
+    "RECRUIT",
+    "CADET",
+    "MIDSHIPMAN",
+    "PILOT",
+    "ELITE PILOT",
+    "SERGEANT",
+    "WARRANT OFFICER",
+    "LIEUTENANT",
+    "CAPTAIN",
     "MAJOR",
-    "TENENTE-CORONEL",
-    "CORONEL",
-    "COMODORO",
-    "CONTRA-ALMIRANTE",
-    "VICE-ALMIRANTE",
-    "ALMIRANTE",
-    "ALMIRANTE DE ESQUADRA",
-    "MARECHAL ESTELAR",
-    "HERÓI DA GALÁXIA",
-    "LENDA ESTELAR",
+    "LIEUTENANT COLONEL",
+    "COLONEL",
+    "COMMODORE",
+    "REAR ADMIRAL",
+    "VICE ADMIRAL",
+    "ADMIRAL",
+    "FLEET ADMIRAL",
+    "STAR MARSHAL",
+    "GALAXY HERO",
+    "STAR LEGEND",
 ];
 
-/// XP total necessário para alcançar a patente `r`.
+/// Total XP needed to reach rank `r`.
 pub fn xp_for(r: usize) -> u64 {
     if r == 0 {
         0
@@ -268,48 +268,48 @@ pub fn rank_of(xp: u64) -> usize {
         .unwrap_or(0)
 }
 
-/// O que cada patente desbloqueia (texto mostrado na tela de promoção).
+/// What each rank unlocks (shown on the promotion screen).
 pub fn unlock_text(r: usize) -> &'static str {
     match r {
-        1 => "Modo CLÁSSICO",
-        2 => "Arma ONDA",
-        3 => "Nave FALCÃO e DESAFIO DIÁRIO",
-        4 => "Arma ESTILHAÇO e modo SOBREVIVÊNCIA",
-        5 => "Arma DISCO e dificuldade DIFÍCIL",
-        6 => "Nave BASTIÃO e arma RICOCHETE",
-        7 => "Modo CHEFÕES e arma CRIO",
-        8 => "Arma TROVÃO",
-        9 => "Nave VEGA e arma GRANADA",
-        10 => "Arma CHAMA",
-        11 => "Itens raros na loja e arma COLMEIA",
-        12 => "Nave FANTASMA",
-        13 => "Pintura RUBI e arma ÓRBITA",
-        14 => "Pintura ESMERALDA",
-        15 => "Nave COLOSSO",
-        16 => "Pintura OURO e arma BURACO NEGRO",
-        17 => "Pintura SOMBRA",
-        18 => "Pintura GELO",
-        19 => "Pintura LENDÁRIA e nome dourado no ranking",
+        1 => "CLASSIC mode",
+        2 => "WAVE weapon",
+        3 => "FALCON ship and DAILY CHALLENGE",
+        4 => "SHRAPNEL weapon and SURVIVAL mode",
+        5 => "DISC weapon and HARD difficulty",
+        6 => "BASTION ship and RICOCHET weapon",
+        7 => "BOSS RUSH mode and CRYO weapon",
+        8 => "THUNDER weapon",
+        9 => "VEGA ship and GRENADE weapon",
+        10 => "FLAME weapon",
+        11 => "Rare shop items and the HIVE weapon",
+        12 => "PHANTOM ship",
+        13 => "RUBY paint and ORBIT weapon",
+        14 => "EMERALD paint",
+        15 => "COLOSSUS ship",
+        16 => "GOLD paint and BLACK HOLE weapon",
+        17 => "SHADOW paint",
+        18 => "ICE paint",
+        19 => "LEGENDARY paint and a golden name in the high scores",
         _ => "",
     }
 }
 
-/// Patente necessária para cada pintura (skin).
+/// Rank needed for each paint (skin).
 pub fn skin_rank(skin: usize) -> usize {
     [0, 13, 14, 16, 17, 18, 19][skin.min(6)]
 }
 
 pub const SKIN_NAMES: [&str; 7] = [
     "ORIGINAL",
-    "RUBI",
-    "ESMERALDA",
-    "OURO",
-    "SOMBRA",
-    "GELO",
-    "LENDÁRIA",
+    "RUBY",
+    "EMERALD",
+    "GOLD",
+    "SHADOW",
+    "ICE",
+    "LEGENDARY",
 ];
 
-/// Desenha a insígnia da patente centrada em (x, y).
+/// Draws the rank insignia centered at (x, y).
 pub fn draw_insignia(r: usize, x: f32, y: f32, scale: f32) {
     let gold = Color::from_rgba(255, 205, 80, 255);
     let silver = Color::from_rgba(200, 210, 230, 255);
@@ -319,7 +319,7 @@ pub fn draw_insignia(r: usize, x: f32, y: f32, scale: f32) {
     draw_circle_lines(x, y, 15.0 * s, 2.0, if r >= 10 { gold } else { silver });
     match r {
         0..=4 => {
-            // divisas (chevrons)
+            // chevrons
             let n = r + 1;
             for i in 0..n {
                 let yy = y + 5.0 * s - i as f32 * 4.0 * s;
@@ -328,7 +328,7 @@ pub fn draw_insignia(r: usize, x: f32, y: f32, scale: f32) {
             }
         }
         5..=9 => {
-            // barras
+            // bars
             let n = r - 4;
             for i in 0..n {
                 let yy = y - 8.0 * s + i as f32 * 4.0 * s;
@@ -336,7 +336,7 @@ pub fn draw_insignia(r: usize, x: f32, y: f32, scale: f32) {
             }
         }
         _ => {
-            // estrelas
+            // stars
             let n = (r - 9).min(10);
             let per_row = 5.min(n);
             for i in 0..n {
@@ -352,7 +352,7 @@ pub fn draw_insignia(r: usize, x: f32, y: f32, scale: f32) {
 }
 
 // ---------------------------------------------------------------------------
-// Conquistas
+// Achievements
 // ---------------------------------------------------------------------------
 
 pub struct AchDef {
@@ -380,218 +380,206 @@ const fn h(name: &'static str, desc: &'static str, xp: u64) -> AchDef {
 }
 
 pub const ACHS: &[AchDef] = &[
-    a("Primeiro Voo", "Termine a primeira onda.", 50),
-    a("Regicida", "Derrote a Rainha da Colmeia.", 150),
-    a("Ferro-Velho", "Derrote o Couraçado Zênite.", 200),
-    a("Encantador de Serpentes", "Derrote a Serpente Cometa.", 250),
-    a("Aracnofobia", "Derrote a Tecelã Abissal.", 300),
-    a("Não Pisque", "Derrote o Olho do Vazio.", 350),
-    a("Coração Partido", "Termine a campanha.", 1000),
+    a("First Flight", "Clear the first wave.", 50),
+    a("Regicide", "Defeat the Hive Queen.", 150),
+    a("Scrapyard", "Defeat the Zenith Dreadnought.", 200),
+    a("Snake Charmer", "Defeat the Comet Serpent.", 250),
+    a("Arachnophobia", "Defeat the Abyssal Weaver.", 300),
+    a("Don't Blink", "Defeat the Eye of the Void.", 350),
+    a("Broken Heart", "Finish the campaign.", 1000),
     h(
-        "Final Verdadeiro",
-        "Termine a campanha no Difícil sem usar continues.",
+        "True Ending",
+        "Finish the campaign on Hard without using continues.",
         2500,
     ),
-    h("Pesadelo Desperto", "Termine a campanha no Pesadelo.", 5000),
-    a(
-        "Perfeição",
-        "Acerte todos os inimigos de um estágio bônus.",
-        200,
+    h(
+        "Nightmare Awakened",
+        "Finish the campaign on Nightmare.",
+        5000,
     ),
-    h("Pacifista", "Termine um estágio bônus sem disparar.", 300),
-    a("Combo 50", "Faça um combo de 50.", 150),
-    a("Combo 100", "Faça um combo de 100.", 400),
-    a("Na Raspa", "Faça 100 raspões numa partida.", 300),
-    a("Intocável", "Termine um setor sem ser atingido.", 400),
+    a("Perfection", "Hit every enemy in a bonus stage.", 200),
+    h("Pacifist", "Finish a bonus stage without firing.", 300),
+    a("Combo 50", "Make a 50 combo.", 150),
+    a("Combo 100", "Make a 100 combo.", 400),
+    a("Close Shave", "Make 100 grazes in one run.", 300),
+    a("Untouchable", "Finish a sector without getting hit.", 400),
     a(
         "Desmonte",
-        "Destrua todas as partes de um chefe antes do corpo.",
+        "Destroy every part of a boss before its body.",
         300,
     ),
-    a("Milionário", "Faça 1.000.000 de pontos numa partida.", 1500),
-    a("Tio Patinhas", "Tenha 300 cristais ao mesmo tempo.", 250),
-    a("Colecionador", "Encontre 20 cartas diferentes.", 500),
+    a("Millionaire", "Score 1,000,000 points in one run.", 1500),
+    a("Scrooge", "Hold 300 crystals at once.", 250),
+    a("Collector", "Find 20 different cards.", 500),
     a(
-        "Completista",
-        "Encontre todas as cartas comuns, raras, épicas e lendárias.",
+        "Completionist",
+        "Find every common, rare, epic and legendary card.",
         2000,
     ),
-    h("Ouro de Tolo", "Abata um Escaravelho Dourado.", 200),
-    h("Muuu!", "Abata a Vaca Cósmica.", 300),
+    h("Fool's Gold", "Shoot down a Golden Scarab.", 200),
+    h("Moo!", "Shoot down the Cosmic Cow.", 300),
     h(
-        "Bom Samaritano",
-        "Deixe o Mercador passar em paz três vezes.",
+        "Good Samaritan",
+        "Let the Merchant pass in peace three times.",
         300,
     ),
-    h("Pirata Espacial", "Ataque o Mercador.", 150),
+    h("Space Pirate", "Attack the Merchant.", 150),
     h(
-        "Saudosista",
-        "Digite o código Konami na tela de título.",
+        "Nostalgic",
+        "Enter the Konami code on the title screen.",
         500,
     ),
-    h("Viajante Dimensional", "Encontre a Dimensão Dourada.", 800),
+    h("Dimension Traveler", "Find the Golden Dimension.", 800),
+    a("Weapon Master", "Take 5 different weapons to level 5.", 600),
+    a("Full Hangar", "Unlock the 7 classic ships.", 1000),
+    a("Survivor", "Reach wave 30 in Survival mode.", 800),
     a(
-        "Mestre de Armas",
-        "Leve 5 armas diferentes ao nível 5.",
-        600,
-    ),
-    a("Hangar Cheio", "Desbloqueie as 7 naves clássicas.", 1000),
-    a(
-        "Sobrevivente",
-        "Chegue à onda 30 no modo Sobrevivência.",
-        800,
-    ),
-    a(
-        "Velocista",
-        "Vença o modo Chefões em menos de 12 minutos.",
+        "Speedrunner",
+        "Beat Boss Rush mode in under 12 minutes.",
         1000,
     ),
-    a("Fliperama", "Faça 60.000 pontos no modo Clássico.", 600),
-    a("Rotina", "Termine 3 desafios diários.", 500),
-    a("Anti-Kamikaze", "Abata 150 Kamikazes no total.", 300),
-    a("Bombardeiro", "Use 50 bombas no total.", 250),
+    a("Arcade", "Score 60,000 points in Classic mode.", 600),
+    a("Routine", "Complete 3 daily challenges.", 500),
+    a("Anti-Kamikaze", "Shoot down 150 Kamikazes in total.", 300),
+    a("Bomber", "Use 50 bombs in total.", 250),
     h(
-        "Disco de Ouro",
-        "Duas sondas levam um disco de ouro. Diga o nome delas no ranking.",
+        "Golden Record",
+        "Two probes carry a golden record. Enter their name in the high scores.",
         700,
     ),
-    h("Criador", "Quem fez este jogo?", 300),
-    a("Insistente", "Jogue 25 partidas.", 400),
-    a("Maratona", "Jogue por 2 horas no total.", 800),
-    a("Piromaníaco", "Abata 300 inimigos com a Chama.", 400),
-    a("Sem Arranhões", "Derrote um chefe sem ser atingido.", 500),
+    h("Creator", "Who made this game?", 300),
+    a("Persistent", "Play 25 runs.", 400),
+    a("Marathon", "Play for 2 hours in total.", 800),
+    a("Pyromaniac", "Shoot down 300 enemies with the Flame.", 400),
+    a(
+        "Without a Scratch",
+        "Defeat a boss without getting hit.",
+        500,
+    ),
     h(
-        "Curioso",
-        "Algo acontece se você digitar o nome do jogo no título.",
+        "Curious",
+        "Something happens if you type the game's name on the title screen.",
         150,
     ),
-    h("Insone", "Deixe o jogo rodar sozinho na demonstração.", 100),
-    a("Febre!", "Entre em Febre com um combo alto.", 200),
-    a("Febre Tripla", "Entre em Febre 3 vezes numa partida.", 500),
-    a("Contratado", "Complete um contrato.", 150),
+    h("Sleepless", "Let the game play itself in demo mode.", 100),
+    a("Fever!", "Enter Fever with a high combo.", 200),
+    a("Triple Fever", "Enter Fever 3 times in one run.", 500),
+    a("Hired", "Complete a contract.", 150),
+    a("Elite Mercenary", "Complete 30 contracts in total.", 900),
+    a("Archaeologist", "Find 6 flight logs.", 500),
+    a("Historian", "Find all 12 flight logs.", 1500),
+    a("Twins Apart", "Defeat the Twins.", 400),
+    h("The Void Stares Back", "Defeat the Devourer.", 5000),
     a(
-        "Mercenário de Elite",
-        "Complete 30 contratos no total.",
-        900,
-    ),
-    a("Arqueólogo", "Encontre 6 registros de bordo.", 500),
-    a(
-        "Historiador",
-        "Encontre todos os 12 registros de bordo.",
-        1500,
-    ),
-    a("Gêmeas Separadas", "Derrote as Gêmeas.", 400),
-    h("O Vazio Olha de Volta", "Derrote o Devorador.", 5000),
-    a(
-        "Pega Ladrão",
-        "Abata um Ladrão carregando o que roubou.",
+        "Thief Catcher",
+        "Shoot down a Thief carrying its loot.",
         250,
     ),
-    a("Desconfiado", "Abata 10 Mímicos no total.", 300),
+    a("Suspicious", "Shoot down 10 Mimics in total.", 300),
     a(
-        "Elite da Elite",
-        "Abata 50 inimigos de elite no total.",
+        "Elite of the Elite",
+        "Shoot down 50 elite enemies in total.",
         600,
     ),
-    a("Era do Gelo", "Congele 150 inimigos no total.", 400),
+    a("Ice Age", "Freeze 150 enemies in total.", 400),
     a(
-        "Horizonte",
-        "Engula 300 tiros com buracos negros no total.",
+        "Horizon",
+        "Swallow 300 shots with black holes in total.",
         400,
     ),
     a(
-        "Arsenal Duplo",
-        "Leve duas armas diferentes ao nível 5 na mesma partida.",
+        "Double Arsenal",
+        "Take two different weapons to level 5 in the same run.",
         400,
     ),
     a(
-        "Mestre Supremo",
-        "Leve 12 armas diferentes ao nível 5.",
+        "Supreme Master",
+        "Take 12 different weapons to level 5.",
         1500,
     ),
-    a("Eclipse Total", "Termine um setor durante um Eclipse.", 400),
-    h("Fazendeiro", "Abata a Vaca Cósmica 3 vezes.", 600),
-    a("Fliperamista", "Vença 10 minigames das Fendas.", 600),
-    h("Relicário", "Encontre uma Relíquia.", 1000),
-    a("Turista Cósmico", "Viva os 6 eventos de setor.", 700),
-    a("Exorcista", "Destrua 25 maldições a tiros.", 500),
-    h("Azarado", "Pegue 10 maldições. De propósito?", 200),
-    h("Caçador de Estrelas", "Encontre uma Sala Secreta.", 800),
-    a("Perfeccionista", "Consiga PERFEITO em 5 minigames.", 700),
-    h("Guardião das Relíquias", "Encontre as 4 Relíquias.", 4000),
-    a("Expedicionário", "Chegue ao setor 10 da Expedição.", 1200),
-    h("Tesoureiro", "Abra 5 relicários secretos.", 900),
-    a("Frota Completa", "Desbloqueie as 10 naves.", 1500),
-    a("Caçador de Cometas", "Derrote o Cometa Wild.", 400),
-    a("Soletrador", "Junte as letras S-T-A-R-D-U-S-T.", 800),
-    h("Contatos Imediatos", "Derrube a Nave-Mãe misteriosa.", 300),
-    h("Atalho", "Use um Portal de Salto.", 600),
-    a(
-        "Onda Relâmpago",
-        "Limpe uma onda em menos de 7 segundos.",
-        400,
+    a("Total Eclipse", "Finish a sector during an Eclipse.", 400),
+    h("Farmer", "Shoot down the Cosmic Cow 3 times.", 600),
+    a("Arcade Master", "Win 10 Rift minigames.", 600),
+    h("Reliquary", "Find a Relic.", 1000),
+    a("Cosmic Tourist", "Live through all 6 sector events.", 700),
+    a("Exorcist", "Destroy 25 curses with your shots.", 500),
+    h("Jinxed", "Pick up 10 curses. On purpose?", 200),
+    h("Star Hunter", "Find a Secret Room.", 800),
+    a("Perfectionist", "Get PERFECT in 5 minigames.", 700),
+    h("Keeper of Relics", "Find the 4 Relics.", 4000),
+    a("Expeditionary", "Reach sector 10 in Expedition.", 1200),
+    h("Treasurer", "Open 5 secret reliquaries.", 900),
+    a("Full Fleet", "Unlock all 10 ships.", 1500),
+    a("Comet Hunter", "Defeat the Wild Comet.", 400),
+    a("Speller", "Collect the letters S-T-A-R-D-U-S-T.", 800),
+    h(
+        "Close Encounters",
+        "Shoot down the mysterious Mothership.",
+        300,
     ),
+    h("Shortcut", "Use a Warp Gate.", 600),
+    a("Lightning Wave", "Clear a wave in under 7 seconds.", 400),
     a(
-        "Tiro de Canhão",
-        "Abata 5 inimigos com um só tiro carregado.",
+        "Cannon Shot",
+        "Shoot down 5 enemies with a single charged shot.",
         500,
     ),
 ];
 
-/// Registros de bordo: a história por trás do Enxame.
+/// Flight logs: the story behind the Swarm.
 pub const LOGS: [(&str, &str); 12] = [
     (
-        "REGISTRO 1 - A RAINHA",
-        "A poeira da sonda humana chamou por nós. Ordenei a migração. Não há tempo para explicar aos nativos.",
+        "LOG 1 - THE QUEEN",
+        "The human probe's dust called to us. I ordered the migration. No time to explain to the natives.",
     ),
     (
-        "REGISTRO 2 - O COURAÇADO",
-        "Tomamos a nave dos humanos. Precisávamos de casco e de canhões. Algo nos segue há três ciclos.",
+        "LOG 2 - THE DREADNOUGHT",
+        "We took the humans' ship. We needed hull and cannons. Something has been following us for three cycles.",
     ),
     (
-        "REGISTRO 3 - A SERPENTE",
-        "A Serpente era a guardiã do caminho. Ela ouviu primeiro: um silêncio que engole estrelas.",
+        "LOG 3 - THE SERPENT",
+        "The Serpent was the guardian of the path. It heard first: a silence that swallows stars.",
     ),
     (
-        "REGISTRO 4 - A TECELÃ",
-        "Tecemos redes entre as luas para atrasar a coisa. As redes sumiram. Não rasgaram: sumiram.",
+        "LOG 4 - THE WEAVER",
+        "We wove nets between the moons to slow the thing down. The nets vanished. They didn't tear: they vanished.",
     ),
     (
-        "REGISTRO 5 - O OLHO",
-        "O Olho foi feito para vigiar o escuro. Ele viu. Desde então não consegue mais fechar direito.",
+        "LOG 5 - THE EYE",
+        "The Eye was made to watch the dark. It saw. Since then it can't quite close.",
     ),
     (
-        "REGISTRO 6 - O ÔMEGA",
-        "Reforçamos o Couraçado. Se o piloto humano chegar até aqui, talvez seja forte o bastante.",
+        "LOG 6 - THE OMEGA",
+        "We reinforced the Dreadnought. If the human pilot makes it this far, maybe they're strong enough.",
     ),
     (
-        "REGISTRO 7 - AS GÊMEAS",
-        "Minhas filhas lutam juntas. Disse a elas para não odiarem o piloto. Ele só não sabe.",
+        "LOG 7 - THE TWINS",
+        "My daughters fight together. I told them not to hate the pilot. The pilot just doesn't know.",
     ),
     (
-        "REGISTRO 8 - O CORAÇÃO",
-        "Se eu cair, a colmeia se espalha e sobrevive. Se ele cair, ninguém mais vai segurar a porta.",
+        "LOG 8 - THE HEART",
+        "If I fall, the hive scatters and survives. If they fall, no one will hold the door anymore.",
     ),
     (
-        "REGISTRO 9 - DIMENSÃO DOURADA",
-        "Escondemos o tesouro da colmeia entre dimensões. Só quem nunca cai consegue achar a porta.",
+        "LOG 9 - GOLDEN DIMENSION",
+        "We hid the hive's treasure between dimensions. Only those who never fall can find the door.",
     ),
     (
-        "REGISTRO 10 - A VACA",
-        "A Vaca não é nossa. Ela apareceu um dia e começou a nos seguir. Desde então chamamos ela de sorte.",
+        "LOG 10 - THE COW",
+        "The Cow is not ours. It showed up one day and started following us. Since then we call it luck.",
     ),
     (
-        "REGISTRO 11 - O MERCADOR",
-        "O Mercador vende para todos os lados. Ele sabe do Devorador. Ele sempre soube.",
+        "LOG 11 - THE MERCHANT",
+        "The Merchant sells to every side. He knows about the Devourer. He always knew.",
     ),
     (
-        "REGISTRO 12 - DEPOIS",
-        "Obrigada, piloto. O Devorador recuou. A colmeia vai sobreviver. E agora você também sabe.",
+        "LOG 12 - AFTERWARD",
+        "Thank you, pilot. The Devourer retreated. The hive will survive. And now you know too.",
     ),
 ];
 
 // ---------------------------------------------------------------------------
-// Insígnias de Honra: patentes que não vêm de XP, e sim de feitos.
+// Honor Insignias: ranks that don't come from XP, but from feats.
 // ---------------------------------------------------------------------------
 
 pub struct Honor {
@@ -604,85 +592,85 @@ pub struct Honor {
 
 pub const HONORS: [Honor; 10] = [
     Honor {
-        name: "INSÍGNIA DO INTOCÁVEL",
-        feat: "Termine um setor sem ser atingido.",
-        reward: "Rastro ARCO-ÍRIS",
-        short: "ARCO-ÍRIS",
-        ach: ach::INTOCAVEL,
+        name: "UNTOUCHABLE INSIGNIA",
+        feat: "Finish a sector without getting hit.",
+        reward: "RAINBOW trail",
+        short: "RAINBOW",
+        ach: ach::UNTOUCHABLE,
     },
     Honor {
-        name: "INSÍGNIA DO EXORCISTA",
-        feat: "Destrua 25 maldições a tiros.",
-        reward: "Rastro FOGO",
-        short: "FOGO",
-        ach: ach::EXORCISTA,
+        name: "EXORCIST INSIGNIA",
+        feat: "Destroy 25 curses with your shots.",
+        reward: "FIRE trail",
+        short: "FIRE",
+        ach: ach::EXORCIST,
     },
     Honor {
-        name: "INSÍGNIA DO FLIPERAMA",
-        feat: "Vença 10 minigames das Fendas.",
-        reward: "Nave CORSÁRIA",
-        short: "CORSÁRIA",
-        ach: ach::FLIPERAMISTA,
+        name: "ARCADE INSIGNIA",
+        feat: "Win 10 Rift minigames.",
+        reward: "CORSAIR ship",
+        short: "CORSAIR",
+        ach: ach::ARCADE_MASTER,
     },
     Honor {
-        name: "INSÍGNIA DO EXPLORADOR",
-        feat: "Encontre uma Sala Secreta.",
-        reward: "Nave SONDA e rastro POEIRA ESTELAR",
-        short: "SONDA",
-        ach: ach::SALA_SECRETA,
+        name: "EXPLORER INSIGNIA",
+        feat: "Find a Secret Room.",
+        reward: "PROBE ship and STARDUST trail",
+        short: "PROBE",
+        ach: ach::SECRET_ROOM,
     },
     Honor {
-        name: "INSÍGNIA DO PERFECCIONISTA",
-        feat: "Consiga PERFEITO em 5 minigames.",
-        reward: "Nave ÉGIDE",
-        short: "ÉGIDE",
-        ach: ach::PERFECCIONISTA,
+        name: "PERFECTIONIST INSIGNIA",
+        feat: "Get PERFECT in 5 minigames.",
+        reward: "AEGIS ship",
+        short: "AEGIS",
+        ach: ach::PERFECTIONIST,
     },
     Honor {
-        name: "INSÍGNIA DO ARSENAL",
-        feat: "Leve 5 armas ao nível 5.",
-        reward: "Rastro GELO",
-        short: "GELO",
-        ach: ach::MESTRE_ARMAS,
+        name: "ARSENAL INSIGNIA",
+        feat: "Take 5 weapons to level 5.",
+        reward: "ICE trail",
+        short: "ICE",
+        ach: ach::WEAPON_MASTER,
     },
     Honor {
-        name: "INSÍGNIA DA RELÍQUIA",
-        feat: "Encontre uma Relíquia.",
-        reward: "Rastro OURO",
-        short: "OURO",
-        ach: ach::RELICARIO,
+        name: "RELIC INSIGNIA",
+        feat: "Find a Relic.",
+        reward: "GOLD trail",
+        short: "GOLD",
+        ach: ach::RELIQUARY,
     },
     Honor {
-        name: "INSÍGNIA DA EXPEDIÇÃO",
-        feat: "Chegue ao setor 10 da Expedição.",
-        reward: "Rastro PLASMA",
+        name: "EXPEDITION INSIGNIA",
+        feat: "Reach sector 10 in Expedition.",
+        reward: "PLASMA trail",
         short: "PLASMA",
-        ach: ach::EXPEDICIONARIO,
+        ach: ach::EXPEDITIONARY,
     },
     Honor {
-        name: "INSÍGNIA DO VAZIO",
-        feat: "Derrote o Devorador.",
-        reward: "Rastro VAZIO",
-        short: "VAZIO",
-        ach: ach::DEVORADOR,
+        name: "VOID INSIGNIA",
+        feat: "Defeat the Devourer.",
+        reward: "VOID trail",
+        short: "VOID",
+        ach: ach::DEVOURER,
     },
     Honor {
-        name: "INSÍGNIA SUPREMA",
-        feat: "Encontre as 4 Relíquias.",
-        reward: "Pintura LENDÁRIA para todas as naves",
-        short: "LENDÁRIA",
-        ach: ach::RELIQUIAS,
+        name: "SUPREME INSIGNIA",
+        feat: "Find the 4 Relics.",
+        reward: "LEGENDARY paint for every ship",
+        short: "LEGENDARY",
+        ach: ach::ALL_RELICS,
     },
 ];
 
 impl Honor {
-    /// Insígnias ligadas a conquistas escondidas não revelam nada até serem ganhas.
+    /// Insignias tied to hidden achievements reveal nothing until earned.
     pub fn masked(&self, achs: &[bool]) -> bool {
         ACHS[self.ach].hidden && !achs.get(self.ach).copied().unwrap_or(false)
     }
     pub fn shown_name(&self, achs: &[bool]) -> &'static str {
         if self.masked(achs) {
-            "INSÍGNIA ???"
+            "INSIGNIA ???"
         } else {
             self.name
         }
@@ -710,26 +698,26 @@ pub fn honors_earned(achs: &[bool]) -> usize {
 }
 
 pub const TRAILS: [&str; 8] = [
-    "SEM RASTRO",
-    "ARCO-ÍRIS",
-    "FOGO",
-    "POEIRA ESTELAR",
-    "VAZIO",
-    "GELO",
-    "OURO",
+    "NO TRAIL",
+    "RAINBOW",
+    "FIRE",
+    "COSMIC DUST",
+    "VOID",
+    "ICE",
+    "GOLD",
     "PLASMA",
 ];
 
-/// Conquista que libera cada rastro (o 0 é sempre livre).
+/// Achievement that unlocks each trail (0 is always free).
 pub fn trail_ach(i: usize) -> Option<usize> {
     match i {
-        1 => Some(ach::INTOCAVEL),
-        2 => Some(ach::EXORCISTA),
-        3 => Some(ach::SALA_SECRETA),
-        4 => Some(ach::DEVORADOR),
-        5 => Some(ach::MESTRE_ARMAS),
-        6 => Some(ach::RELICARIO),
-        7 => Some(ach::EXPEDICIONARIO),
+        1 => Some(ach::UNTOUCHABLE),
+        2 => Some(ach::EXORCIST),
+        3 => Some(ach::SECRET_ROOM),
+        4 => Some(ach::DEVOURER),
+        5 => Some(ach::WEAPON_MASTER),
+        6 => Some(ach::RELIQUARY),
+        7 => Some(ach::EXPEDITIONARY),
         _ => None,
     }
 }
@@ -742,86 +730,86 @@ pub fn trail_unlocked(i: usize, s: &crate::save::Save) -> bool {
 }
 
 pub mod ach {
-    pub const PRIMEIRO_VOO: usize = 0;
-    pub const REGICIDA: usize = 1;
-    pub const FERRO_VELHO: usize = 2;
-    pub const SERPENTES: usize = 3;
-    pub const ARACNO: usize = 4;
-    pub const NAO_PISQUE: usize = 5;
-    pub const CORACAO_PARTIDO: usize = 6;
-    pub const FINAL_VERDADEIRO: usize = 7;
-    pub const PESADELO: usize = 8;
-    pub const PERFEICAO: usize = 9;
-    pub const PACIFISTA: usize = 10;
+    pub const FIRST_FLIGHT: usize = 0;
+    pub const REGICIDE: usize = 1;
+    pub const SCRAPYARD: usize = 2;
+    pub const SNAKE_CHARMER: usize = 3;
+    pub const ARACHNO: usize = 4;
+    pub const DONT_BLINK: usize = 5;
+    pub const BROKEN_HEART: usize = 6;
+    pub const TRUE_ENDING: usize = 7;
+    pub const NIGHTMARE: usize = 8;
+    pub const PERFECTION: usize = 9;
+    pub const PACIFIST: usize = 10;
     pub const COMBO50: usize = 11;
     pub const COMBO100: usize = 12;
-    pub const RASPA: usize = 13;
-    pub const INTOCAVEL: usize = 14;
-    pub const DESMONTE: usize = 15;
-    pub const MILIONARIO: usize = 16;
-    pub const PATINHAS: usize = 17;
-    pub const COLECIONADOR: usize = 18;
-    pub const COMPLETISTA: usize = 19;
-    pub const OURO: usize = 20;
-    pub const MUUU: usize = 21;
-    pub const SAMARITANO: usize = 22;
-    pub const PIRATA: usize = 23;
+    pub const CLOSE_SHAVE: usize = 13;
+    pub const UNTOUCHABLE: usize = 14;
+    pub const DISMANTLE: usize = 15;
+    pub const MILLIONAIRE: usize = 16;
+    pub const SCROOGE: usize = 17;
+    pub const COLLECTOR: usize = 18;
+    pub const COMPLETIONIST: usize = 19;
+    pub const FOOLS_GOLD: usize = 20;
+    pub const MOO: usize = 21;
+    pub const SAMARITAN: usize = 22;
+    pub const PIRATE: usize = 23;
     pub const KONAMI: usize = 24;
     pub const DIMENSIONAL: usize = 25;
-    pub const MESTRE_ARMAS: usize = 26;
+    pub const WEAPON_MASTER: usize = 26;
     pub const HANGAR: usize = 27;
-    pub const SOBREVIVENTE: usize = 28;
-    pub const VELOCISTA: usize = 29;
-    pub const FLIPERAMA: usize = 30;
-    pub const ROTINA: usize = 31;
+    pub const SURVIVOR: usize = 28;
+    pub const SPEEDRUNNER: usize = 29;
+    pub const ARCADE_SCORE: usize = 30;
+    pub const ROUTINE: usize = 31;
     pub const ANTI_KAMIKAZE: usize = 32;
-    pub const BOMBARDEIRO: usize = 33;
-    pub const DISCO_OURO: usize = 34;
-    pub const CRIADOR: usize = 35;
-    pub const INSISTENTE: usize = 36;
-    pub const MARATONA: usize = 37;
-    pub const PIROMANIACO: usize = 38;
-    pub const SEM_ARRANHOES: usize = 39;
-    pub const CURIOSO: usize = 40;
-    pub const INSONE: usize = 41;
-    pub const FEBRE: usize = 42;
-    pub const FEBRE3: usize = 43;
-    pub const CONTRATADO: usize = 44;
-    pub const MERCENARIO: usize = 45;
-    pub const ARQUEOLOGO: usize = 46;
-    pub const HISTORIADOR: usize = 47;
-    pub const GEMEAS: usize = 48;
-    pub const DEVORADOR: usize = 49;
-    pub const PEGA_LADRAO: usize = 50;
-    pub const DESCONFIADO: usize = 51;
+    pub const BOMBER: usize = 33;
+    pub const GOLDEN_RECORD: usize = 34;
+    pub const CREATOR: usize = 35;
+    pub const PERSISTENT: usize = 36;
+    pub const MARATHON: usize = 37;
+    pub const PYROMANIAC: usize = 38;
+    pub const NO_SCRATCH: usize = 39;
+    pub const CURIOUS: usize = 40;
+    pub const SLEEPLESS: usize = 41;
+    pub const FEVER: usize = 42;
+    pub const FEVER3: usize = 43;
+    pub const HIRED: usize = 44;
+    pub const ELITE_MERCENARY: usize = 45;
+    pub const ARCHAEOLOGIST: usize = 46;
+    pub const HISTORIAN: usize = 47;
+    pub const TWINS: usize = 48;
+    pub const DEVOURER: usize = 49;
+    pub const THIEF_CATCHER: usize = 50;
+    pub const SUSPICIOUS: usize = 51;
     pub const ELITE: usize = 52;
-    pub const GELO: usize = 53;
-    pub const HORIZONTE: usize = 54;
-    pub const ARSENAL_DUPLO: usize = 55;
-    pub const MESTRE_SUPREMO: usize = 56;
+    pub const ICE_AGE: usize = 53;
+    pub const HORIZON: usize = 54;
+    pub const DOUBLE_ARSENAL: usize = 55;
+    pub const SUPREME_MASTER: usize = 56;
     pub const ECLIPSE: usize = 57;
-    pub const FAZENDEIRO: usize = 58;
-    pub const FLIPERAMISTA: usize = 59;
-    pub const RELICARIO: usize = 60;
-    pub const TURISTA: usize = 61;
-    pub const EXORCISTA: usize = 62;
-    pub const AZARADO: usize = 63;
-    pub const SALA_SECRETA: usize = 64;
-    pub const PERFECCIONISTA: usize = 65;
-    pub const RELIQUIAS: usize = 66;
-    pub const EXPEDICIONARIO: usize = 67;
-    pub const TESOUREIRO: usize = 68;
-    pub const FROTA: usize = 69;
-    pub const COMETA: usize = 70;
-    pub const SOLETRADOR: usize = 71;
-    pub const OVNI: usize = 72;
-    pub const ATALHO: usize = 73;
-    pub const RELAMPAGO: usize = 74;
-    pub const CARREGADO: usize = 75;
+    pub const FARMER: usize = 58;
+    pub const ARCADE_MASTER: usize = 59;
+    pub const RELIQUARY: usize = 60;
+    pub const TOURIST: usize = 61;
+    pub const EXORCIST: usize = 62;
+    pub const JINXED: usize = 63;
+    pub const SECRET_ROOM: usize = 64;
+    pub const PERFECTIONIST: usize = 65;
+    pub const ALL_RELICS: usize = 66;
+    pub const EXPEDITIONARY: usize = 67;
+    pub const TREASURER: usize = 68;
+    pub const FULL_FLEET: usize = 69;
+    pub const COMET: usize = 70;
+    pub const SPELLER: usize = 71;
+    pub const UFO: usize = 72;
+    pub const SHORTCUT: usize = 73;
+    pub const LIGHTNING_WAVE: usize = 74;
+    pub const CHARGED: usize = 75;
 }
 
 // ---------------------------------------------------------------------------
-// Bestiário
+// Bestiary
 // ---------------------------------------------------------------------------
 
 pub struct Lore {
@@ -829,140 +817,140 @@ pub struct Lore {
     pub text: &'static str,
 }
 
-/// Uma entrada por tipo de inimigo (ordem de game::Kind) seguida pelos chefes (ordem de BossId).
+/// One entry per enemy type (order of game::Kind) followed by the bosses (order of BossKind).
 pub const BESTIARY: &[Lore] = &[
     Lore {
-        name: "ZANGÃO",
-        text: "A base do Enxame. Sozinho é inofensivo; em formação, é uma muralha viva.",
+        name: "DRONE",
+        text: "The base of the Swarm. Harmless alone; in formation, a living wall.",
     },
     Lore {
-        name: "VESPA",
-        text: "Rápida e nervosa. Gosta de mergulhar em espiral antes de voltar à formação.",
+        name: "WASP",
+        text: "Fast and jumpy. Loves to dive in spirals before returning to formation.",
     },
     Lore {
-        name: "BESOURO",
-        text: "Comandante blindado. Aguenta dois tiros e sempre leva escolta nos mergulhos.",
+        name: "BEETLE",
+        text: "Armored commander. Takes two hits and always brings escorts when diving.",
     },
     Lore {
-        name: "ATIRADOR",
-        text: "Carrega dois canhões biológicos. Para no meio da tela para disparar em leque.",
+        name: "GUNNER",
+        text: "Carries two biological cannons. Stops mid-screen to fire a spread.",
     },
     Lore {
-        name: "DIVISOR",
-        text: "Quando morre, se divide em dois filhotes famintos que caçam a sua nave.",
+        name: "SPLITTER",
+        text: "When it dies, it splits into two hungry hatchlings that hunt your ship.",
     },
     Lore {
         name: "KAMIKAZE",
-        text: "Não atira. Não desvia. Só quer encostar em você.",
+        text: "Doesn't shoot. Doesn't dodge. Just wants to touch you.",
     },
     Lore {
-        name: "FILHOTE",
-        text: "Nasce dos Divisores e das Portadoras. Pequeno, rápido e teimoso.",
+        name: "HATCHLING",
+        text: "Born from Splitters and Carriers. Small, fast and stubborn.",
     },
     Lore {
-        name: "ESCUDEIRO",
-        text: "Carrega uma placa de quitina na frente. Quebre o escudo antes de feri-lo.",
+        name: "SHIELDBEARER",
+        text: "Carries a chitin plate in front. Break the shield before you can hurt it.",
     },
     Lore {
-        name: "TECELÃ",
-        text: "Dispara teias pegajosas que deixam sua nave lenta por alguns segundos.",
+        name: "WEAVER",
+        text: "Shoots sticky webs that slow your ship down for a few seconds.",
     },
     Lore {
-        name: "PORTADORA",
-        text: "Uma creche voadora. Solta filhotes enquanto estiver viva.",
+        name: "CARRIER",
+        text: "A flying nursery. Releases hatchlings while alive.",
     },
     Lore {
-        name: "CAMALEÃO",
-        text: "Some e reaparece. Só é atingido quando está visível.",
+        name: "CHAMELEON",
+        text: "Vanishes and reappears. Can only be hit while visible.",
     },
     Lore {
-        name: "ESCARAVELHO DOURADO",
-        text: "Raríssimo. Foge rápido, mas carrega uma fortuna em cristais.",
+        name: "GOLDEN SCARAB",
+        text: "Very rare. Flees fast, but carries a fortune in crystals.",
     },
     Lore {
-        name: "VACA CÓSMICA",
-        text: "Ninguém sabe como ela chegou ao espaço. Ninguém tem coragem de perguntar.",
+        name: "COSMIC COW",
+        text: "Nobody knows how it got to space. Nobody dares to ask.",
     },
     Lore {
-        name: "MERCADOR",
-        text: "Um comerciante neutro. Retribui a gentileza... e nunca esquece uma traição.",
+        name: "MERCHANT",
+        text: "A neutral trader. Returns kindness... and never forgets a betrayal.",
     },
     Lore {
-        name: "RAINHA DA COLMEIA",
-        text: "Mãe de todo o Enxame. Suas garras disparam sozinhas e ela chama lacaios.",
+        name: "HIVE QUEEN",
+        text: "Mother of the whole Swarm. Her claws fire on their own and she calls minions.",
     },
     Lore {
-        name: "COURAÇADO ZÊNITE",
-        text: "Uma nave roubada e infestada. O canhão central dispara um laser avisado.",
+        name: "ZENITH DREADNOUGHT",
+        text: "A stolen, infested ship. The central cannon fires a telegraphed laser.",
     },
     Lore {
-        name: "SERPENTE COMETA",
-        text: "Uma cauda de anéis em brasa. Cada anel destruído enfraquece a fera.",
+        name: "COMET SERPENT",
+        text: "A tail of burning rings. Each ring destroyed weakens the beast.",
     },
     Lore {
-        name: "TECELÃ ABISSAL",
-        text: "Aranha do tamanho de uma lua. Suas teias atravessam a tela inteira.",
+        name: "ABYSSAL WEAVER",
+        text: "A spider the size of a moon. Its webs cross the entire screen.",
     },
     Lore {
-        name: "OLHO DO VAZIO",
-        text: "Só pode ser ferido com a pálpebra aberta. Seu olhar varre o espaço com raios.",
+        name: "EYE OF THE VOID",
+        text: "Can only be hurt with its eyelid open. Its gaze sweeps space with beams.",
     },
     Lore {
-        name: "RAINHA SUPREMA",
-        text: "O coração do Enxame. Coroada, furiosa e com todos os truques das irmãs.",
+        name: "SUPREME QUEEN",
+        text: "The heart of the Swarm. Crowned, furious and with all her sisters' tricks.",
     },
     Lore {
-        name: "MÍMICO",
-        text: "Parece uma cápsula. Não é. Quando você chega perto, ele abre a boca.",
+        name: "MIMIC",
+        text: "Looks like a capsule. It isn't. When you get close, it opens its mouth.",
     },
     Lore {
-        name: "LADRÃO",
-        text: "Mascarado e rápido. Rouba o que cai na tela e foge. Derrube-o para recuperar em dobro.",
+        name: "THIEF",
+        text: "Masked and fast. Steals what falls and flees. Shoot it down to get it back doubled.",
     },
     Lore {
-        name: "CARGUEIRO",
-        text: "Nave de carga do Enxame. Não atira e está lotada de cristais.",
+        name: "FREIGHTER",
+        text: "Swarm cargo ship. Doesn't shoot and is packed with crystals.",
     },
     Lore {
-        name: "AS GÊMEAS",
-        text: "Duas princesas da colmeia que lutam juntas. Quando uma cai, a outra enlouquece.",
+        name: "THE TWINS",
+        text: "Two hive princesses who fight together. When one falls, the other goes berserk.",
     },
     Lore {
-        name: "O DEVORADOR",
-        text: "Aquilo de que o Enxame fugia. Uma fome do tamanho de uma galáxia.",
+        name: "THE DEVOURER",
+        text: "What the Swarm was fleeing from. A hunger the size of a galaxy.",
     },
     Lore {
-        name: "COMETA WILD",
-        text: "Um cometa que o Enxame domou. Sua cauda solta poeira estelar que fere.",
+        name: "WILD COMET",
+        text: "A comet the Swarm tamed. Its tail sheds cosmic dust that hurts.",
     },
     Lore {
-        name: "MINADOR",
-        text: "Desce em mergulho largando minas que explodem em leque. Atire nas minas!",
+        name: "MINELAYER",
+        text: "Dives while dropping mines that explode in a spread. Shoot the mines!",
     },
     Lore {
-        name: "SALTADOR",
-        text: "Nunca fica no mesmo lugar da formação. Some num piscar e reaparece longe.",
+        name: "JUMPER",
+        text: "Never stays in the same spot of the formation. Vanishes in a blink and reappears far away.",
     },
 ];
 
 pub const LORE_BOSS_START: usize = 14;
-/// Novos registros da v3 (depois dos chefes originais, para manter saves antigos).
-pub const LORE_V3: usize = 20;
+/// Special enemies and late bosses (after the original bosses).
+pub const LORE_SPECIAL: usize = 20;
 pub const LORE_TWINS: usize = 23;
 pub const LORE_DEVOURER: usize = 24;
 pub const LORE_COMET: usize = 25;
-/// Inimigos da v5 (Minador e Saltador), depois do Cometa.
-pub const LORE_V5: usize = 26;
-pub const KIND_V5: usize = 17;
+/// Late enemies (Minelayer and Jumper), after the Comet.
+pub const LORE_LATE: usize = 26;
+pub const KIND_LATE: usize = 17;
 
-/// Índice do bestiário para um tipo de inimigo (game::Kind as usize).
+/// Bestiary index for an enemy type (game::Kind as usize).
 pub fn lore_of_kind(kind: usize) -> usize {
     if kind < LORE_BOSS_START {
         kind
-    } else if kind >= KIND_V5 {
-        LORE_V5 + kind - KIND_V5
+    } else if kind >= KIND_LATE {
+        LORE_LATE + kind - KIND_LATE
     } else {
-        LORE_V3 + kind - LORE_BOSS_START
+        LORE_SPECIAL + kind - LORE_BOSS_START
     }
 }
 
@@ -971,7 +959,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn patentes_crescem() {
+    fn ranks_grow() {
         for r in 1..RANKS.len() {
             assert!(xp_for(r) > xp_for(r - 1));
             assert_eq!(rank_of(xp_for(r)), r);
@@ -980,21 +968,21 @@ mod tests {
     }
 
     #[test]
-    fn datas() {
+    fn dates() {
         assert_eq!(civil(0), (1970, 1, 1));
         assert_eq!(civil(20_454), (2026, 1, 1));
         assert_eq!(civil(20_760), (2026, 11, 3));
     }
 
     #[test]
-    fn conquistas_tem_nomes_unicos() {
+    fn achievements_have_unique_names() {
         let mut names: Vec<&str> = ACHS.iter().map(|a| a.name).collect();
         names.sort();
         names.dedup();
         assert_eq!(names.len(), ACHS.len());
-        assert_eq!(ACHS[ach::INSONE].name, "Insone");
-        assert_eq!(ACHS[ach::TURISTA].name, "Turista Cósmico");
+        assert_eq!(ACHS[ach::SLEEPLESS].name, "Sleepless");
+        assert_eq!(ACHS[ach::TOURIST].name, "Cosmic Tourist");
         assert_eq!(ACHS.len(), 76);
-        assert_eq!(ACHS[ach::COMETA].name, "Caçador de Cometas");
+        assert_eq!(ACHS[ach::COMET].name, "Comet Hunter");
     }
 }

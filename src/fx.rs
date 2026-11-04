@@ -1,4 +1,4 @@
-//! Partículas, ondas de choque, textos flutuantes e fundo animado.
+//! Particles, shock waves, floating texts and animated background.
 
 use crate::{H, W};
 use macroquad::prelude::*;
@@ -48,7 +48,7 @@ static DENSITY: AtomicU32 = AtomicU32::new(0x3f80_0000); // 1.0
 static FLASH: AtomicU32 = AtomicU32::new(0x3f80_0000);
 static STILL_BG: AtomicU32 = AtomicU32::new(0);
 
-/// Configurações gráficas globais (vindas da tela de Configurações).
+/// Global graphics settings (from the Settings screen).
 pub fn set_quality(density: f32, flash: f32, still_bg: bool) {
     DENSITY.store(density.to_bits(), Ordering::Relaxed);
     FLASH.store(flash.to_bits(), Ordering::Relaxed);
@@ -207,7 +207,7 @@ impl Fx {
 }
 
 // ---------------------------------------------------------------------------
-// Fundo
+// Background
 // ---------------------------------------------------------------------------
 
 struct Star {
@@ -245,61 +245,61 @@ pub struct Theme {
 
 pub const THEMES: [Theme; 10] = [
     Theme {
-        name: "ÓRBITA BAIXA",
+        name: "LOW ORBIT",
         base: Color::new(0.02, 0.02, 0.08, 1.0),
         a: [0.10, 0.20, 0.55],
         b: [0.30, 0.15, 0.60],
     },
     Theme {
-        name: "CAMPO DE ASTEROIDES",
+        name: "ASTEROID FIELD",
         base: Color::new(0.04, 0.03, 0.04, 1.0),
         a: [0.40, 0.25, 0.15],
         b: [0.20, 0.25, 0.40],
     },
     Theme {
-        name: "NEBULOSA CARMESIM",
+        name: "CRIMSON NEBULA",
         base: Color::new(0.06, 0.01, 0.04, 1.0),
         a: [0.65, 0.10, 0.25],
         b: [0.90, 0.40, 0.20],
     },
     Theme {
-        name: "COLMEIA EXTERIOR",
+        name: "OUTER HIVE",
         base: Color::new(0.01, 0.05, 0.05, 1.0),
         a: [0.10, 0.50, 0.40],
         b: [0.40, 0.60, 0.15],
     },
     Theme {
-        name: "CINTURÃO DE GELO",
+        name: "ICE BELT",
         base: Color::new(0.02, 0.04, 0.08, 1.0),
         a: [0.45, 0.70, 0.95],
         b: [0.70, 0.85, 1.00],
     },
     Theme {
-        name: "TEMPESTADE IÔNICA",
+        name: "ION STORM",
         base: Color::new(0.01, 0.03, 0.05, 1.0),
         a: [0.10, 0.35, 0.45],
         b: [0.30, 0.20, 0.55],
     },
     Theme {
-        name: "RUÍNAS ANCESTRAIS",
+        name: "ANCIENT RUINS",
         base: Color::new(0.05, 0.035, 0.02, 1.0),
         a: [0.55, 0.40, 0.15],
         b: [0.35, 0.25, 0.20],
     },
     Theme {
-        name: "CORAÇÃO DO ENXAME",
+        name: "HEART OF THE SWARM",
         base: Color::new(0.05, 0.01, 0.07, 1.0),
         a: [0.50, 0.10, 0.60],
         b: [0.80, 0.20, 0.30],
     },
     Theme {
-        name: "DIMENSÃO DOURADA",
+        name: "GOLDEN DIMENSION",
         base: Color::new(0.08, 0.05, 0.01, 1.0),
         a: [0.95, 0.75, 0.20],
         b: [1.00, 0.50, 0.30],
     },
     Theme {
-        name: "O VAZIO ALÉM",
+        name: "THE VOID BEYOND",
         base: Color::new(0.0, 0.0, 0.01, 1.0),
         a: [0.18, 0.02, 0.10],
         b: [0.05, 0.02, 0.15],
@@ -440,7 +440,7 @@ impl Background {
         }
     }
 
-    /// Fundo esticado para a tela inteira (laterais dos painéis).
+    /// Background stretched across the whole screen (behind the side panels).
     pub fn draw_wide(&self, total_w: f32) {
         let theme = &THEMES[self.theme.min(THEMES.len() - 1)];
         draw_rectangle(0.0, 0.0, total_w, H, theme.base);
@@ -499,10 +499,10 @@ impl Background {
                 );
             }
         }
-        // Elementos de cenário por tema
+        // Scenery per theme
         match self.theme {
             0 => {
-                // Planeta azul enorme lá embaixo, ficando para trás
+                // Huge blue planet far below, falling behind
                 let c = vec2(W * 0.72, H + 400.0 + self.planet_y.min(900.0) * 0.6);
                 draw_circle(c.x, c.y, 420.0, Color::from_rgba(14, 30, 70, 255));
                 draw_circle(
@@ -545,7 +545,7 @@ impl Background {
                 );
             }
             3 => {
-                // favos distantes
+                // distant honeycombs
                 let col = Color::from_rgba(60, 160, 130, 40);
                 let oy = (self.neb_y * 1.5) % 52.0;
                 for row in -1..16 {
@@ -557,7 +557,7 @@ impl Background {
                 }
             }
             4 => {
-                // neve / cristais de gelo
+                // snow / ice crystals
                 for (i, s) in self.stars.iter().enumerate().take(60) {
                     let x = (s.pos.x + (time * 0.8 + i as f32).sin() * 12.0).rem_euclid(W);
                     let y = (s.pos.y * 1.3 + time * 20.0).rem_euclid(H);
@@ -582,7 +582,7 @@ impl Background {
                 );
             }
             5 => {
-                // relâmpagos distantes
+                // distant lightning
                 let k = (time * 0.7).floor();
                 let phase = (time * 0.7).fract();
                 if phase < 0.06 {
@@ -597,7 +597,7 @@ impl Background {
                 }
             }
             6 => {
-                // pilares e glifos ancestrais
+                // ancient pillars and glyphs
                 let oy = (self.neb_y * 0.6) % 240.0;
                 for row in -1..4 {
                     for i in 0..3 {
@@ -623,7 +623,7 @@ impl Background {
                 }
             }
             9 => {
-                // olhos no escuro
+                // eyes in the dark
                 for i in 0..14 {
                     let fx = ((i as f32 * 73.1).sin() * 0.5 + 0.5) * W;
                     let fy = ((i as f32 * 41.7).cos() * 0.5 + 0.5) * H;

@@ -1,4 +1,4 @@
-//! Chefes: Rainha, Couraçado, Serpente, Tecelã, Olho, Gêmeas, Cometa e Devorador.
+//! Bosses: Queen, Warship, Serpent, Weaver, Eye, Twins, Comet and Devourer.
 
 use crate::art::Art;
 use crate::audio::Sfx;
@@ -117,7 +117,7 @@ pub struct Boss {
     pub variant: bool,
     aim: Vec2,
     trail: Vec<Vec2>,
-    // olho
+    // eye
     open: bool,
     lid_t: f32,
     beam_angles: Vec<f32>,
@@ -288,7 +288,7 @@ impl Boss {
         }
     }
 
-    /// Índice no bestiário (a partir de LORE_BOSS_START).
+    /// Bestiary index (relative to LORE_BOSS_START).
     pub fn lore_id(&self) -> usize {
         match (self.kind, self.final_boss) {
             (BossKind::Queen, true) => 5,
@@ -303,7 +303,7 @@ impl Boss {
         }
     }
 
-    /// Índice absoluto no bestiário.
+    /// Absolute bestiary index.
     pub fn lore_index(&self) -> usize {
         match self.lore_id() {
             6 => crate::progress::LORE_TWINS,
@@ -315,19 +315,19 @@ impl Boss {
 
     pub fn name(&self) -> &'static str {
         match (self.kind, self.final_boss, self.variant) {
-            (BossKind::Queen, true, _) => "RAINHA SUPREMA DO ENXAME",
-            (BossKind::Queen, false, _) => "RAINHA DA COLMEIA",
-            (BossKind::Warship, _, true) => "COURAÇADO ÔMEGA",
-            (BossKind::Warship, _, false) => "COURAÇADO ZÊNITE",
-            (BossKind::Serpent, _, true) => "SERPENTE ANCESTRAL",
-            (BossKind::Serpent, _, false) => "SERPENTE COMETA",
-            (BossKind::Weaver, _, _) => "TECELÃ ABISSAL",
-            (BossKind::Eye, _, true) => "OLHO ANCESTRAL",
-            (BossKind::Eye, _, false) => "OLHO DO VAZIO",
-            (BossKind::Twins, _, _) => "AS GÊMEAS",
-            (BossKind::Devourer, _, _) => "O DEVORADOR",
-            (BossKind::Comet, _, true) => "COMETA WILD ANCESTRAL",
-            (BossKind::Comet, _, false) => "COMETA WILD",
+            (BossKind::Queen, true, _) => "SUPREME QUEEN OF THE SWARM",
+            (BossKind::Queen, false, _) => "HIVE QUEEN",
+            (BossKind::Warship, _, true) => "OMEGA DREADNOUGHT",
+            (BossKind::Warship, _, false) => "ZENITH DREADNOUGHT",
+            (BossKind::Serpent, _, true) => "ANCIENT SERPENT",
+            (BossKind::Serpent, _, false) => "COMET SERPENT",
+            (BossKind::Weaver, _, _) => "ABYSSAL WEAVER",
+            (BossKind::Eye, _, true) => "ANCIENT EYE",
+            (BossKind::Eye, _, false) => "EYE OF THE VOID",
+            (BossKind::Twins, _, _) => "THE TWINS",
+            (BossKind::Devourer, _, _) => "THE DEVOURER",
+            (BossKind::Comet, _, true) => "ANCIENT WILD COMET",
+            (BossKind::Comet, _, false) => "WILD COMET",
         }
     }
 
@@ -477,7 +477,7 @@ impl Boss {
         let ph = self.phase();
         let bs = bmul * self.speed();
 
-        // movimento
+        // movement
         let frozen = self.beam.is_some() || self.beam_on > 0.0 || self.beam_warn > 0.0;
         if !frozen {
             self.move_t += dt * (1.0 + ph as f32 * 0.25) * if self.rush > 0.0 { 2.4 } else { 1.0 };
@@ -522,7 +522,7 @@ impl Boss {
         }
         self.place_parts();
 
-        // pálpebra do olho
+        // eye lid
         if self.kind == BossKind::Eye {
             self.lid_t += dt;
             let (open_t, closed_t) = if ph >= 2 { (2.6, 1.4) } else { (3.6, 2.0) };
@@ -536,7 +536,7 @@ impl Boss {
             }
         }
 
-        // partes atiram sozinhas
+        // parts fire on their own
         let spd = self.speed();
         for p in &mut self.parts {
             if p.hp <= 0.0 || p.kind == PartKind::Cannon {
@@ -566,7 +566,7 @@ impl Boss {
             }
         }
 
-        // laser do couraçado
+        // warship laser
         if let Some(b) = &mut self.beam {
             if let Some(c) = self.parts.iter().find(|p| p.kind == PartKind::Cannon) {
                 b.x = c.pos.x;
@@ -585,7 +585,7 @@ impl Boss {
             }
         }
 
-        // raios giratórios do olho
+        // eye's rotating beams
         if self.beam_warn > 0.0 {
             self.beam_warn -= dt;
             if self.beam_warn <= 0.0 {
@@ -602,7 +602,7 @@ impl Boss {
             }
         }
 
-        // olhar (rajada mirada)
+        // gaze (aimed burst)
         if let Some((target, t)) = &mut self.gaze {
             *t -= dt;
             if *t <= 0.0 {
@@ -620,7 +620,7 @@ impl Boss {
             }
         }
 
-        // padrões
+        // patterns
         let list = self.pattern_list(ph);
         let pos = self.pos;
         match &mut self.active {
@@ -684,7 +684,7 @@ impl Boss {
                     }
                     Pattern::Minions => {
                         let kind = if self.kind == BossKind::Weaver {
-                            Kind::Tecela
+                            Kind::Weaver
                         } else {
                             Kind::Kamikaze
                         };
@@ -696,11 +696,8 @@ impl Boss {
                             ));
                         }
                         if ph >= 1 {
-                            out.spawns.push((
-                                Kind::Zangao,
-                                pos + vec2(0.0, 40.0),
-                                vec2(0.0, 160.0),
-                            ));
+                            out.spawns
+                                .push((Kind::Drone, pos + vec2(0.0, 40.0), vec2(0.0, 160.0)));
                         }
                         out.sfx.push(Sfx::Powerup);
                         done = true;
@@ -1202,7 +1199,7 @@ impl Boss {
                             Color::new(1.0, 0.6, 0.85, 1.0),
                             p.flash > 0.0,
                         );
-                        // laço entre as irmãs
+                        // link between the sisters
                         let k = (time * 3.0).sin() * 0.5 + 0.5;
                         draw_line(
                             pos.x,
@@ -1226,7 +1223,7 @@ impl Boss {
                         Color::new(0.4, 0.0, 0.25, 0.06 + k as f32 * 0.03),
                     );
                 }
-                // tentáculos
+                // tentacles
                 for i in 0..10 {
                     let base = i as f32 / 10.0 * TAU + time * 0.2;
                     let mut prev = pos + vec2(base.cos(), base.sin()) * 56.0;
@@ -1253,7 +1250,7 @@ impl Boss {
                     3.0,
                     Color::new(0.7, 0.1, 0.4, 0.6 + pulse * 0.4),
                 );
-                // boca
+                // mouth
                 let open = ((time * 1.7).sin() * 0.5 + 0.5) * 10.0
                     + if self.pull > 0.0 { 14.0 } else { 0.0 };
                 let my = pos.y + 26.0;
@@ -1280,7 +1277,7 @@ impl Boss {
                         WHITE,
                     );
                 }
-                // olho central
+                // central eye
                 let d = (self.aim - self.pos).normalize_or_zero() * 8.0;
                 draw_ellipse(
                     pos.x,
@@ -1356,7 +1353,7 @@ impl Boss {
     }
 
     fn draw_comet(&self, pos: Vec2, off: Vec2, time: f32, tint: Color, flash: bool) {
-        // cauda de poeira
+        // dust tail
         let n = self.trail.len();
         for (i, p) in self.trail.iter().enumerate().rev().step_by(2) {
             let k = i as f32 / n.max(1) as f32;
@@ -1387,7 +1384,7 @@ impl Boss {
             46.0 + pulse * 0.5,
             Color::new(0.6, 0.9, 1.0, 0.12),
         );
-        // núcleo
+        // nucleus
         let base = if flash {
             WHITE
         } else {
@@ -1429,7 +1426,7 @@ impl Boss {
                 Color::new(1.0, 0.5, 0.4, 0.8),
             );
         }
-        // fragmentos
+        // fragments
         for p in &self.parts {
             if p.hp <= 0.0 {
                 continue;

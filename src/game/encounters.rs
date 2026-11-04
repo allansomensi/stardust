@@ -1,52 +1,52 @@
-//! Sistemas da versão 3: novas armas e segunda arma, Febre, contratos, eventos de
-//! setor, Mímicos, Ladrões, elites, cargueiros, registros de bordo, o Vazio e o bezerro.
+//! Encounter systems: extra weapons, Fever, contracts, sector events, Mimics,
+//! Thieves, elites, freighters, flight logs, the Void and the calf.
 
 use super::*;
 use crate::progress::LOGS;
 use std::f32::consts::TAU;
 
 // ---------------------------------------------------------------------------
-// Eventos de setor
+// Sector events
 // ---------------------------------------------------------------------------
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum SEvent {
     Eclipse,
-    Meteoros,
-    Ouro,
-    Emboscada,
-    Gravidade,
-    Comboio,
+    Meteors,
+    GoldRush,
+    Ambush,
+    Gravity,
+    Convoy,
 }
 
 pub const SEVENTS: [SEvent; 6] = [
     SEvent::Eclipse,
-    SEvent::Meteoros,
-    SEvent::Ouro,
-    SEvent::Emboscada,
-    SEvent::Gravidade,
-    SEvent::Comboio,
+    SEvent::Meteors,
+    SEvent::GoldRush,
+    SEvent::Ambush,
+    SEvent::Gravity,
+    SEvent::Convoy,
 ];
 
 impl SEvent {
     pub fn name(self) -> &'static str {
         match self {
             SEvent::Eclipse => "ECLIPSE",
-            SEvent::Meteoros => "CHUVA DE METEOROS",
-            SEvent::Ouro => "FEBRE DO OURO",
-            SEvent::Emboscada => "EMBOSCADA",
-            SEvent::Gravidade => "MARÉ GRAVITACIONAL",
-            SEvent::Comboio => "COMBOIO DE CARGA",
+            SEvent::Meteors => "METEOR SHOWER",
+            SEvent::GoldRush => "GOLD RUSH",
+            SEvent::Ambush => "AMBUSH",
+            SEvent::Gravity => "GRAVITY TIDE",
+            SEvent::Convoy => "CARGO CONVOY",
         }
     }
     pub fn desc(self) -> &'static str {
         match self {
-            SEvent::Eclipse => "A luz some. Só se vê perto da nave.",
-            SEvent::Meteoros => "Pedras despencam por todo o setor.",
-            SEvent::Ouro => "Cristais valem o dobro neste setor.",
-            SEvent::Emboscada => "Parte do Enxame chega por baixo!",
-            SEvent::Gravidade => "Os tiros inimigos curvam na sua direção.",
-            SEvent::Comboio => "Cargueiros lotados de cristais cruzam a tela.",
+            SEvent::Eclipse => "The light fades. You can only see near your ship.",
+            SEvent::Meteors => "Rocks rain down all over the sector.",
+            SEvent::GoldRush => "Crystals are worth double this sector.",
+            SEvent::Ambush => "Part of the Swarm comes from below!",
+            SEvent::Gravity => "Enemy shots curve toward you.",
+            SEvent::Convoy => "Freighters full of crystals cross the screen.",
         }
     }
     pub fn index(self) -> usize {
@@ -55,7 +55,7 @@ impl SEvent {
 }
 
 // ---------------------------------------------------------------------------
-// Contratos
+// Contracts
 // ---------------------------------------------------------------------------
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -85,30 +85,30 @@ impl Contract {
     pub fn text(&self) -> String {
         match self.kind {
             CKind::Kill(k) => format!(
-                "Abata {} {}",
+                "Shoot down {} {}",
                 self.target,
                 crate::progress::BESTIARY[crate::progress::lore_of_kind(k.index())].name
             ),
-            CKind::Combo => format!("Faça um combo de {}", self.target),
-            CKind::Grazes => format!("Faça {} raspões", self.target),
-            CKind::Capsules => format!("Pegue {} cápsulas", self.target),
-            CKind::Crystals => format!("Colete {} cristais", self.target),
-            CKind::Dives => format!("Abata {} em mergulho", self.target),
-            CKind::Parts => format!("Destrua {} partes de chefes", self.target),
-            CKind::NoBomb => "Termine um setor sem bombas".to_string(),
-            CKind::Elites => format!("Abata {} elites", self.target),
-            CKind::Frozen => format!("Congele {} inimigos", self.target),
-            CKind::Fever => "Entre em Febre".to_string(),
+            CKind::Combo => format!("Make a {} combo", self.target),
+            CKind::Grazes => format!("Make {} grazes", self.target),
+            CKind::Capsules => format!("Grab {} capsules", self.target),
+            CKind::Crystals => format!("Collect {} crystals", self.target),
+            CKind::Dives => format!("Shoot down {} while diving", self.target),
+            CKind::Parts => format!("Destroy {} boss parts", self.target),
+            CKind::NoBomb => "Finish a sector without bombs".to_string(),
+            CKind::Elites => format!("Shoot down {} elites", self.target),
+            CKind::Frozen => format!("Freeze {} enemies", self.target),
+            CKind::Fever => "Enter Fever".to_string(),
         }
     }
 }
 
 fn roll_contracts(mode: Mode, rank: usize, achs: &[bool]) -> Vec<Contract> {
-    let classic = mode == Mode::Classico;
+    let classic = mode == Mode::Classic;
     let mut pool: Vec<(CKind, u32, u32)> = vec![
-        (CKind::Kill(Kind::Vespa), 30, 300),
-        (CKind::Kill(Kind::Besouro), 12, 350),
-        (CKind::Kill(Kind::Zangao), 40, 300),
+        (CKind::Kill(Kind::Wasp), 30, 300),
+        (CKind::Kill(Kind::Beetle), 12, 350),
+        (CKind::Kill(Kind::Drone), 40, 300),
         (CKind::Combo, 40, 400),
         (CKind::Dives, 20, 350),
         (CKind::NoBomb, 1, 400),
@@ -122,18 +122,18 @@ fn roll_contracts(mode: Mode, rank: usize, achs: &[bool]) -> Vec<Contract> {
         ]);
         if matches!(
             mode,
-            Mode::Campanha | Mode::Diario | Mode::Chefoes | Mode::Expedicao
+            Mode::Campaign | Mode::Daily | Mode::BossRush | Mode::Expedition
         ) {
             pool.push((CKind::Parts, 4, 450));
         }
-        if matches!(mode, Mode::Campanha | Mode::Sobrevivencia | Mode::Expedicao) {
+        if matches!(mode, Mode::Campaign | Mode::Survival | Mode::Expedition) {
             pool.push((CKind::Elites, 4, 450));
         }
-        if Weapon::Crio.unlocked(rank, achs) {
+        if Weapon::Cryo.unlocked(rank, achs) {
             pool.push((CKind::Frozen, 25, 350));
         }
     }
-    if mode == Mode::Chefoes {
+    if mode == Mode::BossRush {
         pool.retain(|(k, _, _)| {
             matches!(
                 k,
@@ -161,7 +161,7 @@ fn roll_contracts(mode: Mode, rank: usize, achs: &[bool]) -> Vec<Contract> {
 }
 
 // ---------------------------------------------------------------------------
-// Estado da v3
+// State
 // ---------------------------------------------------------------------------
 
 #[derive(Clone, Copy)]
@@ -172,7 +172,7 @@ enum Loot {
 }
 
 #[derive(Default)]
-pub struct V3State {
+pub struct Encounters {
     pub fever_t: f32,
     fever_lock: bool,
     pub fevers: u32,
@@ -201,9 +201,9 @@ pub struct V3State {
     pub saws: Vec<Vec2>,
 }
 
-impl V3State {
-    pub fn new(cfg: &RunConfig) -> V3State {
-        V3State {
+impl Encounters {
+    pub fn new(cfg: &RunConfig) -> Encounters {
+        Encounters {
             contracts: roll_contracts(cfg.mode, cfg.rank, &cfg.achs),
             thief_timer: 3.0,
             calf_moo: 15.0,
@@ -213,10 +213,10 @@ impl V3State {
 }
 
 // ---------------------------------------------------------------------------
-// Armas novas
+// Extra weapons
 // ---------------------------------------------------------------------------
 
-/// Dispara as armas da v3 e devolve o intervalo até o próximo tiro.
+/// Fires the extra weapons and returns the delay until the next shot.
 #[allow(clippy::too_many_arguments)]
 pub(super) fn fire_extra(
     w: Weapon,
@@ -236,7 +236,7 @@ pub(super) fn fire_extra(
     };
     let lvi = (lv - 1).clamp(0, 4) as usize;
     match w {
-        Weapon::Ricochete => {
+        Weapon::Ricochet => {
             let n = [2, 2, 3, 4, 5][lvi];
             for k in 0..n {
                 let a = if n == 1 {
@@ -253,7 +253,7 @@ pub(super) fn fire_extra(
             au.play_vol(Sfx::Laser, 0.3);
             0.17
         }
-        Weapon::Granada => {
+        Weapon::Grenade => {
             let n = if lv >= 4 { 2 } else { 1 };
             for k in 0..n {
                 let a = (k as f32 - (n - 1) as f32 / 2.0) * 14.0;
@@ -265,7 +265,7 @@ pub(super) fn fire_extra(
             au.play_vol(Sfx::Missile, 0.3);
             0.5
         }
-        Weapon::Crio => {
+        Weapon::Cryo => {
             let n = [1, 2, 2, 3, 3][lvi];
             for k in 0..n {
                 let a = if n == 1 {
@@ -280,11 +280,11 @@ pub(super) fn fire_extra(
             au.play_vol(Sfx::Ice, 0.3);
             0.13
         }
-        Weapon::Orbita => {
+        Weapon::Orbit => {
             out.push(mk(o, 0.0, 640.0, dmg, BKind::Shot));
             0.2
         }
-        Weapon::BuracoNegro => {
+        Weapon::BlackHole => {
             out.push(mk(o + vec2(-5.0, 0.0), 0.0, 640.0, 0.7 * dmg, BKind::Shot));
             out.push(mk(o + vec2(5.0, 0.0), 0.0, 640.0, 0.7 * dmg, BKind::Shot));
             if *hole_cd <= 0.0 {
@@ -298,7 +298,7 @@ pub(super) fn fire_extra(
             }
             0.18
         }
-        Weapon::Colmeia => {
+        Weapon::Hive => {
             let n = ((2 + lv) as f32 * mods.bee_mul) as usize;
             for k in 0..n {
                 let side = if k % 2 == 0 { -1.0 } else { 1.0 };
@@ -316,7 +316,7 @@ pub(super) fn fire_extra(
             au.play_vol(Sfx::Buzz, 0.5);
             0.24
         }
-        Weapon::Vaca => {
+        Weapon::Cow => {
             let mut b = mk(o, 0.0, 380.0, (3.0 + lv as f32) * dmg, BKind::Cow);
             b.life = 1.3;
             b.phase = (60.0 + lv as f32 * 6.0) * mods.blast_mul;
@@ -324,7 +324,7 @@ pub(super) fn fire_extra(
             au.play_vol(Sfx::Moo, 0.25);
             0.6
         }
-        other => super::v4::fire_v4(other, lv, dmg, o, ss, hole_cd, rate, mods, out, au),
+        other => super::rifts::fire_advanced(other, lv, dmg, o, ss, hole_cd, rate, mods, out, au),
     }
 }
 
@@ -375,7 +375,7 @@ pub(super) fn move_bullet(b: &mut PBullet, dt: f32, targets: &[Vec2], boss_pos: 
     }
 }
 
-/// Pegar uma arma nova: ela substitui a atual e mantém o nível de potência.
+/// Picking up a new weapon: it replaces the current one and keeps the power level.
 pub(super) fn pick_new_weapon(p: &mut Player, w: Weapon) {
     p.weapon = w;
 }
@@ -471,7 +471,7 @@ pub(super) fn draw_bullet(b: &PBullet, p: Vec2, sp: &Sprites, time: f32) {
             }
         }
         BKind::Cow => {
-            sp.enemies[Kind::Vaca.index()][((time * 8.0) as usize) % 2].draw(
+            sp.enemies[Kind::Cow.index()][((time * 8.0) as usize) % 2].draw(
                 p,
                 1.6,
                 b.t * 9.0,
@@ -515,7 +515,7 @@ pub(super) fn draw_log_drop(p: Vec2, time: f32) {
 
 impl Game {
     // -----------------------------------------------------------------------
-    // Ganchos chamados pelo jogo principal
+    // Hooks called by the main game
     // -----------------------------------------------------------------------
 
     pub(super) fn expire_bullets(&mut self) {
@@ -529,7 +529,7 @@ impl Game {
 
     pub(super) fn drop_log(&mut self, i: usize, pos: Vec2) {
         let found =
-            self.cfg.found_logs.get(i).copied().unwrap_or(true) || self.x.logs_found.contains(&i);
+            self.cfg.found_logs.get(i).copied().unwrap_or(true) || self.enc.logs_found.contains(&i);
         let queued = self
             .drops
             .iter()
@@ -540,8 +540,8 @@ impl Game {
     }
 
     pub(super) fn collect_log(&mut self, i: usize, au: &mut Audio) {
-        if !self.x.logs_found.contains(&i) {
-            self.x.logs_found.push(i);
+        if !self.enc.logs_found.contains(&i) {
+            self.enc.logs_found.push(i);
             self.events.push(Event::Log(i));
         }
         au.play(Sfx::Log);
@@ -549,51 +549,51 @@ impl Game {
     }
 
     pub(super) fn event_crystal_mul(&self) -> f32 {
-        if self.x.event == Some(SEvent::Ouro) {
+        if self.enc.event == Some(SEvent::GoldRush) {
             2.0
         } else {
             1.0
         }
     }
 
-    pub(super) fn v3_begin_sector(&mut self) {
-        self.x.event = None;
-        self.x.bombs_sector = 0;
+    pub(super) fn enc_begin_sector(&mut self) {
+        self.enc.event = None;
+        self.enc.bombs_sector = 0;
         let campaign = matches!(
             self.cfg.mode,
-            Mode::Campanha | Mode::Diario | Mode::Expedicao
+            Mode::Campaign | Mode::Daily | Mode::Expedition
         );
         if campaign
             && self.sector() >= 2
             && !self.secret_stage
-            && !self.x.void
+            && !self.enc.void
             && gen_range(0.0, 1.0) < 0.4
         {
             let e = SEVENTS[gen_range(0, SEVENTS.len())];
-            self.x.event = Some(e);
-            self.x.event_timer = 3.0;
-            if !self.x.events_seen.contains(&e.index()) {
-                self.x.events_seen.push(e.index());
+            self.enc.event = Some(e);
+            self.enc.event_timer = 3.0;
+            if !self.enc.events_seen.contains(&e.index()) {
+                self.enc.events_seen.push(e.index());
             }
             self.events.push(Event::SectorEvent(e.index()));
         }
     }
 
-    pub(super) fn v3_sector_clear(&mut self) {
-        if self.x.bombs_sector == 0 {
-            for c in &mut self.x.contracts {
+    pub(super) fn enc_sector_clear(&mut self) {
+        if self.enc.bombs_sector == 0 {
+            for c in &mut self.enc.contracts {
                 if c.kind == CKind::NoBomb {
                     c.progress = 1;
                 }
             }
         }
-        if self.x.event == Some(SEvent::Eclipse) {
+        if self.enc.event == Some(SEvent::Eclipse) {
             self.ach(ach::ECLIPSE);
         }
     }
 
-    /// Chamado logo depois de montar uma onda normal.
-    pub(super) fn v3_wave_start(&mut self) {
+    /// Called right after a normal wave is built.
+    pub(super) fn enc_wave_start(&mut self) {
         let tier = self.stage().tier;
         let classic = self.classic();
         // elites
@@ -605,8 +605,8 @@ impl Game {
                 }
             }
         }
-        // emboscada: metade dos grupos entra por baixo
-        if self.x.event == Some(SEvent::Emboscada) {
+        // ambush: half of the groups come in from below
+        if self.enc.event == Some(SEvent::Ambush) {
             for e in &mut self.enemies {
                 if e.group % 2 == 1
                     && e.group < 90
@@ -621,10 +621,10 @@ impl Game {
                 }
             }
         }
-        // mímico disfarçado de cápsula
+        // mimic disguised as a capsule
         if tier >= 2 && !classic && gen_range(0.0, 1.0) < 0.14 {
             self.spawn(
-                Kind::Mimico,
+                Kind::Mimic,
                 0,
                 0,
                 EState::Free { vel: Vec2::ZERO },
@@ -639,19 +639,19 @@ impl Game {
     }
 
     pub(super) fn on_kill(&mut self, e: &Enemy, au: &mut Audio) {
-        for c in &mut self.x.contracts {
+        for c in &mut self.enc.contracts {
             if c.kind == CKind::Kill(e.kind) {
                 c.progress += 1;
             }
         }
         if e.diving() {
-            self.x.dives += 1;
+            self.enc.dives += 1;
         }
-        if self.x.fever_t > 0.0 && !e.bonus {
+        if self.enc.fever_t > 0.0 && !e.bonus {
             self.spawn_drop(e.pos, DropKind::Crystal(1));
         }
         if e.elite {
-            self.x.elites += 1;
+            self.enc.elites += 1;
             self.events.push(Event::Elite);
             self.add_score(e.kind.points() * 2);
             for _ in 0..3 {
@@ -666,8 +666,8 @@ impl Game {
             }
         }
         match e.kind {
-            Kind::Mimico => {
-                self.x.mimics += 1;
+            Kind::Mimic => {
+                self.enc.mimics += 1;
                 self.events.push(Event::Mimic);
                 let cap = self.make_capsule();
                 self.spawn_drop(e.pos, cap);
@@ -675,13 +675,13 @@ impl Game {
                     self.spawn_drop(e.pos, DropKind::Crystal(5));
                 }
             }
-            Kind::Ladrao => {
-                if let Some(i) = self.x.loot.iter().position(|(id, _)| *id == e.id) {
-                    let (_, l) = self.x.loot.swap_remove(i);
-                    self.ach(ach::PEGA_LADRAO);
+            Kind::Thief => {
+                if let Some(i) = self.enc.loot.iter().position(|(id, _)| *id == e.id) {
+                    let (_, l) = self.enc.loot.swap_remove(i);
+                    self.ach(ach::THIEF_CATCHER);
                     au.play(Sfx::Fanfare);
                     self.fx
-                        .text(e.pos - vec2(0.0, 24.0), "RECUPERADO EM DOBRO!", GOLD, 20.0);
+                        .text(e.pos - vec2(0.0, 24.0), "RECOVERED TWICE OVER!", GOLD, 20.0);
                     for _ in 0..2 {
                         let kind = match l {
                             Loot::Capsule => self.make_capsule(),
@@ -695,14 +695,14 @@ impl Game {
                     self.spawn_drop(e.pos, DropKind::Crystal(5));
                 }
             }
-            Kind::Cargueiro => {
+            Kind::Freighter => {
                 au.play(Sfx::Buy);
                 for _ in 0..6 {
                     self.spawn_drop(e.pos, DropKind::Crystal(5));
                 }
             }
-            Kind::Vaca => {
-                self.x.cows += 1;
+            Kind::Cow => {
+                self.enc.cows += 1;
                 self.events.push(Event::Cow);
                 self.drop_log(9, e.pos);
             }
@@ -711,7 +711,7 @@ impl Game {
     }
 
     pub(super) fn on_boss_killed(&mut self, b: &Boss) {
-        let campaign = matches!(self.cfg.mode, Mode::Campanha | Mode::Diario);
+        let campaign = matches!(self.cfg.mode, Mode::Campaign | Mode::Daily);
         let log = match (b.kind, b.final_boss, b.variant) {
             (BossKind::Queen, true, _) => 7,
             (BossKind::Queen, false, _) => 0,
@@ -728,30 +728,27 @@ impl Game {
             self.drop_log(log, b.pos + vec2(30.0, 0.0));
         }
         if b.kind == BossKind::Devourer {
-            self.x.void_done = true;
-            self.spawn_drop(
-                b.pos - vec2(30.0, 0.0),
-                DropKind::Card(cards::id::DEVORADOR),
-            );
+            self.enc.void_done = true;
+            self.spawn_drop(b.pos - vec2(30.0, 0.0), DropKind::Card(cards::id::DEVOURER));
         }
     }
 
     // -----------------------------------------------------------------------
-    // O Vazio (setor secreto 9)
+    // The Void (secret sector 9)
     // -----------------------------------------------------------------------
 
     pub(super) fn devour_ready(&self) -> bool {
-        self.cfg.mode == Mode::Campanha
+        self.cfg.mode == Mode::Campaign
             && self.cycle == 0
-            && self.cfg.diff as u8 >= Difficulty::Dificil as u8
+            && self.cfg.diff as u8 >= Difficulty::Hard as u8
             && self.continues_used == 0
-            && !self.x.void
-            && !self.x.void_done
+            && !self.enc.void
+            && !self.enc.void_done
             && self.sector() == SECTORS
     }
 
     pub(super) fn enter_void(&mut self, au: &mut Audio) -> Phase {
-        self.x.void = true;
+        self.enc.void = true;
         self.wave = 41;
         self.ebullets.clear();
         self.collect_all_drops(au);
@@ -761,10 +758,10 @@ impl Game {
     }
 
     // -----------------------------------------------------------------------
-    // Atualização
+    // Update
     // -----------------------------------------------------------------------
 
-    pub(super) fn v3_update(&mut self, dt: f32, au: &mut Audio) {
+    pub(super) fn enc_update(&mut self, dt: f32, au: &mut Audio) {
         self.process_blasts(au);
         self.update_saws(dt, au);
         self.update_holes(dt);
@@ -775,20 +772,20 @@ impl Game {
         self.update_contracts(au);
         self.update_calf(dt, au);
         let pp = self.player.pos;
-        // escudo reativo
-        self.x.nohit_t += dt;
+        // reactive shield
+        self.enc.nohit_t += dt;
         if self.mods.regen_shield
             && !self.player.shield
-            && self.x.nohit_t > 25.0
+            && self.enc.nohit_t > 25.0
             && self.player.alive()
         {
             self.player.shield = true;
-            self.x.nohit_t = 0.0;
+            self.enc.nohit_t = 0.0;
             au.play(Sfx::Shield);
             self.fx
-                .text(pp - vec2(0.0, 40.0), "ESCUDO REGENERADO", CYAN, 18.0);
+                .text(pp - vec2(0.0, 40.0), "SHIELD RESTORED", CYAN, 18.0);
         }
-        // gravidade do Devorador
+        // Devourer's gravity
         if let Some(b) = &self.boss
             && b.pull > 0.0
             && self.player.alive()
@@ -799,16 +796,16 @@ impl Game {
             p.pos.x = p.pos.x.clamp(18.0, W - 18.0);
             p.pos.y = p.pos.y.clamp(H * 0.55, H - 36.0);
         }
-        // arsenal duplo: duas armas diferentes no nível 5 na mesma partida
+        // double arsenal: two different weapons at level 5 in the same run
         if self.mastery_run.iter().filter(|m| **m).count() >= 2 {
-            self.ach(ach::ARSENAL_DUPLO);
+            self.ach(ach::DOUBLE_ARSENAL);
         }
     }
 
     fn process_blasts(&mut self, au: &mut Audio) {
         let blasts: Vec<_> = self.blasts.drain(..).collect();
         for (pos, r, dmg, weapon) in blasts {
-            let cow = weapon == Some(Weapon::Vaca);
+            let cow = weapon == Some(Weapon::Cow);
             au.play_vol(if cow { Sfx::Moo } else { Sfx::Boom }, 0.6);
             self.fx.explosion(
                 pos,
@@ -834,7 +831,7 @@ impl Game {
                     e.damaged = true;
                     e.last_weapon = weapon;
                 }
-                if e.kind == Kind::Mimico && e.pos.distance(pos) < r {
+                if e.kind == Kind::Mimic && e.pos.distance(pos) < r {
                     e.damaged = true;
                 }
             }
@@ -849,7 +846,7 @@ impl Game {
                 if let Some(t) = probes.iter().find_map(|p| b.hit_test(*p)) {
                     let res = b.damage(t, dmg * 1.5);
                     if res.part_destroyed {
-                        self.x.parts += 1;
+                        self.enc.parts += 1;
                     }
                 }
             }
@@ -862,8 +859,8 @@ impl Game {
     }
 
     fn update_saws(&mut self, dt: f32, au: &mut Audio) {
-        self.x.saws.clear();
-        if self.player.weapon != Weapon::Orbita || !self.player.alive() {
+        self.enc.saws.clear();
+        if self.player.weapon != Weapon::Orbit || !self.player.alive() {
             return;
         }
         let lv = self.effective_level();
@@ -871,9 +868,9 @@ impl Game {
         let pp = self.player.pos;
         for i in 0..n {
             let a = self.time * 4.0 + i as f32 / n as f32 * TAU;
-            self.x.saws.push(pp + vec2(a.cos(), a.sin()) * 48.0);
+            self.enc.saws.push(pp + vec2(a.cos(), a.sin()) * 48.0);
         }
-        let saws = self.x.saws.clone();
+        let saws = self.enc.saws.clone();
         let dmg = self.ship().dmg.ceil() as i32;
         let mut hits = 0;
         for e in &mut self.enemies {
@@ -888,7 +885,7 @@ impl Game {
                 e.saw_cd = 0.22;
                 e.flash = 0.06;
                 e.damaged = true;
-                e.last_weapon = Some(Weapon::Orbita);
+                e.last_weapon = Some(Weapon::Orbit);
                 hits += 1;
             }
         }
@@ -949,7 +946,7 @@ impl Game {
                     e.hp -= 1;
                     e.flash = 0.05;
                     e.damaged = true;
-                    e.last_weapon = Some(Weapon::BuracoNegro);
+                    e.last_weapon = Some(Weapon::BlackHole);
                 }
             }
         }
@@ -981,7 +978,7 @@ impl Game {
         let time = self.time;
         let mut bursts = vec![];
         for e in &mut self.enemies {
-            if e.kind != Kind::Mimico || e.dead {
+            if e.kind != Kind::Mimic || e.dead {
                 continue;
             }
             if !e.revealed {
@@ -1017,7 +1014,7 @@ impl Game {
         let bspeed = 200.0 * self.bullet_mul();
         for p in bursts {
             au.play(Sfx::Steal);
-            self.fx.text(p - vec2(0.0, 26.0), "MÍMICO!", RED, 24.0);
+            self.fx.text(p - vec2(0.0, 26.0), "MIMIC!", RED, 24.0);
             self.fx.burst(p, RED, 20, 160.0);
             for k in 0..10 {
                 let a = k as f32 / 10.0 * TAU;
@@ -1029,9 +1026,9 @@ impl Game {
 
     fn update_thieves(&mut self, dt: f32, au: &mut Audio) {
         let tier = self.stage().tier;
-        self.x.thief_timer -= dt;
-        if self.x.thief_timer <= 0.0 {
-            self.x.thief_timer = 2.0;
+        self.enc.thief_timer -= dt;
+        if self.enc.thief_timer <= 0.0 {
+            self.enc.thief_timer = 2.0;
             let loot_on_screen = self.drops.iter().any(|d| {
                 matches!(
                     d.kind,
@@ -1041,7 +1038,7 @@ impl Game {
             let has_thief = self
                 .enemies
                 .iter()
-                .any(|e| e.kind == Kind::Ladrao && !e.dead);
+                .any(|e| e.kind == Kind::Thief && !e.dead);
             if loot_on_screen
                 && !has_thief
                 && tier >= 2
@@ -1051,7 +1048,7 @@ impl Game {
             {
                 let x = if gen_range(0, 2) == 0 { 20.0 } else { W - 20.0 };
                 self.spawn(
-                    Kind::Ladrao,
+                    Kind::Thief,
                     0,
                     0,
                     EState::Free { vel: Vec2::ZERO },
@@ -1062,8 +1059,8 @@ impl Game {
                     t.pos = vec2(x, -20.0);
                 }
                 self.banner = Some((
-                    "LADRÃO!".into(),
-                    "Ele quer o que está caindo. Derrube-o!".into(),
+                    "THIEF!".into(),
+                    "It wants what's falling. Shoot it down!".into(),
                     2.0,
                 ));
             }
@@ -1072,10 +1069,10 @@ impl Game {
         let mut stolen: Vec<(u32, usize)> = vec![];
         let mut escaped: Vec<u32> = vec![];
         for e in &mut self.enemies {
-            if e.kind != Kind::Ladrao || e.dead {
+            if e.kind != Kind::Thief || e.dead {
                 continue;
             }
-            let carrying = self.x.loot.iter().any(|(id, _)| *id == e.id);
+            let carrying = self.enc.loot.iter().any(|(id, _)| *id == e.id);
             if carrying {
                 e.pos.y -= 260.0 * slow * dt;
                 e.pos.x += (self.time * 6.0).sin() * 60.0 * dt;
@@ -1122,30 +1119,30 @@ impl Game {
                 DropKind::Power(k) => Loot::Power(k),
                 _ => Loot::Capsule,
             };
-            self.x.loot.push((id, l));
+            self.enc.loot.push((id, l));
             au.play(Sfx::Steal);
-            self.fx.text(d.pos - vec2(0.0, 20.0), "ROUBADO!", RED, 20.0);
+            self.fx.text(d.pos - vec2(0.0, 20.0), "STOLEN!", RED, 20.0);
         }
         for id in escaped {
-            self.x.loot.retain(|(i, _)| *i != id);
+            self.enc.loot.retain(|(i, _)| *i != id);
             self.banner = Some((
-                "O LADRÃO FUGIU".into(),
-                "Da próxima vez, seja mais rápido.".into(),
+                "THE THIEF GOT AWAY".into(),
+                "Next time, be faster.".into(),
                 2.0,
             ));
         }
     }
 
     fn update_events(&mut self, dt: f32) {
-        let Some(ev) = self.x.event else { return };
+        let Some(ev) = self.enc.event else { return };
         let playing = matches!(self.phase, Phase::Playing) && self.wave_kind == WaveKind::Normal;
         if !playing {
             return;
         }
-        self.x.event_timer -= dt;
+        self.enc.event_timer -= dt;
         match ev {
-            SEvent::Meteoros if self.x.event_timer <= 0.0 => {
-                self.x.event_timer = gen_range(1.4, 2.6);
+            SEvent::Meteors if self.enc.event_timer <= 0.0 => {
+                self.enc.event_timer = gen_range(1.4, 2.6);
                 self.rocks.push(Rock {
                     pos: vec2(gen_range(30.0, W - 30.0), -30.0),
                     vel: vec2(gen_range(-50.0, 50.0), gen_range(90.0, 150.0)),
@@ -1158,8 +1155,8 @@ impl Game {
                     flash: 0.0,
                 });
             }
-            SEvent::Comboio if self.x.event_timer <= 0.0 => {
-                self.x.event_timer = gen_range(6.0, 9.0);
+            SEvent::Convoy if self.enc.event_timer <= 0.0 => {
+                self.enc.event_timer = gen_range(6.0, 9.0);
                 let y = gen_range(150.0, 300.0);
                 let (a, b) = if gen_range(0, 2) == 0 {
                     (-50.0, W + 50.0)
@@ -1172,9 +1169,9 @@ impl Game {
                     vec2(W * 0.65, y - 30.0),
                     vec2(b, y),
                 );
-                self.spawn_special(Kind::Cargueiro, path, 7.0, 0.0);
+                self.spawn_special(Kind::Freighter, path, 7.0, 0.0);
             }
-            SEvent::Gravidade => {
+            SEvent::Gravity => {
                 let pp = self.player.pos;
                 for b in &mut self.ebullets {
                     if b.style == 3 {
@@ -1191,43 +1188,43 @@ impl Game {
 
     fn update_fever(&mut self, dt: f32, au: &mut Audio) {
         if self.combo == 0 {
-            self.x.fever_lock = false;
+            self.enc.fever_lock = false;
         }
-        if !self.x.fever_lock && self.combo >= self.mods.fever_start && !self.classic() {
-            self.x.fever_lock = true;
-            self.x.fever_t = 8.0 * self.mods.fever_mul;
-            self.x.fevers += 1;
+        if !self.enc.fever_lock && self.combo >= self.mods.fever_start && !self.classic() {
+            self.enc.fever_lock = true;
+            self.enc.fever_t = 8.0 * self.mods.fever_mul;
+            self.enc.fevers += 1;
             au.play(Sfx::Fever);
             self.banner = Some((
-                "FEBRE!".into(),
-                "Pontos em dobro e cristais a cada abate!".into(),
+                "FEVER!".into(),
+                "Double points and crystals on every kill!".into(),
                 2.0,
             ));
-            self.ach(ach::FEBRE);
-            if self.x.fevers >= 3 {
-                self.ach(ach::FEBRE3);
+            self.ach(ach::FEVER);
+            if self.enc.fevers >= 3 {
+                self.ach(ach::FEVER3);
             }
         }
-        self.x.fever_t = (self.x.fever_t - dt).max(0.0);
+        self.enc.fever_t = (self.enc.fever_t - dt).max(0.0);
     }
 
     fn update_contracts(&mut self, au: &mut Audio) {
         let (combo, grazes, frozen) = (self.combo, self.grazes, self.frozen_count);
         let mut finished = vec![];
-        for (i, c) in self.x.contracts.iter_mut().enumerate() {
+        for (i, c) in self.enc.contracts.iter_mut().enumerate() {
             if c.done {
                 continue;
             }
             match c.kind {
                 CKind::Combo => c.progress = c.progress.max(combo),
                 CKind::Grazes => c.progress = grazes,
-                CKind::Capsules => c.progress = self.x.capsules,
-                CKind::Crystals => c.progress = self.x.crystals,
-                CKind::Dives => c.progress = self.x.dives,
-                CKind::Parts => c.progress = self.x.parts,
-                CKind::Elites => c.progress = self.x.elites,
+                CKind::Capsules => c.progress = self.enc.capsules,
+                CKind::Crystals => c.progress = self.enc.crystals,
+                CKind::Dives => c.progress = self.enc.dives,
+                CKind::Parts => c.progress = self.enc.parts,
+                CKind::Elites => c.progress = self.enc.elites,
                 CKind::Frozen => c.progress = frozen,
-                CKind::Fever => c.progress = self.x.fevers,
+                CKind::Fever => c.progress = self.enc.fevers,
                 _ => {}
             }
             if c.progress >= c.target {
@@ -1237,15 +1234,15 @@ impl Game {
         }
         for i in finished {
             let mul = self.mods.contract_mul;
-            let c = &self.x.contracts[i];
-            self.x.contract_xp += c.xp * mul;
-            self.x.contracts_done += 1;
+            let c = &self.enc.contracts[i];
+            self.enc.contract_xp += c.xp * mul;
+            self.enc.contracts_done += 1;
             self.crystals += 25.0 * mul as f32;
             let text = c.text();
             au.play(Sfx::Contract);
             self.banner = Some((
-                "CONTRATO CUMPRIDO".into(),
-                format!("{text}  ·  +{} XP  +{} cristais", c.xp * mul, 25 * mul),
+                "CONTRACT COMPLETE".into(),
+                format!("{text}  ·  +{} XP  +{} crystals", c.xp * mul, 25 * mul),
                 3.0,
             ));
             self.events.push(Event::Contract);
@@ -1258,41 +1255,41 @@ impl Game {
         }
         let pp = self.player.pos;
         let target = pp + vec2(-52.0, 18.0 + (self.time * 3.0).sin() * 6.0);
-        self.x.calf += (target - self.x.calf) * (dt * 4.0).min(1.0);
-        let calf = self.x.calf;
+        self.enc.calf += (target - self.enc.calf) * (dt * 4.0).min(1.0);
+        let calf = self.enc.calf;
         for d in &mut self.drops {
             if matches!(d.kind, DropKind::Crystal(_)) && d.pos.distance(calf) < 70.0 {
                 d.pos = d.pos.lerp(pp, (dt * 6.0).min(1.0));
             }
         }
-        self.x.calf_moo -= dt;
-        if self.x.calf_moo <= 0.0 {
-            self.x.calf_moo = gen_range(18.0, 35.0);
+        self.enc.calf_moo -= dt;
+        if self.enc.calf_moo <= 0.0 {
+            self.enc.calf_moo = gen_range(18.0, 35.0);
             au.play_vol(Sfx::Moo, 0.35);
             self.fx.text(calf - vec2(0.0, 18.0), "muu", WHITE, 14.0);
         }
     }
 
     // -----------------------------------------------------------------------
-    // Desenho
+    // Drawing
     // -----------------------------------------------------------------------
 
-    pub(super) fn v3_draw(&self, off: Vec2, sp: &Sprites) {
-        // mímicos disfarçados de cápsula
+    pub(super) fn enc_draw(&self, off: Vec2, sp: &Sprites) {
+        // mimics disguised as capsules
         for e in &self.enemies {
-            if e.kind != Kind::Mimico || e.revealed || e.dead {
+            if e.kind != Kind::Mimic || e.revealed || e.dead {
                 continue;
             }
             let p = e.pos + off;
             let w = WEAPONS[(e.seed * 10.0) as usize % 3];
             let w2 = WEAPONS[(e.seed * 10.0 + 1.0) as usize % 3];
             let prog = (self.time * 0.55 + e.seed).fract();
-            super::v4::draw_capsule(p, w, Some(w2), prog, self.time, false);
+            super::rifts::draw_capsule(p, w, Some(w2), prog, self.time, false);
             if self.mods.mimic_mark {
                 draw_circle_lines(p.x, p.y, 22.0, 2.0, RED);
             }
         }
-        // elites e congelados
+        // elites and frozen enemies
         for e in &self.enemies {
             if !e.active() {
                 continue;
@@ -1323,24 +1320,24 @@ impl Game {
                     Color::new(0.9, 1.0, 1.0, 0.8),
                 );
             }
-            if e.kind == Kind::Ladrao && self.x.loot.iter().any(|(id, _)| *id == e.id) {
+            if e.kind == Kind::Thief && self.enc.loot.iter().any(|(id, _)| *id == e.id) {
                 draw_circle(p.x, p.y + 14.0, 7.0, Color::from_rgba(170, 120, 60, 255));
                 ui::text_c("$", p.x, p.y + 19.0, 13.0, GOLD);
             }
         }
-        // serras da Órbita
-        for s in &self.x.saws {
+        // Orbit saws
+        for s in &self.enc.saws {
             let p = *s + off;
             let a = self.time * 900.0;
             draw_poly(p.x, p.y, 8, 10.0, a, Color::from_rgba(200, 205, 220, 255));
             draw_poly_lines(p.x, p.y, 4, 11.0, a + 22.0, 2.0, WHITE);
             draw_circle(p.x, p.y, 3.0, Color::from_rgba(60, 60, 80, 255));
         }
-        // bezerro cósmico
+        // cosmic calf
         if self.mods.calf && self.player.alive() {
             let f = ((self.time * 4.0) as usize) % 2;
-            sp.enemies[Kind::Vaca.index()][f].draw(
-                self.x.calf + off,
+            sp.enemies[Kind::Cow.index()][f].draw(
+                self.enc.calf + off,
                 1.6,
                 (self.time * 2.0).sin() * 0.2,
                 WHITE,
@@ -1349,9 +1346,9 @@ impl Game {
         }
     }
 
-    /// Efeitos de tela por cima de tudo (antes do HUD).
-    pub(super) fn v3_draw_late(&self) {
-        if self.x.event == Some(SEvent::Eclipse)
+    /// Screen effects on top of everything (before the HUD).
+    pub(super) fn enc_draw_late(&self) {
+        if self.enc.event == Some(SEvent::Eclipse)
             && matches!(self.phase, Phase::Playing | Phase::WaveClear { .. })
             && self.wave_kind == WaveKind::Normal
         {
@@ -1373,7 +1370,7 @@ impl Game {
             draw_rectangle(0.0, p.y + rr, W, H, dark);
             draw_rectangle(0.0, p.y - rr, (p.x - rr).max(0.0), rr * 2.0, dark);
             draw_rectangle(p.x + rr, p.y - rr, W, rr * 2.0, dark);
-            // inimigos e tiros brilham no escuro
+            // enemies and shots glow in the dark
             for e in &self.enemies {
                 if e.active() {
                     draw_circle(e.pos.x, e.pos.y, 4.0, Color::new(1.0, 0.3, 0.3, 0.8));
@@ -1385,9 +1382,9 @@ impl Game {
                 draw_circle(b.pos.x, b.pos.y, b.r, Color::new(1.0, 0.4, 0.6, 0.9));
             }
         }
-        if self.x.fever_t > 0.0 {
+        if self.enc.fever_t > 0.0 {
             let c = ui::hsl(self.time * 0.6, 0.9, 0.6);
-            let a = (self.x.fever_t * 2.0).min(1.0) * (0.5 + (self.time * 10.0).sin() * 0.2);
+            let a = (self.enc.fever_t * 2.0).min(1.0) * (0.5 + (self.time * 10.0).sin() * 0.2);
             for k in 0..6 {
                 let w = 6.0 - k as f32;
                 let col = Color::new(c.r, c.g, c.b, a * 0.15 * w / 6.0);
@@ -1395,14 +1392,14 @@ impl Game {
                 draw_rectangle(W - (k + 1) as f32 * 4.0, 0.0, 4.0, H, col);
             }
             ui::text_c(
-                &format!("FEBRE x2  {:.0}", self.x.fever_t.ceil()),
+                &format!("FEVER x2  {:.0}", self.enc.fever_t.ceil()),
                 W / 2.0,
                 92.0,
                 18.0,
                 Color::new(c.r, c.g, c.b, a + 0.3),
             );
         }
-        if let (Phase::Intro { t }, Some(ev)) = (&self.phase, self.x.event) {
+        if let (Phase::Intro { t }, Some(ev)) = (&self.phase, self.enc.event) {
             let a = ((t - 0.6) * 2.0).clamp(0.0, 1.0) * ((2.8 - t) * 2.0).clamp(0.0, 1.0);
             let y = H * 0.62;
             draw_rectangle(
@@ -1413,7 +1410,7 @@ impl Game {
                 Color::new(0.3, 0.05, 0.1, 0.7 * a),
             );
             ui::text_c(
-                &format!("EVENTO: {}", ev.name()),
+                &format!("EVENT: {}", ev.name()),
                 W / 2.0,
                 y - 4.0,
                 20.0,

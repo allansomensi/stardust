@@ -1,6 +1,6 @@
-//! Sistemas da versão 4 (Stardust): maldições que caem dos inimigos, Relíquias secretas,
-//! armas novas, Fendas de minigame, a Estrela Cadente que abre Salas Secretas,
-//! as habilidades das naves novas e os rastros personalizados.
+//! Rift systems: curses dropped by enemies, secret Relics, advanced weapons,
+//! minigame Rifts, the Shooting Star that opens Secret Rooms,
+//! the abilities of the late ships and custom engine trails.
 
 use super::minigame::{Grade, MG_KINDS, MgKind, Minigame};
 use super::*;
@@ -9,50 +9,50 @@ use crate::ships::RELICS;
 use std::f32::consts::{PI, TAU};
 
 // ---------------------------------------------------------------------------
-// Maldições
+// Curses
 // ---------------------------------------------------------------------------
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Curse {
-    Caveira,
-    Ferrugem,
-    Ancora,
-    Espelho,
-    Pane,
+    Skull,
+    Rust,
+    Anchor,
+    Mirror,
+    Jam,
 }
 
 impl Curse {
     pub fn name(self) -> &'static str {
         match self {
-            Curse::Caveira => "CAVEIRA",
-            Curse::Ferrugem => "FERRUGEM",
-            Curse::Ancora => "ÂNCORA",
-            Curse::Espelho => "ESPELHO",
-            Curse::Pane => "PANE",
+            Curse::Skull => "SKULL",
+            Curse::Rust => "RUST",
+            Curse::Anchor => "ANCHOR",
+            Curse::Mirror => "MIRROR",
+            Curse::Jam => "JAM",
         }
     }
     fn effect(self) -> &'static str {
         match self {
-            Curse::Caveira => "Você perdeu a arma!",
-            Curse::Ferrugem => "A arma perdeu 2 níveis.",
-            Curse::Ancora => "Nave pesada por 8 segundos.",
-            Curse::Espelho => "Controles invertidos por 6 segundos.",
-            Curse::Pane => "Armas travadas por 3 segundos.",
+            Curse::Skull => "You lost your weapon!",
+            Curse::Rust => "The weapon lost 2 levels.",
+            Curse::Anchor => "Heavy ship for 8 seconds.",
+            Curse::Mirror => "Controls reversed for 6 seconds.",
+            Curse::Jam => "Weapons jammed for 3 seconds.",
         }
     }
     fn random() -> Curse {
         match gen_range(0, 100) {
-            0..=34 => Curse::Caveira,
-            35..=54 => Curse::Ferrugem,
-            55..=71 => Curse::Ancora,
-            72..=86 => Curse::Espelho,
-            _ => Curse::Pane,
+            0..=34 => Curse::Skull,
+            35..=54 => Curse::Rust,
+            55..=71 => Curse::Anchor,
+            72..=86 => Curse::Mirror,
+            _ => Curse::Jam,
         }
     }
 }
 
 // ---------------------------------------------------------------------------
-// Sala secreta
+// Secret room
 // ---------------------------------------------------------------------------
 
 pub struct Geode {
@@ -84,11 +84,11 @@ struct Star {
 }
 
 // ---------------------------------------------------------------------------
-// Estado
+// State
 // ---------------------------------------------------------------------------
 
 #[derive(Default)]
-pub struct V4State {
+pub struct Rifts {
     pub anchor_t: f32,
     pub mirror_t: f32,
     pub jam_t: f32,
@@ -121,18 +121,18 @@ pub struct V4State {
     shield_each: bool,
 }
 
-impl V4State {
-    pub fn new() -> V4State {
-        V4State::default()
+impl Rifts {
+    pub fn new() -> Rifts {
+        Rifts::default()
     }
 }
 
 // ---------------------------------------------------------------------------
-// Armas novas e Relíquias
+// Advanced weapons and Relics
 // ---------------------------------------------------------------------------
 
 #[allow(clippy::too_many_arguments)]
-pub(super) fn fire_v4(
+pub(super) fn fire_advanced(
     w: Weapon,
     lv: i32,
     dmg: f32,
@@ -150,7 +150,7 @@ pub(super) fn fire_v4(
     };
     let lvi = (lv - 1).clamp(0, 4) as usize;
     match w {
-        Weapon::Agulha => {
+        Weapon::Needle => {
             let xs: &[f32] = match lvi {
                 0 => &[0.0],
                 1 => &[-4.0, 4.0],
@@ -172,7 +172,7 @@ pub(super) fn fire_v4(
             au.play_vol(Sfx::Laser, 0.18);
             0.075
         }
-        Weapon::Bumerangue => {
+        Weapon::Boomerang => {
             let angs: &[f32] = if lv >= 4 { &[-12.0, 12.0] } else { &[0.0] };
             for a in angs {
                 let mut b = mk(
@@ -192,7 +192,7 @@ pub(super) fn fire_v4(
             au.play_vol(Sfx::Disc, 0.35);
             0.5 - lv as f32 * 0.03
         }
-        Weapon::Prisma => {
+        Weapon::Prism => {
             let mut b = mk(o, 0.0, 720.0, 1.4 * dmg, BKind::Prism);
             b.phase = if lv >= 4 { 5.0 } else { 3.0 };
             b.base_x = 0.8 + lv as f32 * 0.12;
@@ -205,7 +205,7 @@ pub(super) fn fire_v4(
             au.play_vol(Sfx::Laser, 0.32);
             0.22
         }
-        Weapon::Mina => {
+        Weapon::Mine => {
             out.push(mk(o, 0.0, 640.0, 0.9 * dmg, BKind::Shot));
             if *timer <= 0.0 {
                 *timer = (0.75 - lv as f32 * 0.07) / rate;
@@ -254,7 +254,7 @@ pub(super) fn fire_v4(
             }
             0.12
         }
-        Weapon::Poeira => {
+        Weapon::CosmicDust => {
             for k in 0..4 {
                 let side = if k % 2 == 0 { -1.0 } else { 1.0 };
                 let mut b = PBullet::new(
@@ -272,7 +272,7 @@ pub(super) fn fire_v4(
             au.play_vol(Sfx::Crystal, 0.12);
             0.085
         }
-        Weapon::Lanca => {
+        Weapon::SolarLance => {
             let mut b = mk(o + vec2(0.0, -6.0), 0.0, 1500.0, 1.35 * dmg, BKind::Lance);
             b.pierce = 255;
             out.push(b);
@@ -282,7 +282,7 @@ pub(super) fn fire_v4(
             }
             0.035
         }
-        Weapon::Singularidade => {
+        Weapon::Singularity => {
             for x in [-7.0, 7.0] {
                 let mut b = mk(o + vec2(x, 0.0), 0.0, 980.0, 1.3 * dmg, BKind::Laser);
                 b.pierce = 3;
@@ -498,7 +498,7 @@ pub(super) fn draw_bullet(b: &PBullet, p: Vec2, time: f32) {
     }
 }
 
-/// Moldura de cápsula: ícone da arma, nome e o anel que mostra quando ela vai trocar.
+/// Capsule frame: weapon icon, name and the ring that shows when it's about to change.
 pub(super) fn draw_capsule(
     p: Vec2,
     w: Weapon,
@@ -570,8 +570,8 @@ fn draw_curse(p: Vec2, c: Curse, hp: i32, time: f32) {
     }
     let skull_col = Color::from_rgba(240, 230, 220, 255);
     match c {
-        Curse::Caveira => draw_skull(p, 1.0, skull_col),
-        Curse::Ferrugem => {
+        Curse::Skull => draw_skull(p, 1.0, skull_col),
+        Curse::Rust => {
             draw_skull(
                 p + vec2(-2.0, -1.0),
                 0.8,
@@ -579,7 +579,7 @@ fn draw_curse(p: Vec2, c: Curse, hp: i32, time: f32) {
             );
             crate::ui::text_c("-2", p.x + 7.0, p.y + 11.0, 11.0, WHITE);
         }
-        Curse::Ancora => {
+        Curse::Anchor => {
             let col = Color::from_rgba(180, 190, 210, 255);
             draw_line(p.x, p.y - 9.0, p.x, p.y + 8.0, 2.5, col);
             draw_line(p.x - 5.0, p.y - 5.0, p.x + 5.0, p.y - 5.0, 2.5, col);
@@ -587,7 +587,7 @@ fn draw_curse(p: Vec2, c: Curse, hp: i32, time: f32) {
             draw_line(p.x - 8.0, p.y + 3.0, p.x, p.y + 9.0, 2.5, col);
             draw_line(p.x + 8.0, p.y + 3.0, p.x, p.y + 9.0, 2.5, col);
         }
-        Curse::Espelho => {
+        Curse::Mirror => {
             let col = Color::from_rgba(200, 160, 255, 255);
             draw_triangle(
                 p + vec2(-10.0, 0.0),
@@ -603,7 +603,7 @@ fn draw_curse(p: Vec2, c: Curse, hp: i32, time: f32) {
             );
             draw_line(p.x, p.y - 9.0, p.x, p.y + 9.0, 1.5, WHITE);
         }
-        Curse::Pane => {
+        Curse::Jam => {
             let col = Color::from_rgba(255, 220, 80, 255);
             draw_line(p.x - 6.0, p.y - 8.0, p.x + 6.0, p.y + 8.0, 3.0, col);
             draw_line(p.x + 6.0, p.y - 8.0, p.x - 6.0, p.y + 8.0, 3.0, col);
@@ -636,7 +636,7 @@ fn draw_relic_drop(p: Vec2, w: Weapon, time: f32) {
     }
     draw_circle(p.x, p.y, 24.0, Color::new(1.0, 0.85, 0.3, 0.2));
     icons::weapon_badge(w, p, 17.0, 1.0);
-    let label = "RELÍQUIA";
+    let label = "RELIC";
     let tw = crate::ui::width(label, 11.0);
     draw_rectangle(
         p.x - tw / 2.0 - 4.0,
@@ -664,7 +664,7 @@ fn draw_rift(p: Vec2, time: f32) {
     }
     draw_circle(p.x, p.y, 7.0, Color::from_rgba(20, 10, 40, 255));
     crate::ui::text_c("?", p.x, p.y + 6.0, 16.0, WHITE);
-    let label = "FENDA";
+    let label = "RIFT";
     let tw = crate::ui::width(label, 11.0);
     draw_rectangle(
         p.x - tw / 2.0 - 4.0,
@@ -676,7 +676,7 @@ fn draw_rift(p: Vec2, time: f32) {
     crate::ui::text_c(label, p.x, p.y + 33.0, 11.0, CYAN);
 }
 
-/// Movimento dos drops novos (chamado de update_drops).
+/// Movement of rift drops (called from update_drops).
 pub(super) fn drop_motion(kind: &DropKind, vel: &mut Vec2, age: f32, pos: Vec2, pp: Vec2, dt: f32) {
     match kind {
         DropKind::Curse(..) => {
@@ -723,36 +723,36 @@ pub(super) fn draw_drop(kind: &DropKind, p: Vec2, time: f32) {
 }
 
 // ---------------------------------------------------------------------------
-// Jogo
+// Game
 // ---------------------------------------------------------------------------
 
 impl Game {
-    pub(super) fn v4_begin_sector(&mut self) {
-        self.v4_sector_start();
-        self.y.rifts_sector = 0;
-        self.y.curses_shot_sector = 0;
-        self.y.sector_nohit = true;
-        self.y.star_planned = None;
+    pub(super) fn rift_begin_sector(&mut self) {
+        self.rift_sector_start();
+        self.rift.rifts_sector = 0;
+        self.rift.curses_shot_sector = 0;
+        self.rift.sector_nohit = true;
+        self.rift.star_planned = None;
         let campaign = matches!(
             self.cfg.mode,
-            Mode::Campanha | Mode::Diario | Mode::Expedicao
+            Mode::Campaign | Mode::Daily | Mode::Expedition
         );
-        if campaign && !self.secret_stage && !self.x.void && gen_range(0.0, 1.0) < 0.4 {
-            // a estrela cadente aparece em uma das ondas normais do setor
-            self.y.star_planned = Some(gen_range(1, 4));
+        if campaign && !self.secret_stage && !self.enc.void && gen_range(0.0, 1.0) < 0.4 {
+            // the shooting star shows up in one of the sector's normal waves
+            self.rift.star_planned = Some(gen_range(1, 4));
         }
     }
 
-    pub(super) fn v4_wave_start(&mut self) {
-        if let Some(n) = self.y.star_planned
+    pub(super) fn rift_wave_start(&mut self) {
+        if let Some(n) = self.rift.star_planned
             && self.sub() == n
             && self.wave_kind == WaveKind::Normal
         {
-            self.y.star_planned = None;
+            self.rift.star_planned = None;
             let left = gen_range(0, 2) == 0;
             let x = if left { -20.0 } else { W + 20.0 };
             let dir = if left { 1.0 } else { -1.0 };
-            self.y.star = Some(Star {
+            self.rift.star = Some(Star {
                 pos: vec2(x, gen_range(90.0, 220.0)),
                 vel: vec2(dir * gen_range(120.0, 160.0), gen_range(10.0, 40.0)),
                 hp: 3,
@@ -761,9 +761,9 @@ impl Game {
         }
     }
 
-    /// Chamado em cada inimigo abatido.
-    pub(super) fn v4_on_kill(&mut self, e: &Enemy) {
-        if self.classic() || self.secret_stage || self.y.room.is_some() || e.harmless {
+    /// Called for every enemy shot down.
+    pub(super) fn rift_on_kill(&mut self, e: &Enemy) {
+        if self.classic() || self.secret_stage || self.rift.room.is_some() || e.harmless {
             return;
         }
         let tier = self.stage().tier;
@@ -783,7 +783,7 @@ impl Game {
             self.spawn_drop(e.pos, DropKind::Curse(Curse::random(), 3));
             self.fx.ring(e.pos, 120.0, 0.3, RED, 2.0);
         }
-        let rift_chance = if e.kind == Kind::Cargueiro {
+        let rift_chance = if e.kind == Kind::Freighter {
             0.25
         } else if e.elite {
             0.1
@@ -791,30 +791,30 @@ impl Game {
             0.012
         } * self.mods.rift_mul;
         let rift_on_screen = self.drops.iter().any(|d| matches!(d.kind, DropKind::Rift));
-        if !rift_on_screen && self.y.rifts_sector < 2 && gen_range(0.0, 1.0) < rift_chance {
-            self.y.rifts_sector += 1;
+        if !rift_on_screen && self.rift.rifts_sector < 2 && gen_range(0.0, 1.0) < rift_chance {
+            self.rift.rifts_sector += 1;
             self.spawn_drop(e.pos, DropKind::Rift);
         }
     }
 
-    pub(super) fn v4_on_hit(&mut self) {
-        self.y.sector_nohit = false;
+    pub(super) fn rift_on_hit(&mut self) {
+        self.rift.sector_nohit = false;
     }
 
-    /// Perder a arma (caveira) ou morrer com uma Relíquia na mão.
+    /// Losing the weapon (skull) or dying while holding a Relic.
     fn lose_weapon(&mut self) {
         let p = &mut self.player;
-        p.weapon = Weapon::Rajada;
+        p.weapon = Weapon::Blaster;
         p.level = (p.level - 1).max(1);
     }
 
-    pub(super) fn v4_on_death(&mut self) {
+    pub(super) fn rift_on_death(&mut self) {
         if self.player.weapon.is_relic() {
             let w = self.player.weapon;
             self.lose_weapon();
             self.fx.text(
                 self.player.pos - vec2(0.0, 40.0),
-                format!("{} PERDIDA", w.name()),
+                format!("{} LOST", w.name()),
                 GOLD,
                 18.0,
             );
@@ -826,11 +826,15 @@ impl Game {
         if self.mods.amulet && gen_range(0, 2) == 0 {
             au.play(Sfx::Shield);
             self.fx.ring(pp, 260.0, 0.4, GOLD, 4.0);
-            self.fx
-                .text(pp - vec2(0.0, 40.0), "O AMULETO PROTEGEU!", GOLD, 18.0);
+            self.fx.text(
+                pp - vec2(0.0, 40.0),
+                "THE AMULET PROTECTED YOU!",
+                GOLD,
+                18.0,
+            );
             return;
         }
-        self.y.curses_taken += 1;
+        self.rift.curses_taken += 1;
         self.events.push(Event::CurseTaken);
         au.play(Sfx::Curse);
         self.fx.ring(pp, 300.0, 0.5, RED, 5.0);
@@ -838,52 +842,48 @@ impl Game {
             .burst(pp, Color::from_rgba(120, 20, 50, 255), 30, 200.0);
         self.fx.shake = self.fx.shake.max(0.4);
         match c {
-            Curse::Caveira => {
+            Curse::Skull => {
                 let lost = self.player.weapon;
                 self.lose_weapon();
-                self.banner = Some((
-                    "CAVEIRA!".into(),
-                    format!("{} foi perdida.", lost.name()),
-                    2.2,
-                ));
+                self.banner = Some(("SKULL!".into(), format!("{} was lost.", lost.name()), 2.2));
             }
-            Curse::Ferrugem => {
+            Curse::Rust => {
                 if !self.player.weapon.is_relic() {
                     self.player.level = (self.player.level - 2).max(1);
                 }
-                self.banner = Some(("FERRUGEM!".into(), c.effect().into(), 2.0));
+                self.banner = Some(("RUST!".into(), c.effect().into(), 2.0));
             }
-            Curse::Ancora => {
-                self.y.anchor_t = 8.0;
-                self.banner = Some(("ÂNCORA!".into(), c.effect().into(), 2.0));
+            Curse::Anchor => {
+                self.rift.anchor_t = 8.0;
+                self.banner = Some(("ANCHOR!".into(), c.effect().into(), 2.0));
             }
-            Curse::Espelho => {
-                self.y.mirror_t = 6.0;
-                self.banner = Some(("ESPELHO!".into(), c.effect().into(), 2.0));
+            Curse::Mirror => {
+                self.rift.mirror_t = 6.0;
+                self.banner = Some(("MIRROR!".into(), c.effect().into(), 2.0));
             }
-            Curse::Pane => {
-                self.y.jam_t = 3.0;
-                self.banner = Some(("PANE!".into(), c.effect().into(), 2.0));
+            Curse::Jam => {
+                self.rift.jam_t = 3.0;
+                self.banner = Some(("JAM!".into(), c.effect().into(), 2.0));
             }
         }
     }
 
     fn grant_relic(&mut self, w: Weapon, pos: Vec2) {
-        if self.y.relics_given.contains(&w) {
+        if self.rift.relics_given.contains(&w) {
             return;
         }
-        self.y.relics_given.push(w);
+        self.rift.relics_given.push(w);
         self.spawn_drop(pos, DropKind::Relic(w));
         self.banner = Some((
-            "UMA RELÍQUIA SURGIU!".into(),
-            "Pegue antes que ela se perca.".into(),
+            "A RELIC APPEARED!".into(),
+            "Grab it before it's lost.".into(),
             2.5,
         ));
     }
 
     pub(super) fn take_relic(&mut self, w: Weapon, au: &mut Audio) {
         let pp = self.player.pos;
-        v3::pick_new_weapon(&mut self.player, w);
+        encounters::pick_new_weapon(&mut self.player, w);
         self.player.level = 5;
         au.play(Sfx::Relic);
         self.fx.flash = 0.6;
@@ -891,8 +891,8 @@ impl Game {
         self.fx.ring(pp, 400.0, 0.6, GOLD, 6.0);
         self.fx.burst(pp, GOLD, 60, 320.0);
         let i = RELICS.iter().position(|r| *r == w).unwrap_or(0);
-        if !self.y.relics_found.contains(&i) {
-            self.y.relics_found.push(i);
+        if !self.rift.relics_found.contains(&i) {
+            self.rift.relics_found.push(i);
         }
         self.events.push(Event::Relic(i));
         self.banner = Some((w.name().into(), w.desc().into(), 3.5));
@@ -900,18 +900,18 @@ impl Game {
 
     pub(super) fn start_minigame(&mut self, au: &mut Audio) {
         let mut kind = MG_KINDS[gen_range(0, MG_KINDS.len())];
-        if Some(kind) == self.y.last_mg {
+        if Some(kind) == self.rift.last_mg {
             kind = MG_KINDS[(kind as usize + 1) % MG_KINDS.len()];
         }
-        self.y.last_mg = Some(kind);
-        self.y.minigames_played += 1;
+        self.rift.last_mg = Some(kind);
+        self.rift.minigames_played += 1;
         au.play(Sfx::Portal);
-        self.y.minigame = Some(Minigame::new(kind));
+        self.rift.minigame = Some(Minigame::new(kind));
     }
 
-    /// Roda o minigame em vez do mundo. Devolve true enquanto ele estiver ativo.
-    pub(super) fn v4_minigame(&mut self, dt: f32, inp: &Input, au: &mut Audio) -> bool {
-        let Some(mg) = &mut self.y.minigame else {
+    /// Runs the minigame instead of the world. Returns true while it's active.
+    pub(super) fn rift_minigame(&mut self, dt: f32, inp: &Input, au: &mut Audio) -> bool {
+        let Some(mg) = &mut self.rift.minigame else {
             return false;
         };
         mg.update(dt, inp, au);
@@ -919,20 +919,20 @@ impl Game {
             return true;
         }
         let grade = mg.grade;
-        self.y.minigame = None;
+        self.rift.minigame = None;
         let pp = self.player.pos;
         self.events.push(Event::Minigame(grade as u8));
         match grade {
-            Grade::Derrota => {
+            Grade::Defeat => {
                 for _ in 0..1 {
                     self.spawn_drop(pp - vec2(0.0, 60.0), DropKind::Crystal(5));
                 }
             }
-            Grade::Vitoria | Grade::Perfeito => {
-                let perfect = grade == Grade::Perfeito;
-                self.y.minigames_won += 1;
+            Grade::Victory | Grade::Perfect => {
+                let perfect = grade == Grade::Perfect;
+                self.rift.minigames_won += 1;
                 if perfect {
-                    self.y.perfects += 1;
+                    self.rift.perfects += 1;
                 }
                 let n = if perfect { 12 } else { 6 };
                 for _ in 0..n {
@@ -946,7 +946,7 @@ impl Game {
                     p.level += 1;
                     self.fx.text(
                         pp - vec2(0.0, 40.0),
-                        format!("{} NÍVEL {}", p.weapon.name(), p.level),
+                        format!("{} LEVEL {}", p.weapon.name(), p.level),
                         p.weapon.color(),
                         20.0,
                     );
@@ -956,7 +956,7 @@ impl Game {
                     self.spawn_drop(pp - vec2(30.0, 140.0), DropKind::Card(cards::roll(1)));
                 }
                 au.play(Sfx::Fanfare);
-                if self.y.minigames_won == 3 {
+                if self.rift.minigames_won == 3 {
                     self.grant_relic(Weapon::Supernova, vec2(W / 2.0, 80.0));
                 }
             }
@@ -966,7 +966,7 @@ impl Game {
     }
 
     // -----------------------------------------------------------------------
-    // Sala Secreta
+    // Secret Room
     // -----------------------------------------------------------------------
 
     fn enter_room(&mut self, au: &mut Audio) {
@@ -985,7 +985,7 @@ impl Game {
                 flash: 0.0,
             });
         }
-        self.y.room = Some(Room {
+        self.rift.room = Some(Room {
             t: 0.0,
             chest: vec2(W / 2.0, 250.0),
             chest_hp: hp,
@@ -999,7 +999,7 @@ impl Game {
             stash_rocks,
             theme,
         });
-        self.y.rooms_found += 1;
+        self.rift.rooms_found += 1;
         self.events.push(Event::Room);
         self.bg.set_theme(5);
         au.play(Sfx::Portal);
@@ -1007,14 +1007,14 @@ impl Game {
         self.fx.flash = 0.9;
         self.fx.flash_color = WHITE;
         self.banner = Some((
-            "SALA SECRETA".into(),
-            "Abra o relicário antes que a fenda se feche!".into(),
+            "SECRET ROOM".into(),
+            "Open the reliquary before the rift closes!".into(),
             3.0,
         ));
     }
 
     fn leave_room(&mut self, au: &mut Audio) {
-        if let Some(r) = self.y.room.take() {
+        if let Some(r) = self.rift.room.take() {
             self.enemies = r.stash_enemies;
             self.ebullets = r.stash_ebullets;
             self.rocks = r.stash_rocks;
@@ -1028,11 +1028,11 @@ impl Game {
     }
 
     pub(super) fn room_active(&self) -> bool {
-        self.y.room.is_some() || self.y.room_enter > 0.0
+        self.rift.room.is_some() || self.rift.room_enter > 0.0
     }
 
     fn update_room(&mut self, dt: f32, au: &mut Audio) {
-        let Some(r) = &mut self.y.room else { return };
+        let Some(r) = &mut self.rift.room else { return };
         r.t += dt;
         for g in &mut r.geodes {
             g.flash = (g.flash - dt).max(0.0);
@@ -1062,8 +1062,8 @@ impl Game {
             }
             if r.t > 28.0 {
                 self.banner = Some((
-                    "A FENDA SE FECHOU".into(),
-                    "O relicário ficou para trás.".into(),
+                    "THE RIFT CLOSED".into(),
+                    "The reliquary was left behind.".into(),
                     2.5,
                 ));
                 leave = true;
@@ -1075,7 +1075,7 @@ impl Game {
     }
 
     fn open_chest(&mut self, au: &mut Audio) {
-        let Some(r) = &mut self.y.room else { return };
+        let Some(r) = &mut self.rift.room else { return };
         r.opened = Some(0.0);
         let pos = r.chest;
         self.ebullets.clear();
@@ -1091,32 +1091,32 @@ impl Game {
                 age: 0.0,
             });
         }
-        if !self.y.relics_given.contains(&Weapon::Poeira) {
-            self.grant_relic(Weapon::Poeira, pos);
+        if !self.rift.relics_given.contains(&Weapon::CosmicDust) {
+            self.grant_relic(Weapon::CosmicDust, pos);
         } else {
             self.spawn_drop(pos, DropKind::Card(cards::roll(2)));
-            self.spawn_drop(pos, DropKind::Power(PowerKind::Vida));
+            self.spawn_drop(pos, DropKind::Power(PowerKind::ExtraLife));
         }
     }
 
     // -----------------------------------------------------------------------
-    // Atualização
+    // Update
     // -----------------------------------------------------------------------
 
-    pub(super) fn v4_update(&mut self, dt: f32, au: &mut Audio) {
+    pub(super) fn rift_update(&mut self, dt: f32, au: &mut Audio) {
         for t in [
-            &mut self.y.anchor_t,
-            &mut self.y.mirror_t,
-            &mut self.y.jam_t,
-            &mut self.y.aerogel_t,
-            &mut self.y.loot_t,
-            &mut self.y.reflect_t,
+            &mut self.rift.anchor_t,
+            &mut self.rift.mirror_t,
+            &mut self.rift.jam_t,
+            &mut self.rift.aerogel_t,
+            &mut self.rift.loot_t,
+            &mut self.rift.reflect_t,
         ] {
             *t = (*t - dt).max(0.0);
         }
-        self.y.nova_t -= dt;
+        self.rift.nova_t -= dt;
 
-        // prismas se dividem
+        // prisms split
         let mut splits = vec![];
         for b in &mut self.bullets {
             if b.kind == BKind::Prism && b.t > 0.17 && b.life > 0.0 {
@@ -1125,7 +1125,7 @@ impl Game {
                     b.pos,
                     b.phase as usize,
                     b.base_x,
-                    b.weapon.unwrap_or(Weapon::Prisma),
+                    b.weapon.unwrap_or(Weapon::Prism),
                 ));
             }
         }
@@ -1145,14 +1145,14 @@ impl Game {
             );
         }
 
-        // Singularidade: engolir tiros com buracos negros
+        // Singularity: swallow shots with black holes
         if self.absorbed >= 150 && !self.classic() {
-            self.grant_relic(Weapon::Singularidade, vec2(W / 2.0, 70.0));
+            self.grant_relic(Weapon::Singularity, vec2(W / 2.0, 70.0));
         }
 
-        // estrela cadente
+        // shooting star
         let mut open = false;
-        if let Some(s) = &mut self.y.star {
+        if let Some(s) = &mut self.rift.star {
             s.pos += s.vel * dt;
             s.flash = (s.flash - dt).max(0.0);
             if gen_range(0, 2) == 0 {
@@ -1178,39 +1178,40 @@ impl Game {
                 open = true;
             }
             if s.pos.x < -40.0 || s.pos.x > W + 40.0 || s.pos.y > H * 0.7 {
-                self.y.star = None;
+                self.rift.star = None;
             }
         }
         if open {
-            let pos = self.y.star.take().map(|s| s.pos).unwrap_or_default();
+            let pos = self.rift.star.take().map(|s| s.pos).unwrap_or_default();
             self.fx.burst(pos, GOLD, 50, 260.0);
             self.fx.ring(pos, 500.0, 0.6, WHITE, 5.0);
             au.play(Sfx::Relic);
-            if self.boss.is_some() || self.wave_kind != WaveKind::Normal || self.y.room.is_some() {
+            if self.boss.is_some() || self.wave_kind != WaveKind::Normal || self.rift.room.is_some()
+            {
                 for _ in 0..6 {
                     self.spawn_drop(pos, DropKind::Crystal(5));
                 }
             } else {
-                self.y.room_enter = 1.2;
+                self.rift.room_enter = 1.2;
                 self.banner = Some((
-                    "A ESTRELA SE ABRIU".into(),
-                    "Algo puxa a nave para dentro...".into(),
+                    "THE STAR OPENED".into(),
+                    "Something pulls the ship inside...".into(),
                     1.2,
                 ));
             }
         }
-        if self.y.room_enter > 0.0 {
-            self.y.room_enter -= dt;
-            self.bg.speed_mul = 1.0 + (1.2 - self.y.room_enter) * 4.0;
-            if self.y.room_enter <= 0.0 {
+        if self.rift.room_enter > 0.0 {
+            self.rift.room_enter -= dt;
+            self.bg.speed_mul = 1.0 + (1.2 - self.rift.room_enter) * 4.0;
+            if self.rift.room_enter <= 0.0 {
                 self.bg.speed_mul = 1.0;
                 self.enter_room(au);
             }
         }
         self.update_room(dt, au);
 
-        // habilidades novas
-        if self.y.aerogel_t > 0.0 && self.player.alive() {
+        // ship abilities
+        if self.rift.aerogel_t > 0.0 && self.player.alive() {
             let pp = self.player.pos;
             let mut caught = 0;
             self.ebullets.retain(|b| {
@@ -1221,12 +1222,12 @@ impl Game {
                 !hit
             });
             if caught > 0 {
-                self.y.captured += caught;
+                self.rift.captured += caught;
                 self.crystals += caught as f32 * 0.5;
                 self.fx.sparks(pp, vec2(0.0, -1.0), CYAN, 2);
             }
         }
-        if self.y.reflect_t > 0.0 && self.player.alive() {
+        if self.rift.reflect_t > 0.0 && self.player.alive() {
             let pp = self.player.pos;
             let mut back = vec![];
             self.ebullets.retain(|b| {
@@ -1244,7 +1245,7 @@ impl Game {
                 self.bullets.push(b);
             }
         }
-        if self.y.loot_t > 0.0 && self.player.alive() {
+        if self.rift.loot_t > 0.0 && self.player.alive() {
             let pp = self.player.pos;
             for d in &mut self.drops {
                 if !matches!(d.kind, DropKind::Curse(..)) {
@@ -1254,23 +1255,23 @@ impl Game {
             }
         }
 
-        // rastro
-        self.y.trail_cd -= dt;
-        if self.y.trail_cd <= 0.0 && self.player.alive() && self.cfg.trail > 0 {
-            self.y.trail_cd = 0.016;
-            self.y
+        // trail
+        self.rift.trail_cd -= dt;
+        if self.rift.trail_cd <= 0.0 && self.player.alive() && self.cfg.trail > 0 {
+            self.rift.trail_cd = 0.016;
+            self.rift
                 .trail
                 .push((self.player.pos + vec2(gen_range(-3.0, 3.0), 20.0), 0.0));
         }
-        for t in &mut self.y.trail {
+        for t in &mut self.rift.trail {
             t.1 += dt;
             t.0.y += 160.0 * dt;
         }
-        self.y.trail.retain(|t| t.1 < 0.5);
+        self.rift.trail.retain(|t| t.1 < 0.5);
     }
 
-    /// Tiros contra maldições, a estrela e os objetos da sala secreta.
-    pub(super) fn v4_collisions(&mut self, au: &mut Audio) {
+    /// Shots against curses, the star and the secret room objects.
+    pub(super) fn rift_collisions(&mut self, au: &mut Audio) {
         let mut destroyed = vec![];
         for (i, d) in self.drops.iter_mut().enumerate() {
             let DropKind::Curse(_, hp) = &mut d.kind else {
@@ -1297,25 +1298,25 @@ impl Game {
         }
         for &i in destroyed.iter().rev() {
             let d = self.drops.swap_remove(i);
-            self.y.curses_shot += 1;
-            self.y.curses_shot_sector += 1;
+            self.rift.curses_shot += 1;
+            self.rift.curses_shot_sector += 1;
             self.events.push(Event::CurseShot);
             au.play(Sfx::Pop);
             self.fx
                 .burst(d.pos, Color::from_rgba(255, 90, 120, 255), 24, 200.0);
             self.fx
-                .text(d.pos - vec2(0.0, 20.0), "EXORCIZADA!", PINK, 16.0);
+                .text(d.pos - vec2(0.0, 20.0), "EXORCISED!", PINK, 16.0);
             for _ in 0..3 {
                 self.spawn_drop(d.pos, DropKind::Crystal(1));
             }
-            if self.y.curses_shot_sector >= 3 {
-                self.grant_relic(Weapon::Lanca, d.pos);
+            if self.rift.curses_shot_sector >= 3 {
+                self.grant_relic(Weapon::SolarLance, d.pos);
             }
         }
 
-        // sala secreta
+        // secret room
         let mut open = false;
-        if let Some(r) = &mut self.y.room
+        if let Some(r) = &mut self.rift.room
             && r.opened.is_none()
         {
             let mut crystals = vec![];
@@ -1361,24 +1362,24 @@ impl Game {
     }
 
     // -----------------------------------------------------------------------
-    // Habilidades das naves novas
+    // Ship abilities
     // -----------------------------------------------------------------------
 
-    pub(super) fn v4_ability(&mut self, ab: Ability, au: &mut Audio) {
+    pub(super) fn rift_ability(&mut self, ab: Ability, au: &mut Audio) {
         let pp = self.player.pos;
         match ab {
             Ability::Aerogel => {
-                self.y.aerogel_t = 4.0;
+                self.rift.aerogel_t = 4.0;
                 au.play(Sfx::Shield);
                 self.fx.ring(pp, 200.0, 0.4, CYAN, 4.0);
             }
-            Ability::Saque => {
-                self.y.loot_t = 5.0;
+            Ability::Loot => {
+                self.rift.loot_t = 5.0;
                 au.play(Sfx::Steal);
                 self.fx.ring(pp, 400.0, 0.5, GOLD, 4.0);
             }
-            Ability::Reflexo => {
-                self.y.reflect_t = 3.0;
+            Ability::Reflect => {
+                self.rift.reflect_t = 3.0;
                 au.play(Sfx::Ability);
                 self.fx
                     .ring(pp, 260.0, 0.4, Color::from_rgba(255, 200, 255, 255), 4.0);
@@ -1388,12 +1389,12 @@ impl Game {
     }
 
     // -----------------------------------------------------------------------
-    // Desenho
+    // Drawing
     // -----------------------------------------------------------------------
 
     pub(super) fn draw_trail(&self, off: Vec2) {
         let style = self.cfg.trail;
-        for (p, age) in &self.y.trail {
+        for (p, age) in &self.rift.trail {
             let k = age / 0.5;
             let a = (1.0 - k) * 0.8;
             let c = trail_color(style, self.time, *age);
@@ -1417,8 +1418,8 @@ impl Game {
         }
     }
 
-    pub(super) fn v4_draw(&self, off: Vec2) {
-        if let Some(s) = &self.y.star {
+    pub(super) fn rift_draw(&self, off: Vec2) {
+        if let Some(s) = &self.rift.star {
             let p = s.pos + off;
             let tw = (self.time * 12.0).sin() * 0.5 + 0.5;
             draw_circle(p.x, p.y, 18.0 + tw * 4.0, Color::new(1.0, 0.9, 0.5, 0.15));
@@ -1436,7 +1437,7 @@ impl Game {
             );
             draw_circle(p.x, p.y, 2.5, WHITE);
         }
-        if let Some(r) = &self.y.room {
+        if let Some(r) = &self.rift.room {
             for g in &r.geodes {
                 if g.hp <= 0 {
                     continue;
@@ -1506,14 +1507,14 @@ impl Game {
         }
     }
 
-    pub(super) fn v4_draw_player_fx(&self, p: Vec2) {
-        if self.y.aerogel_t > 0.0 {
-            let a = (self.y.aerogel_t * 3.0).min(1.0);
+    pub(super) fn rift_draw_player_fx(&self, p: Vec2) {
+        if self.rift.aerogel_t > 0.0 {
+            let a = (self.rift.aerogel_t * 3.0).min(1.0);
             draw_circle(p.x, p.y, 95.0, Color::new(0.5, 0.9, 1.0, 0.08 * a));
             draw_circle_lines(p.x, p.y, 95.0, 2.0, Color::new(0.6, 0.95, 1.0, 0.5 * a));
         }
-        if self.y.reflect_t > 0.0 {
-            let a = (self.y.reflect_t * 3.0).min(1.0);
+        if self.rift.reflect_t > 0.0 {
+            let a = (self.rift.reflect_t * 3.0).min(1.0);
             draw_poly_lines(
                 p.x,
                 p.y,
@@ -1524,13 +1525,13 @@ impl Game {
                 Color::new(1.0, 0.8, 1.0, 0.7 * a),
             );
         }
-        if self.y.anchor_t > 0.0 {
+        if self.rift.anchor_t > 0.0 {
             draw_circle_lines(p.x, p.y + 4.0, 22.0, 2.0, Color::new(0.6, 0.6, 0.7, 0.6));
         }
-        if self.y.jam_t > 0.0 && (self.time * 10.0) as i32 % 2 == 0 {
-            crate::ui::text_c("PANE", p.x, p.y - 30.0, 13.0, GOLD);
+        if self.rift.jam_t > 0.0 && (self.time * 10.0) as i32 % 2 == 0 {
+            crate::ui::text_c("JAM", p.x, p.y - 30.0, 13.0, GOLD);
         }
-        if self.y.mirror_t > 0.0 {
+        if self.rift.mirror_t > 0.0 {
             crate::ui::text_c(
                 "<>",
                 p.x,
@@ -1541,46 +1542,46 @@ impl Game {
         }
     }
 
-    pub(super) fn v4_draw_top(&self, sp: &Sprites, art: &Art) {
-        if let Some(m) = &self.y.minigame {
+    pub(super) fn rift_draw_top(&self, sp: &Sprites, art: &Art) {
+        if let Some(m) = &self.rift.minigame {
             m.draw(self.time, &art.ships[self.cfg.ship][self.cfg.skin]);
         }
         self.draw_blessing(sp);
-        if self.y.room_enter > 0.0 {
-            let k = 1.0 - self.y.room_enter / 1.2;
+        if self.rift.room_enter > 0.0 {
+            let k = 1.0 - self.rift.room_enter / 1.2;
             draw_rectangle(0.0, 0.0, W, H, Color::new(1.0, 0.95, 0.8, k * 0.8));
         }
     }
 
-    /// Linhas extras para os painéis laterais.
+    /// Extra lines for the side panels.
     pub fn curse_status(&self) -> Vec<(String, Color)> {
         let mut v = vec![];
-        if self.y.anchor_t > 0.0 {
-            v.push((format!("ÂNCORA {:.0}s", self.y.anchor_t.ceil()), RED));
+        if self.rift.anchor_t > 0.0 {
+            v.push((format!("ANCHOR {:.0}s", self.rift.anchor_t.ceil()), RED));
         }
-        if self.y.mirror_t > 0.0 {
-            v.push((format!("ESPELHO {:.0}s", self.y.mirror_t.ceil()), RED));
+        if self.rift.mirror_t > 0.0 {
+            v.push((format!("MIRROR {:.0}s", self.rift.mirror_t.ceil()), RED));
         }
-        if self.y.jam_t > 0.0 {
-            v.push((format!("PANE {:.0}s", self.y.jam_t.ceil()), RED));
+        if self.rift.jam_t > 0.0 {
+            v.push((format!("JAM {:.0}s", self.rift.jam_t.ceil()), RED));
         }
         v
     }
 }
 
 // ---------------------------------------------------------------------------
-// Ganchos de teste (variáveis de ambiente STARDUST_*)
+// Test hooks (STARDUST_* environment variables)
 // ---------------------------------------------------------------------------
 
 impl Game {
     pub fn debug_showcase(&mut self) {
-        let caps = [Weapon::Laser, Weapon::Agulha, Weapon::Mina, Weapon::Prisma];
+        let caps = [Weapon::Laser, Weapon::Needle, Weapon::Mine, Weapon::Prism];
         for (i, w) in caps.iter().enumerate() {
             self.drops.push(Drop {
                 pos: vec2(70.0 + i as f32 * 110.0, 150.0),
                 vel: Vec2::ZERO,
                 kind: DropKind::Capsule {
-                    weapons: [*w, Weapon::Rajada, Weapon::Onda, *w],
+                    weapons: [*w, Weapon::Blaster, Weapon::Wave, *w],
                     n: 3,
                     idx: 0,
                     t: i as f32 * 0.4,
@@ -1588,7 +1589,7 @@ impl Game {
                 age: 0.0,
             });
         }
-        let curses = [Curse::Caveira, Curse::Ferrugem, Curse::Ancora];
+        let curses = [Curse::Skull, Curse::Rust, Curse::Anchor];
         for (i, c) in curses.iter().enumerate() {
             self.drops.push(Drop {
                 pos: vec2(110.0 + i as f32 * 130.0, 260.0),
@@ -1612,17 +1613,17 @@ impl Game {
     }
 
     pub fn debug_minigame(&mut self, k: usize) {
-        self.y.minigame = Some(Minigame::new(MG_KINDS[k % MG_KINDS.len()]));
+        self.rift.minigame = Some(Minigame::new(MG_KINDS[k % MG_KINDS.len()]));
     }
 
     pub fn debug_bless(&mut self) {
         self.offer_blessing();
-        if let Some(b) = &mut self.y.blessing {
+        if let Some(b) = &mut self.rift.blessing {
             b.t = -30.0;
         }
     }
 
-    pub fn debug_v5(&mut self) {
+    pub fn debug_letters(&mut self) {
         for i in 0..3 {
             self.drops.push(Drop {
                 pos: vec2(120.0 + i as f32 * 120.0, 200.0),
@@ -1631,16 +1632,16 @@ impl Game {
                 age: 0.0,
             });
         }
-        self.z.letters = [true, false, true, true, false, false, false, true];
+        self.arcade.letters = [true, false, true, true, false, false, false, true];
         self.debug_ufo_soon();
     }
 
     pub fn debug_room(&mut self) {
-        self.y.room_enter = 0.05;
+        self.rift.room_enter = 0.05;
     }
 
     pub fn debug_star(&mut self) {
-        self.y.star = Some(Star {
+        self.rift.star = Some(Star {
             pos: vec2(-10.0, 160.0),
             vel: vec2(130.0, 20.0),
             hp: 3,
@@ -1650,22 +1651,28 @@ impl Game {
 }
 
 // ---------------------------------------------------------------------------
-// Bênçãos da Expedição: ao fim de cada setor, escolha 1 de 3.
+// Expedition blessings: at the end of each sector, pick 1 of 3.
 // ---------------------------------------------------------------------------
 
 pub const BLESSINGS: [(&str, &str); 12] = [
-    ("VIDA EXTRA", "+1 nave agora."),
-    ("GATILHO LEVE", "Cadência +12% pelo resto da expedição."),
-    ("PROPULSORES", "Velocidade +10% pelo resto da expedição."),
-    ("ARSENAL", "Sua arma sobe 2 níveis agora."),
-    ("PAIOL", "+2 bombas agora."),
-    ("ESCUDO ETERNO", "Um escudo novo no começo de cada setor."),
-    ("GANÂNCIA", "Cristais +30% pelo resto da expedição."),
-    ("AMULETO", "Metade das maldições não te pega mais."),
-    ("FENDAS", "Fendas de minigame caem 2,5x mais."),
-    ("DRONE", "+1 drone de apoio (máximo 3)."),
-    ("FOCO", "A barra de habilidade enche 35% mais rápido."),
-    ("TREVO", "Cartas caem 50% mais."),
+    ("EXTRA LIFE", "+1 ship now."),
+    (
+        "LIGHT TRIGGER",
+        "Fire rate +12% for the rest of the expedition.",
+    ),
+    ("THRUSTERS", "Speed +10% for the rest of the expedition."),
+    ("ARSENAL", "Your weapon goes up 2 levels now."),
+    ("ARSENAL", "+2 bombs now."),
+    (
+        "ETERNAL SHIELD",
+        "A fresh shield at the start of every sector.",
+    ),
+    ("GREED", "Crystals +30% for the rest of the expedition."),
+    ("AMULET", "Half of the curses can't touch you anymore."),
+    ("RIFTS", "Minigame rifts drop 2.5x more often."),
+    ("DRONE", "+1 support drone (max 3)."),
+    ("FOCUS", "The ability bar fills 35% faster."),
+    ("CLOVER", "Cards drop 50% more often."),
 ];
 
 pub struct Blessing {
@@ -1683,7 +1690,7 @@ impl Game {
         if self.drones_total() >= 3 {
             pool.retain(|&i| i != 9);
         }
-        if self.y.shield_each {
+        if self.rift.shield_each {
             pool.retain(|&i| i != 5);
         }
         let mut options = vec![];
@@ -1691,7 +1698,7 @@ impl Game {
             let i = gen_range(0, pool.len());
             options.push(pool.swap_remove(i));
         }
-        self.y.blessing = Some(Blessing {
+        self.rift.blessing = Some(Blessing {
             options,
             sel: 1,
             t: 0.0,
@@ -1711,7 +1718,7 @@ impl Game {
             }
             4 => self.player.bombs = (self.player.bombs + 2).min(9),
             5 => {
-                self.y.shield_each = true;
+                self.rift.shield_each = true;
                 self.player.shield = true;
             }
             6 => self.mods.crystal_mul *= 1.3,
@@ -1721,14 +1728,14 @@ impl Game {
             10 => self.mods.meter_mul *= 1.35,
             _ => self.mods.card_mul *= 1.5,
         }
-        self.y.blessings_taken += 1;
+        self.rift.blessings_taken += 1;
         au.play(Sfx::Relic);
         self.fx.ring(pp, 300.0, 0.5, GOLD, 4.0);
     }
 
-    /// Roda a escolha de bênção por cima da loja. Devolve true enquanto ela estiver aberta.
-    pub(super) fn v4_blessing(&mut self, dt: f32, inp: &Input, au: &mut Audio) -> bool {
-        let Some(b) = &mut self.y.blessing else {
+    /// Runs the blessing choice on top of the shop. Returns true while it's open.
+    pub(super) fn rift_blessing(&mut self, dt: f32, inp: &Input, au: &mut Audio) -> bool {
+        let Some(b) = &mut self.rift.blessing else {
             return false;
         };
         b.t += dt;
@@ -1743,24 +1750,24 @@ impl Game {
         }
         if b.t > 0.6 && inp.confirm && n > 0 {
             let pick = b.options[b.sel];
-            self.y.blessing = None;
+            self.rift.blessing = None;
             self.apply_blessing(pick, au);
             return false;
         }
         true
     }
 
-    pub(super) fn v4_sector_start(&mut self) {
-        if self.y.shield_each {
+    pub(super) fn rift_sector_start(&mut self) {
+        if self.rift.shield_each {
             self.player.shield = true;
         }
     }
 
     pub(super) fn draw_blessing(&self, sp: &Sprites) {
-        let Some(b) = &self.y.blessing else { return };
+        let Some(b) = &self.rift.blessing else { return };
         draw_rectangle(0.0, 0.0, W, H, Color::new(0.02, 0.01, 0.06, 0.9));
         crate::ui::text_outline_fit(
-            "ESCOLHA UMA BÊNÇÃO",
+            "CHOOSE A BLESSING",
             W / 2.0,
             150.0,
             28.0,
@@ -1769,7 +1776,7 @@ impl Game {
             W - 30.0,
         );
         crate::ui::text_c(
-            &format!("Expedição · setor {} vencido", self.sector()),
+            &format!("Expedition · sector {} cleared", self.sector()),
             W / 2.0,
             178.0,
             14.0,
@@ -1860,7 +1867,7 @@ impl Game {
             }
         }
         crate::ui::text_c(
-            "ESQ/DIR escolhe · ENTER confirma",
+            "LEFT/RIGHT choose · ENTER confirm",
             W / 2.0,
             520.0,
             14.0,

@@ -80,12 +80,12 @@ Para zerar tudo: CONFIGURAÇÕES > JOGO > APAGAR PROGRESSO.
 MÚSICA PERSONALIZADA
 --------------------
 O jogo compõe a própria trilha chiptune. Para usar suas músicas,
-crie uma pasta "musica" ao lado do stardust.exe (ou dentro da pasta
+crie uma pasta "music" ao lado do stardust.exe (ou dentro da pasta
 de progresso) com arquivos .ogg ou .wav chamados:
-  titulo, fase, chefe, loja, final, creditos
+  title, stage, boss, shop, final, credits
 
 Para exportar a trilha original em .wav:
-  stardust.exe --exportar-musicas
+  stardust.exe --export-music
 
 
 AVISO DO WINDOWS
