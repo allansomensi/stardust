@@ -4,14 +4,25 @@ version = "0.1.0"
 edition = "2024"
 
 [features]
-# Ferramentas de teste (robô, telas diretas, modo deus). Fora do jogo publicado.
+# Test tools (bot, direct screens, god mode). Not part of the released game.
 dev = []
 
 [dependencies]
+gilrs = "0.11"
 macroquad = { version = "0.4", features = ["audio"] }
 sys-locale = "0.3"
 
-# Compila as dependências otimizadas mesmo em modo debug (o jogo roda liso no `cargo run`).
+# Borderless fullscreen on the monitor the window is on (the stock one always picks the primary).
+[target.'cfg(windows)'.dependencies]
+windows-sys = { version = "0.61", features = [
+    "Win32_Foundation",
+    "Win32_Graphics_Gdi",
+    "Win32_System_Threading",
+    "Win32_UI_Input_KeyboardAndMouse",
+    "Win32_UI_WindowsAndMessaging",
+] }
+
+# Optimize dependencies even in debug builds so `cargo run` stays smooth.
 [profile.dev.package."*"]
 opt-level = 2
 

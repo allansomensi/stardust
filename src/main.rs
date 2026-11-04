@@ -5,10 +5,12 @@ mod art;
 mod audio;
 mod boss;
 mod cards;
+mod display;
 mod fx;
 mod game;
 mod i18n;
 mod icons;
+mod pad;
 mod progress;
 mod save;
 mod ships;
@@ -67,7 +69,7 @@ fn window_conf() -> Conf {
 // Input
 // ---------------------------------------------------------------------------
 
-#[derive(Default)]
+#[derive(Default, Clone)]
 pub struct Input {
     pub swap: bool,
     pub left: bool,
@@ -125,6 +127,99 @@ fn any_down(keys: &[KeyCode]) -> bool {
 }
 fn any_pressed(keys: &[KeyCode]) -> bool {
     keys.iter().any(|k| is_key_pressed(*k))
+}
+
+/// One half of the keyboard for co-op without gamepads.
+/// Left: A D move, Space or F fire, G bomb, H ability, left Shift precision.
+/// Right: arrows move, Comma / right Ctrl / keypad 1 fire, Period / keypad 2 bomb,
+/// Slash / keypad 3 ability, right Shift precision.
+fn poll_half(right_half: bool) -> Input {
+    use KeyCode::*;
+    if right_half {
+        Input {
+            left: is_key_down(Left),
+            right: is_key_down(Right),
+            fire: any_down(&[Comma, RightControl, Kp1]),
+            fire_p: any_pressed(&[Comma, RightControl, Kp1]),
+            bomb: any_pressed(&[Period, Kp2]),
+            ability_p: any_pressed(&[Slash, Kp3]),
+            focus: is_key_down(RightShift),
+            ..Default::default()
+        }
+    } else {
+        Input {
+            left: is_key_down(A),
+            right: is_key_down(D),
+            fire: any_down(&[Space, F]),
+            fire_p: any_pressed(&[Space, F]),
+            bomb: is_key_pressed(G),
+            ability_p: is_key_pressed(H),
+            focus: is_key_down(LeftShift),
+            ..Default::default()
+        }
+    }
+}
+
+/// Adds a gamepad's state on top of an input.
+fn merge_pad(inp: &mut Input, s: &pad::PadState) {
+    if !s.connected {
+        return;
+    }
+    inp.left |= s.left;
+    inp.right |= s.right;
+    inp.up |= s.up;
+    inp.down |= s.down;
+    inp.fire |= s.fire;
+    inp.fire_p |= s.fire_p;
+    inp.bomb |= s.bomb_p;
+    inp.ability_p |= s.ability_p;
+    inp.focus |= s.focus;
+    inp.pause |= s.start_p;
+    inp.confirm |= s.confirm_p;
+    inp.enter |= s.confirm_p;
+    inp.back |= s.back_p;
+    inp.up_p |= s.up_p;
+    inp.down_p |= s.down_p;
+    inp.left_p |= s.left_p;
+    inp.right_p |= s.right_p;
+    inp.any |= s.any_p;
+}
+
+/// Builds the inputs for both seats. Menus always use the first one.
+fn seat_inputs(full: Input, pads: &pad::Pads, coop_playing: bool) -> (Input, Input) {
+    if !coop_playing {
+        let mut a = full;
+        merge_pad(&mut a, &pads.state[0]);
+        merge_pad(&mut a, &pads.state[1]);
+        return (a, Input::default());
+    }
+    match pads.count() {
+        0 => {
+            // Split keyboard: keep the menu keys of the full keyboard for player one.
+            let mut a = poll_half(false);
+            a.pause = full.pause;
+            a.confirm = full.confirm;
+            a.enter = full.enter;
+            a.back = full.back;
+            a.up_p = full.up_p;
+            a.down_p = full.down_p;
+            a.any = full.any;
+            a.key = full.key;
+            (a, poll_half(true))
+        }
+        1 => {
+            let mut b = Input::default();
+            merge_pad(&mut b, &pads.state[0]);
+            (full, b)
+        }
+        _ => {
+            let mut a = full;
+            merge_pad(&mut a, &pads.state[0]);
+            let mut b = Input::default();
+            merge_pad(&mut b, &pads.state[1]);
+            (a, b)
+        }
+    }
 }
 
 fn poll_input(rep: &mut Repeat, dt: f32) -> Input {
@@ -259,6 +354,13 @@ struct App {
     panels: bool,
     hangar_trail: usize,
     reset_armed: f32,
+    /// Two-player co-op selected on the mode screen.
+    coop: bool,
+    /// Index into `game::CHECKPOINTS` chosen on the mode screen.
+    start_ckpt: usize,
+    pads: pad::Pads,
+    /// Input for the second ship in co-op.
+    inp2: Input,
 }
 
 const TITLE_ITEMS: [&str; 8] = [
@@ -280,7 +382,7 @@ const PROLOGUE: [&str; 9] = [
     "Millions of star insects surrounded Earth in attack formation.",
     "The fleet fell in hours. What's left: a hidden hangar, one ship and you.",
     "Every crystal you collect turns into better weapons at the mobile hangar.",
-    "Cross all 8 sectors. Reach the Heart of the Hive.",
+    "Clear all 100 levels. Reach the Heart of the Hive.",
     "Nobody knows what the Swarm wants. Good luck, pilot.",
 ];
 
@@ -325,6 +427,15 @@ const KONAMI: [KeyCode; 10] = [
 impl App {
     fn rank(&self) -> usize {
         self.save.rank()
+    }
+
+    /// Campaign sectors the player may start from.
+    fn checkpoints(&self) -> Vec<u32> {
+        game::CHECKPOINTS
+            .iter()
+            .copied()
+            .filter(|&s| s <= self.save.checkpoint)
+            .collect()
     }
 
     fn mode_unlocked(&self, m: Mode) -> bool {
@@ -502,10 +613,20 @@ impl App {
                 0
             },
             show_hitbox: self.save.show_hitbox,
+            coop: self.coop && !demo,
         };
         let mut g = Game::new(cfg);
         if self.start_wave > 1 {
             g.wave = self.start_wave;
+        } else if mode == Mode::Campaign && !demo {
+            let sec = self
+                .checkpoints()
+                .get(self.start_ckpt)
+                .copied()
+                .unwrap_or(1);
+            if sec > 1 {
+                g.start_at_checkpoint(sec);
+            }
         }
         if self.god {
             g.player.lives = 99;
@@ -550,6 +671,9 @@ impl App {
         let s = &mut self.save;
         s.runs += 1;
         s.best_sector = s.best_sector.max(g.absolute_sector());
+        if g.cfg.mode == Mode::Campaign && g.cycle == 0 {
+            s.checkpoint = s.checkpoint.max(g.sector()).min(game::SECTORS);
+        }
         s.best_combo = s.best_combo.max(g.best_combo);
         s.deaths += g.deaths;
         s.frozen_total += g.frozen_count;
@@ -577,11 +701,11 @@ impl App {
             }
             _ => {}
         }
-        let base = g.score as f64 / 50.0
-            + g.kills as f64 * 2.0
-            + g.bosses_killed as f64 * 150.0
-            + g.sectors_cleared as f64 * 100.0
-            + g.new_cards.len() as f64 * 50.0
+        let base = g.score as f64 / 160.0
+            + g.kills as f64 * 0.8
+            + g.bosses_killed as f64 * 90.0
+            + g.sectors_cleared as f64 * 50.0
+            + g.new_cards.len() as f64 * 25.0
             + g.enc.contract_xp as f64;
         let gain = (base * g.cfg.diff.xp_mul() as f64).round() as u64;
         let from_xp = self.save.xp;
@@ -838,7 +962,8 @@ impl App {
                     g.phase,
                     game::Phase::Shop | game::Phase::Continue { .. } | game::Phase::Credits { .. }
                 );
-                if inp.pause && !blocked {
+                g.p2_input = self.inp2.clone();
+                if (inp.pause || self.inp2.pause) && !blocked {
                     self.audio.play(Sfx::MenuMove);
                     Screen::Paused {
                         sel: 0,
@@ -1160,16 +1285,33 @@ impl App {
         inp: &Input,
     ) -> Screen {
         let n = MODES.len();
-        if inp.up_p || inp.down_p {
-            row = 1 - row;
+        let ckpts = self.checkpoints();
+        self.start_ckpt = self.start_ckpt.min(ckpts.len() - 1);
+        // Row 3 (checkpoint) sits inside the mode panel and only exists for the campaign.
+        let order: &[usize] = if MODES[sel] == Mode::Campaign && ckpts.len() > 1 {
+            &[0, 3, 1, 2]
+        } else {
+            &[0, 1, 2]
+        };
+        let at = order.iter().position(|&r| r == row).unwrap_or(0);
+        if inp.up_p {
+            row = order[(at + order.len() - 1) % order.len()];
+            self.audio.play(Sfx::MenuMove);
+        }
+        if inp.down_p {
+            row = order[(at + 1) % order.len()];
             self.audio.play(Sfx::MenuMove);
         }
         if inp.left_p || inp.right_p {
             let d = if inp.left_p { -1i32 } else { 1 };
-            if row == 0 {
-                sel = ((sel as i32 + d).rem_euclid(n as i32)) as usize;
-            } else {
-                diff = ((diff as i32 + d).rem_euclid(DIFFS.len() as i32)) as usize;
+            match row {
+                0 => sel = ((sel as i32 + d).rem_euclid(n as i32)) as usize,
+                1 => diff = ((diff as i32 + d).rem_euclid(DIFFS.len() as i32)) as usize,
+                3 => {
+                    self.start_ckpt =
+                        ((self.start_ckpt as i32 + d).rem_euclid(ckpts.len() as i32)) as usize
+                }
+                _ => self.coop = !self.coop,
             }
             self.audio.play(Sfx::MenuMove);
         }
@@ -1439,7 +1581,7 @@ impl App {
             match (tab, row) {
                 (0, 1) if toggle => {
                     s.fullscreen = !s.fullscreen;
-                    set_fullscreen(s.fullscreen);
+                    display::set_fullscreen(s.fullscreen);
                     changed = true;
                 }
                 (0, 2) if toggle => {
@@ -1823,6 +1965,24 @@ impl App {
                     );
                     ui::text_c(d.desc(), W / 2.0, 342.0, 14.0, WHITE);
                 }
+                Mode::Campaign if self.checkpoints().len() > 1 => {
+                    let ck = self.checkpoints();
+                    let sec = ck[self.start_ckpt.min(ck.len() - 1)];
+                    let a = if row == 3 && (self.time * 3.0) as i32 % 2 == 0 {
+                        GOLD
+                    } else {
+                        DIM
+                    };
+                    ui::text("<", 70.0, 326.0, 18.0, a);
+                    ui::text_r(">", W - 70.0, 326.0, 18.0, a);
+                    ui::text_c(
+                        &format!("START: LEVEL {}", (sec - 1) * game::SUBS + 1),
+                        W / 2.0,
+                        326.0,
+                        16.0,
+                        if row == 3 { WHITE } else { CYAN },
+                    );
+                }
                 Mode::Survival => ui::text_c(
                     &format!("BEST WAVE: {}", self.save.best_survival),
                     W / 2.0,
@@ -1917,17 +2077,44 @@ impl App {
         } else {
             ui::text_c("Reach the rank SERGEANT.", W / 2.0, 494.0, 14.0, RED);
         }
+        // players
+        let arrows = if row == 2 && (self.time * 3.0) as i32 % 2 == 0 {
+            GOLD
+        } else {
+            DIM
+        };
+        ui::text("<", 70.0, 566.0, 18.0, arrows);
+        ui::text_r(">", W - 70.0, 566.0, 18.0, arrows);
+        ui::text_c(
+            if self.coop {
+                "PLAYERS: 2 (CO-OP)"
+            } else {
+                "PLAYERS: 1"
+            },
+            W / 2.0,
+            566.0,
+            16.0,
+            if row == 2 { WHITE } else { DIM },
+        );
+        if self.coop {
+            let hint = match self.pads.count() {
+                0 => "P1: A D + Space · P2: arrows + , . /",
+                1 => "P1: keyboard · P2: gamepad",
+                _ => "P1: gamepad 1 · P2: gamepad 2",
+            };
+            ui::text_c(hint, W / 2.0, 584.0, 11.0, CYAN);
+        }
         // ship summary
         let s = &SHIPS[self.save.ship];
         self.art.ships[self.save.ship][self.save.skin].draw(
-            vec2(60.0, 600.0),
+            vec2(60.0, 624.0),
             3.0,
             0.0,
             WHITE,
             false,
         );
-        ui::text(&format!("SHIP: {}", s.name), 96.0, 594.0, 18.0, CYAN);
-        ui::text(&format!("ABILITY: {}", s.ab_name), 96.0, 616.0, 14.0, DIM);
+        ui::text(&format!("SHIP: {}", s.name), 96.0, 606.0, 16.0, CYAN);
+        ui::text(&format!("ABILITY: {}", s.ab_name), 96.0, 624.0, 13.0, DIM);
         let eq = if self.save.equipped.is_empty() {
             "no card equipped".to_string()
         } else {
@@ -1939,7 +2126,7 @@ impl App {
                 .join(", ")
         };
         for (i, l) in ui::wrap(&eq, 13.0, W - 120.0).iter().take(2).enumerate() {
-            ui::text(l, 96.0, 638.0 + i as f32 * 16.0, 13.0, PINK);
+            ui::text(l, 96.0, 644.0 + i as f32 * 16.0, 13.0, PINK);
         }
         ui::text_c(
             "ARROWS choose  ·  ENTER launch  ·  ESC back",
@@ -3207,9 +3394,12 @@ impl App {
                 ("Shift .............. precision mode".into(), WHITE),
                 ("Esc / P ............ pause".into(), WHITE),
                 ("F11 / Alt+Enter .... fullscreen".into(), WHITE),
+                ("Gamepad: A fire · X bomb · Y ability".into(), CYAN),
+                ("LB precision · Start pause".into(), CYAN),
+                ("Co-op: PLAYERS 2 on the mode screen".into(), PINK),
                 ("".into(), WHITE),
                 ("THE GOAL".into(), GOLD),
-                ("Cross 8 sectors and defeat the Supreme".into(), WHITE),
+                ("Clear 100 levels and defeat the Supreme".into(), WHITE),
                 ("Queen. Each sector has 3 waves, a".into(), WHITE),
                 ("bonus stage and a boss. Then, the shop.".into(), WHITE),
                 ("".into(), WHITE),
@@ -3678,7 +3868,9 @@ impl App {
         y += 56.0;
         let w = p.weapon;
         ui::text("WEAPON", rx, y, 14.0, DIM);
-        icons::weapon_badge(w, vec2(rx + 58.0, y - 5.0), 11.0, 1.0);
+        // The badge sits right before the weapon name, so it never covers the label.
+        let name_w = ui::width(w.name(), 18.0);
+        icons::weapon_badge(w, vec2(rx + cw - name_w - 16.0, y - 6.0), 11.0, 1.0);
         ui::text_r(w.name(), rx + cw, y, 18.0, w.color());
         y += 12.0;
         let lv = g.effective_level();
@@ -3992,7 +4184,7 @@ async fn main() {
 
     let save = Save::load();
     if save.fullscreen {
-        set_fullscreen(true);
+        display::set_fullscreen(true);
     }
     let audio = Audio::load(|_| {}).await;
     let mut bg = Background::new();
@@ -4026,6 +4218,10 @@ async fn main() {
         logo_party: 0.0,
         hangar_trail: 0,
         reset_armed: 0.0,
+        coop: false,
+        start_ckpt: 0,
+        pads: pad::Pads::new(),
+        inp2: Input::default(),
         panels: false,
     };
     if let Some(x) = env("STARDUST_XP").and_then(|v| v.parse().ok()) {
@@ -4108,6 +4304,9 @@ async fn main() {
         }
         _ => {}
     }
+    if env("STARDUST_COOP").is_some() {
+        app.coop = true;
+    }
     if let Some(d) = env("STARDUST_DIFF").and_then(|v| v.parse::<u8>().ok()) {
         app.save.diff = d.min(3);
     }
@@ -4119,11 +4318,16 @@ async fn main() {
     let mut rep = Repeat::default();
     loop {
         let dt = get_frame_time().min(1.0 / 30.0);
-        let mut inp = poll_input(&mut rep, dt);
+        app.pads.update(dt);
+        let full = poll_input(&mut rep, dt);
+        let coop_playing = matches!(app.screen, Screen::Playing)
+            && app.game.as_ref().map(|g| g.coop()).unwrap_or(false);
+        let (mut inp, inp2) = seat_inputs(full, &app.pads, coop_playing);
+        app.inp2 = inp2;
         let alt = is_key_down(KeyCode::LeftAlt) || is_key_down(KeyCode::RightAlt);
         if is_key_pressed(KeyCode::F11) || (alt && is_key_pressed(KeyCode::Enter)) {
             app.save.fullscreen = !app.save.fullscreen;
-            set_fullscreen(app.save.fullscreen);
+            display::set_fullscreen(app.save.fullscreen);
             app.save.write();
             inp.confirm = false;
             inp.enter = false;
@@ -4131,6 +4335,7 @@ async fn main() {
         if app.autoplay {
             if let Some(g) = &app.game {
                 inp = bot_input(g, app.time);
+                app.inp2 = bot_input(g, app.time + 3.7);
             } else {
                 inp.enter = (app.time * 2.0).fract() < 0.05;
                 inp.confirm = inp.enter;

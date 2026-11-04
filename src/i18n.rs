@@ -197,6 +197,10 @@ static EXACT: &[(&str, &str)] = &[
     ),
     ("+45 crystals", "+45 cristais"),
     (
+        "100 levels, bosses, shop and cards. The full adventure.",
+        "100 níveis, chefes, loja e cartas. A aventura completa.",
+    ),
+    (
         "12 to win · 22 without crashing = perfect",
         "12 para vencer · 22 sem bater = perfeito",
     ),
@@ -233,10 +237,6 @@ static EXACT: &[(&str, &str)] = &[
         "5 s com inimigos e tiros quase parados.",
     ),
     ("8 cards", "8 cartas"),
-    (
-        "8 sectors, bosses, shop and cards. The full adventure.",
-        "8 setores, chefes, loja e cartas. A aventura completa.",
-    ),
     ("A BOSS APPROACHES", "UM CHEFE SE APROXIMA"),
     ("A CALF FOLLOWS YOU", "UM BEZERRO TE SEGUE"),
     ("A CARD!", "UMA CARTA!"),
@@ -256,6 +256,10 @@ static EXACT: &[(&str, &str)] = &[
     (
         "A beam that splits into three as it travels.",
         "Um raio que se divide em três ao viajar.",
+    ),
+    (
+        "A blazing fireball that explodes and scatters embers.",
+        "Uma bola de fogo ardente que explode e espalha brasas.",
     ),
     (
         "A calf follows you and gathers crystals. Moo.",
@@ -286,6 +290,10 @@ static EXACT: &[(&str, &str)] = &[
     (
         "A giant, continuous beam for 3 s.",
         "Um raio gigante e contínuo por 3 s.",
+    ),
+    (
+        "A heavy rock that pierces and shatters into shards.",
+        "Uma rocha pesada que perfura e se estilhaça em fragmentos.",
     ),
     (
         "A line shows where your shot will go.",
@@ -422,6 +430,10 @@ static EXACT: &[(&str, &str)] = &[
     ("BOSS DOWN!", "CHEFE ABATIDO!"),
     ("BOSS RUSH", "CHEFÕES"),
     ("BOSS RUSH mode and CRYO weapon", "Modo CHEFÕES e arma CRIO"),
+    (
+        "BOSS RUSH mode, CRYO and METEOR weapons",
+        "Modo CHEFÕES, armas CRIO e METEORO",
+    ),
     ("BULWARK", "MURALHA"),
     (
         "Balanced and reliable. Every recruit's ship.",
@@ -587,8 +599,16 @@ static EXACT: &[(&str, &str)] = &[
         "Chiptune sintetizado pelo próprio jogo,",
     ),
     (
+        "Clear 100 levels and defeat the Supreme",
+        "Vença os 100 níveis e derrote a Rainha",
+    ),
+    (
         "Clear a wave in under 7 seconds.",
         "Limpe uma onda em menos de 7 segundos.",
+    ),
+    (
+        "Clear all 100 levels. Reach the Heart of the Hive.",
+        "Vença os 100 níveis. Chegue ao Coração da Colmeia.",
     ),
     ("Clear the first wave.", "Termine a primeira onda."),
     (
@@ -597,6 +617,10 @@ static EXACT: &[(&str, &str)] = &[
     ),
     ("Close Encounters", "Contatos Imediatos"),
     ("Close Shave", "Na Raspa"),
+    (
+        "Co-op: PLAYERS 2 on the mode screen",
+        "Co-op: JOGADORES 2 na tela de modo",
+    ),
     (
         "Collect all 8: extra life and tons of points.",
         "Junte as 8: vida extra e muitos pontos.",
@@ -642,14 +666,6 @@ static EXACT: &[(&str, &str)] = &[
     ("Cosmic Tourist", "Turista Cósmico"),
     ("Counterattack", "Contra-Ataque"),
     ("Creator", "Criador"),
-    (
-        "Cross 8 sectors and defeat the Supreme",
-        "Atravesse 8 setores e derrote a Rainha",
-    ),
-    (
-        "Cross all 8 sectors. Reach the Heart of the Hive.",
-        "Atravesse os 8 setores. Chegue ao Coração da Colmeia.",
-    ),
     ("Crystal Wings", "Asas de Cristal"),
     (
         "Crystal magnet radius +60%.",
@@ -694,6 +710,10 @@ static EXACT: &[(&str, &str)] = &[
     ),
     ("DIFFICULTY", "DIFICULDADE"),
     ("DISC", "DISCO"),
+    (
+        "DISC and FIREBALL weapons, HARD difficulty",
+        "Armas DISCO e BOLA DE FOGO, dificuldade DIFÍCIL",
+    ),
     (
         "DISC weapon and HARD difficulty",
         "Arma DISCO e dificuldade DIFÍCIL",
@@ -951,8 +971,10 @@ static EXACT: &[(&str, &str)] = &[
     ("FIRE", "FOGO"),
     ("FIRE RATE", "CADÊNCIA"),
     ("FIRE trail", "Rastro FOGO"),
+    ("FIREBALL", "BOLA DE FOGO"),
     ("FIREPOWER", "PODER DE FOGO"),
     ("FLAME", "CHAMA"),
+    ("FLAME and PLASMA weapons", "Armas CHAMA e PLASMA"),
     ("FLAME weapon", "Arma CHAMA"),
     ("FLASHES", "CLARÕES"),
     ("FLEET ADMIRAL", "ALMIRANTE DE ESQUADRA"),
@@ -1103,6 +1125,10 @@ static EXACT: &[(&str, &str)] = &[
     ("GUNNER", "ATIRADOR"),
     ("Gain 1 bomb every sector.", "Ganha 1 bomba a cada setor."),
     (
+        "Gamepad: A fire · X bomb · Y ability",
+        "Controle: A atira · X bomba · Y habilidade",
+    ),
+    (
         "Get PERFECT in 5 minigames.",
         "Consiga PERFEITO em 5 minigames.",
     ),
@@ -1232,6 +1258,10 @@ static EXACT: &[(&str, &str)] = &[
         "Na poeira havia um sinal. E o sinal chamou o ENXAME.",
     ),
     ("Inheritance", "Herança"),
+    (
+        "Instant beam: hits the whole column and ignores shields.",
+        "Feixe instantâneo: acerta a coluna inteira e ignora escudos.",
+    ),
     ("Investor", "Investidor"),
     ("It looks peaceful...", "Ele parece pacífico..."),
     (
@@ -1252,6 +1282,7 @@ static EXACT: &[(&str, &str)] = &[
     ("LANGUAGE", "IDIOMA"),
     ("LASER ONLY", "SÓ LASER"),
     ("LASER SIGHT", "MIRA LASER"),
+    ("LB precision · Start pause", "LB precisão · Start pausa"),
     (
         "LEFT/RIGHT change mode  ·  ENTER back",
         "ESQ/DIR troca o modo  ·  ENTER volta",
@@ -1350,6 +1381,7 @@ static EXACT: &[(&str, &str)] = &[
     ("MERCHANT", "MERCADOR"),
     ("MERCHANT'S GIFT", "PRESENTE DO MERCADOR"),
     ("MERRY CHRISTMAS, PILOT!", "FELIZ NATAL, PILOTO!"),
+    ("METEOR", "METEORO"),
     ("METEOR SHOWER", "CHUVA DE METEOROS"),
     ("MIDSHIPMAN", "ASPIRANTE"),
     ("MIMIC", "MÍMICO"),
@@ -1506,6 +1538,17 @@ static EXACT: &[(&str, &str)] = &[
         "Open the reliquary before the rift closes!",
         "Abra o relicário antes que a fenda se feche!",
     ),
+    ("P1", "J1"),
+    (
+        "P1: A D + Space · P2: arrows + , . /",
+        "J1: A D + Espaço · J2: setas + , . /",
+    ),
+    (
+        "P1: gamepad 1 · P2: gamepad 2",
+        "J1: controle 1 · J2: controle 2",
+    ),
+    ("P1: keyboard · P2: gamepad", "J1: teclado · J2: controle"),
+    ("P2", "J2"),
     ("PACIFIST", "PACIFISTA"),
     ("PARTICLES", "PARTÍCULAS"),
     ("PAUSE", "PAUSA"),
@@ -1513,10 +1556,16 @@ static EXACT: &[(&str, &str)] = &[
     ("PERFECTIONIST INSIGNIA", "INSÍGNIA DO PERFECCIONISTA"),
     ("PHANTOM", "FANTASMA"),
     ("PHANTOM ship", "Nave FANTASMA"),
+    (
+        "PHANTOM ship and RAILGUN weapon",
+        "Nave FANTASMA e arma CANHÃO ELÉTRICO",
+    ),
     ("PHOENIX!", "FÊNIX!"),
     ("PILOT", "PILOTO"),
     ("PLASMA trail", "Rastro PLASMA"),
     ("PLAY", "JOGAR"),
+    ("PLAYERS: 1", "JOGADORES: 1"),
+    ("PLAYERS: 2 (CO-OP)", "JOGADORES: 2 (CO-OP)"),
     ("POWER-UPS (falling orbs)", "PODERES (bolinhas que caem)"),
     ("PRISM", "PRISMA"),
     ("PROBE", "SONDA"),
@@ -1563,6 +1612,10 @@ static EXACT: &[(&str, &str)] = &[
         "Pixel art written letter by letter",
         "Pixel art escrita letra por letra",
     ),
+    (
+        "Plasma orbs that grow and burn through six enemies.",
+        "Orbes de plasma que crescem e atravessam seis inimigos.",
+    ),
     ("Play 25 runs.", "Jogue 25 partidas."),
     ("Play for 2 hours in total.", "Jogue por 2 horas no total."),
     ("Play time", "Tempo de jogo"),
@@ -1603,6 +1656,7 @@ static EXACT: &[(&str, &str)] = &[
         "Suprema. Cada setor tem 3 ondas, um",
     ),
     ("Quick Overdrive", "Sobrecarga Rápida"),
+    ("RAILGUN", "CANHÃO ELÉTRICO"),
     ("RAINBOW", "ARCO-ÍRIS"),
     ("RAINBOW trail", "Rastro ARCO-ÍRIS"),
     ("RANKS", "PATENTES"),
@@ -2480,6 +2534,15 @@ static TEMPLATES: &[(&[&str], &[&str])] = &[
     (&["SHARPSHOOTER +", ""], &["TIRO CERTEIRO +", ""]),
     (&["ACHIEVEMENT: ", ""], &["CONQUISTA: ", ""]),
     (&["Make a ", " combo"], &["Faça um combo de ", ""]),
+    (
+        &["P1  x", "  B", "  ", " LV", ""],
+        &["J1  x", "  B", "  ", " NV", ""],
+    ),
+    (
+        &["P2  x", "  B", "  ", " LV", ""],
+        &["J2  x", "  B", "  ", " NV", ""],
+    ),
+    (&["START: LEVEL ", ""], &["INÍCIO: NÍVEL ", ""]),
     (&["TARGETS: ", " / ", ""], &["ALVOS: ", " / ", ""]),
     (&["Shoot down ", " ", ""], &["Abata ", " ", ""]),
     (&["FEVER x2   ", "s"], &["FEBRE x2   ", "s"]),
@@ -2502,6 +2565,7 @@ static TEMPLATES: &[(&[&str], &[&str])] = &[
     (&["Progress: ", ""], &["Progresso: ", ""]),
     (&["", " of ", " cards"], &["", " de ", " cartas"]),
     (&["", " was lost."], &["", " foi perdida."]),
+    (&["LEVEL ", "/100"], &["NÍVEL ", "/100"]),
     (&["HITS  ", " / ", ""], &["ACERTOS  ", " / ", ""]),
     (&["BOSS IN ", "s"], &["CHEFE EM ", "s"]),
     (&["COMBO ", "  x", ""], &["COMBO ", "  x", ""]),
@@ -2515,6 +2579,7 @@ static TEMPLATES: &[(&[&str], &[&str])] = &[
     (&["copies: ", ""], &["cópias: ", ""]),
     (&["", "  (+", " XP)"], &["", "  (+", " XP)"]),
     (&["ANCHOR ", "s"], &["ÂNCORA ", "s"]),
+    (&["SECTOR ", "/", ""], &["SETOR ", "/", ""]),
     (&["BONUS  ", ""], &["BÔNUS  ", ""]),
     (&["CARDS ", "/", ""], &["CARTAS ", "/", ""]),
     (&["BOSS ", "/8"], &["CHEFE ", "/8"]),

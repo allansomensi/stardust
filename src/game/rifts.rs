@@ -737,7 +737,7 @@ impl Game {
             self.cfg.mode,
             Mode::Campaign | Mode::Daily | Mode::Expedition
         );
-        if campaign && !self.secret_stage && !self.enc.void && gen_range(0.0, 1.0) < 0.4 {
+        if campaign && !self.secret_stage && !self.enc.void && gen_range(0.0, 1.0) < 0.18 {
             // the shooting star shows up in one of the sector's normal waves
             self.rift.star_planned = Some(gen_range(1, 4));
         }
@@ -784,14 +784,14 @@ impl Game {
             self.fx.ring(e.pos, 120.0, 0.3, RED, 2.0);
         }
         let rift_chance = if e.kind == Kind::Freighter {
-            0.25
+            0.12
         } else if e.elite {
-            0.1
+            0.04
         } else {
-            0.012
+            0.0035
         } * self.mods.rift_mul;
         let rift_on_screen = self.drops.iter().any(|d| matches!(d.kind, DropKind::Rift));
-        if !rift_on_screen && self.rift.rifts_sector < 2 && gen_range(0.0, 1.0) < rift_chance {
+        if !rift_on_screen && self.rift.rifts_sector < 1 && gen_range(0.0, 1.0) < rift_chance {
             self.rift.rifts_sector += 1;
             self.spawn_drop(e.pos, DropKind::Rift);
         }

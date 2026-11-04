@@ -519,6 +519,7 @@ impl Game {
     // -----------------------------------------------------------------------
 
     pub(super) fn expire_bullets(&mut self) {
+        self.arsenal_expire();
         for b in &mut self.bullets {
             if b.life <= 0.0 && matches!(b.kind, BKind::Grenade | BKind::Cow | BKind::Mine) {
                 self.blasts.push((b.pos, b.phase, b.dmg, b.weapon));
@@ -734,7 +735,7 @@ impl Game {
     }
 
     // -----------------------------------------------------------------------
-    // The Void (secret sector 9)
+    // The Void (secret sector after the last one)
     // -----------------------------------------------------------------------
 
     pub(super) fn devour_ready(&self) -> bool {
@@ -806,11 +807,19 @@ impl Game {
         let blasts: Vec<_> = self.blasts.drain(..).collect();
         for (pos, r, dmg, weapon) in blasts {
             let cow = weapon == Some(Weapon::Cow);
+            let fire = weapon == Some(Weapon::Fireball);
+            if fire {
+                self.fireball_embers(pos, dmg);
+                self.fx
+                    .burst(pos, Color::from_rgba(255, 140, 40, 255), 18, 200.0);
+            }
             au.play_vol(if cow { Sfx::Moo } else { Sfx::Boom }, 0.6);
             self.fx.explosion(
                 pos,
                 if cow {
                     WHITE
+                } else if fire {
+                    Color::from_rgba(255, 120, 30, 255)
                 } else {
                     Color::from_rgba(200, 220, 90, 255)
                 },

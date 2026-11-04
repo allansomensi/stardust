@@ -52,7 +52,7 @@ fn charset() -> String {
 /// When the scale changes, the fonts are recreated (new atlas) and every glyph is
 /// pre-rasterized at the exact screen size, before anything is drawn that frame.
 pub fn set_pixel_scale(k_raw: f32) {
-    let k = ((k_raw * 8.0).round() / 8.0).clamp(0.75, 2.5);
+    let k = ((k_raw * 8.0).round() / 8.0).clamp(0.75, 4.5);
     let same = FONTS.with(|f| {
         f.borrow()
             .as_ref()

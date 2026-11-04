@@ -38,7 +38,7 @@ impl Mode {
     }
     pub fn desc(self) -> &'static str {
         match self {
-            Mode::Campaign => "8 sectors, bosses, shop and cards. The full adventure.",
+            Mode::Campaign => "100 levels, bosses, shop and cards. The full adventure.",
             Mode::Classic => {
                 "Like the arcades: only the Blaster, no shop, no cards. Endless waves."
             }
@@ -257,7 +257,7 @@ pub fn xp_for(r: usize) -> u64 {
     if r == 0 {
         0
     } else {
-        (250.0 * (r as f64).powf(1.8)).round() as u64
+        (700.0 * (r as f64).powf(2.05)).round() as u64
     }
 }
 
@@ -275,14 +275,14 @@ pub fn unlock_text(r: usize) -> &'static str {
         2 => "WAVE weapon",
         3 => "FALCON ship and DAILY CHALLENGE",
         4 => "SHRAPNEL weapon and SURVIVAL mode",
-        5 => "DISC weapon and HARD difficulty",
+        5 => "DISC and FIREBALL weapons, HARD difficulty",
         6 => "BASTION ship and RICOCHET weapon",
-        7 => "BOSS RUSH mode and CRYO weapon",
+        7 => "BOSS RUSH mode, CRYO and METEOR weapons",
         8 => "THUNDER weapon",
         9 => "VEGA ship and GRENADE weapon",
-        10 => "FLAME weapon",
+        10 => "FLAME and PLASMA weapons",
         11 => "Rare shop items and the HIVE weapon",
-        12 => "PHANTOM ship",
+        12 => "PHANTOM ship and RAILGUN weapon",
         13 => "RUBY paint and ORBIT weapon",
         14 => "EMERALD paint",
         15 => "COLOSSUS ship",

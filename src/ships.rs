@@ -228,6 +228,10 @@ pub enum Weapon {
     CosmicDust,
     SolarLance,
     Singularity,
+    Fireball,
+    Plasma,
+    Railgun,
+    Meteor,
 }
 
 /// The four Relics: absurd weapons that only appear through secret paths.
@@ -238,7 +242,7 @@ pub const RELICS: [Weapon; 4] = [
     Weapon::Singularity,
 ];
 
-pub const WEAPONS: [Weapon; 24] = [
+pub const WEAPONS: [Weapon; 28] = [
     Weapon::Blaster,
     Weapon::Laser,
     Weapon::Missile,
@@ -263,6 +267,10 @@ pub const WEAPONS: [Weapon; 24] = [
     Weapon::CosmicDust,
     Weapon::SolarLance,
     Weapon::Singularity,
+    Weapon::Fireball,
+    Weapon::Plasma,
+    Weapon::Railgun,
+    Weapon::Meteor,
 ];
 
 impl Weapon {
@@ -292,6 +300,10 @@ impl Weapon {
             Weapon::CosmicDust => "COSMIC DUST",
             Weapon::SolarLance => "SOLAR LANCE",
             Weapon::Singularity => "SINGULARITY",
+            Weapon::Fireball => "FIREBALL",
+            Weapon::Plasma => "PLASMA",
+            Weapon::Railgun => "RAILGUN",
+            Weapon::Meteor => "METEOR",
         }
     }
     pub fn desc(self) -> &'static str {
@@ -322,6 +334,10 @@ impl Weapon {
             Weapon::CosmicDust => "RELIC. A cloud of cosmic dust that hunts everything.",
             Weapon::SolarLance => "RELIC. A beam of sunlight that crosses the whole screen.",
             Weapon::Singularity => "RELIC. Black holes in a row and shots that bend space.",
+            Weapon::Fireball => "A blazing fireball that explodes and scatters embers.",
+            Weapon::Plasma => "Plasma orbs that grow and burn through six enemies.",
+            Weapon::Railgun => "Instant beam: hits the whole column and ignores shields.",
+            Weapon::Meteor => "A heavy rock that pierces and shatters into shards.",
         }
     }
     pub fn color(self) -> Color {
@@ -350,6 +366,10 @@ impl Weapon {
             Weapon::CosmicDust => Color::from_rgba(255, 190, 255, 255),
             Weapon::SolarLance => Color::from_rgba(255, 200, 70, 255),
             Weapon::Singularity => Color::from_rgba(200, 140, 255, 255),
+            Weapon::Fireball => Color::from_rgba(255, 120, 30, 255),
+            Weapon::Plasma => Color::from_rgba(190, 120, 255, 255),
+            Weapon::Railgun => Color::from_rgba(140, 220, 255, 255),
+            Weapon::Meteor => Color::from_rgba(220, 150, 100, 255),
         }
     }
     /// Power tier (1 to 5): higher tier weapons hit harder and cost more in the shop.
@@ -358,7 +378,12 @@ impl Weapon {
             Weapon::Blaster | Weapon::Laser | Weapon::Missile => 1,
             Weapon::Wave | Weapon::Shrapnel | Weapon::Disc | Weapon::Needle | Weapon::Ricochet => 2,
             Weapon::Cryo | Weapon::Thunder | Weapon::Grenade | Weapon::Flame | Weapon::Mine => 3,
-            Weapon::Hive | Weapon::Prism | Weapon::Boomerang | Weapon::Orbit => 4,
+            Weapon::Hive
+            | Weapon::Prism
+            | Weapon::Boomerang
+            | Weapon::Orbit
+            | Weapon::Fireball
+            | Weapon::Meteor => 4,
             _ => 5,
         }
     }
@@ -391,6 +416,10 @@ impl Weapon {
             Weapon::Mine => Some(8),
             Weapon::Prism => Some(12),
             Weapon::Boomerang => Some(14),
+            Weapon::Fireball => Some(5),
+            Weapon::Meteor => Some(7),
+            Weapon::Plasma => Some(10),
+            Weapon::Railgun => Some(12),
             _ => None,
         }
     }

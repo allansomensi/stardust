@@ -8,8 +8,9 @@ poeira estelar... e um sinal. O sinal chamou o Enxame: milhões de
 insetos estelares em formação de ataque. A frota caiu em horas.
 Sobrou um hangar escondido, uma nave e você.
 
-Atravesse 8 setores, derrube formações inteiras, recolha cristais,
+Vença 100 níveis, derrube formações inteiras, recolha cristais,
 compre armas cada vez mais fortes e derrote os chefes do Enxame.
+Sozinho ou com um amigo, no teclado ou com controles.
 
 Idioma: português ou inglês, em CONFIGURAÇÕES > JOGO.
 
@@ -29,6 +30,30 @@ CONTROLES
   Atirar segurando o botão só com o TIRO AUTOMÁTICO, comprado na
   loja. Com ele, o tiro carregado deixa de funcionar.
 
+  CONTROLE: analógico ou direcional movem, A atira, X solta bomba,
+  Y usa a habilidade, LB é o modo preciso e Start pausa. Nos menus,
+  A confirma e B volta.
+
+
+DOIS JOGADORES (CO-OP)
+----------------------
+Na tela de modo de jogo, coloque JOGADORES em 2.
+  Sem controle:    J1 = A D, Espaço/F atira, G bomba, H habilidade,
+                        Shift esquerdo preciso
+                   J2 = setas, vírgula (ou Ctrl direito) atira,
+                        ponto bomba, barra habilidade, Shift direito
+  Um controle:     J1 no teclado, J2 no controle.
+  Dois controles:  um para cada.
+As duas naves dividem pontos, cristais e a loja. Cada uma tem as
+próprias vidas e bombas. A partida só acaba quando as duas caem.
+
+
+A CAMPANHA
+----------
+100 níveis em 20 setores. Cada setor tem 3 ondas, um estágio bônus
+e um chefe, depois a loja. Fica mais difícil a cada nível, e o
+último quarto é brutal. Chegando aos níveis 26, 51 ou 76, você pode
+começar a próxima campanha dali.
 
 COMO FICAR MAIS FORTE
 ---------------------

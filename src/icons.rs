@@ -122,6 +122,67 @@ pub fn weapon_icon(w: Weapon, c: Vec2, s: f32, col: Color, alpha: f32) {
                 with_a(YELLOW, alpha),
             );
         }
+        Weapon::Fireball => {
+            draw_triangle(
+                p(-6.0, 1.0),
+                p(6.0, 1.0),
+                p(-2.0, 9.0),
+                with_a(ORANGE, alpha * 0.6),
+            );
+            draw_triangle(
+                p(-4.0, 1.0),
+                p(5.0, 2.0),
+                p(3.0, 9.0),
+                with_a(RED, alpha * 0.5),
+            );
+            draw_circle(c.x, c.y - 1.0 * u, 6.0 * u, with_a(ORANGE, alpha));
+            draw_circle(c.x, c.y - 2.0 * u, 3.8 * u, with_a(YELLOW, alpha));
+            draw_circle(c.x - 1.0 * u, c.y - 3.0 * u, 1.6 * u, white);
+        }
+        Weapon::Plasma => {
+            draw_circle(c.x, c.y, 7.5 * u, with_a(col, 0.35));
+            draw_circle(c.x, c.y, 5.0 * u, col);
+            draw_circle(c.x, c.y, 2.6 * u, white);
+            for k in 0..3 {
+                let a = k as f32 * 2.1 + 0.4;
+                let m = c + vec2((a + 0.5).cos(), (a + 0.5).sin()) * 5.5 * u;
+                let q = c + vec2(a.cos(), a.sin()) * 8.0 * u;
+                draw_line(m.x, m.y, q.x, q.y, 0.9 * u, white);
+            }
+        }
+        Weapon::Railgun => {
+            draw_rectangle(
+                c.x - 4.0 * u,
+                c.y - 8.0 * u,
+                8.0 * u,
+                16.0 * u,
+                with_a(col, 0.25),
+            );
+            draw_rectangle(c.x - 2.0 * u, c.y - 8.0 * u, 4.0 * u, 16.0 * u, col);
+            draw_rectangle(c.x - 0.7 * u, c.y - 8.0 * u, 1.4 * u, 16.0 * u, white);
+            draw_rectangle(c.x - 6.0 * u, c.y + 3.0 * u, 2.0 * u, 5.0 * u, col);
+            draw_rectangle(c.x + 4.0 * u, c.y + 3.0 * u, 2.0 * u, 5.0 * u, col);
+        }
+        Weapon::Meteor => {
+            draw_line(
+                c.x + 2.0 * u,
+                c.y + 2.0 * u,
+                c.x + 7.0 * u,
+                c.y + 8.0 * u,
+                3.0 * u,
+                with_a(ORANGE, alpha * 0.6),
+            );
+            draw_poly(
+                c.x - 1.0 * u,
+                c.y - 1.0 * u,
+                6,
+                6.0 * u,
+                15.0,
+                with_a(Color::from_rgba(130, 95, 80, 255), alpha),
+            );
+            draw_poly_lines(c.x - 1.0 * u, c.y - 1.0 * u, 6, 6.0 * u, 15.0, th, col);
+            draw_circle(c.x - 3.0 * u, c.y - 3.0 * u, 1.4 * u, dark);
+        }
         Weapon::Pulsar => {
             star(c, 8.0 * u, 2.4 * u, 4, 0.0, col);
             draw_circle(c.x, c.y, 1.8 * u, white);

@@ -14,12 +14,19 @@ use macroquad::prelude::*;
 use macroquad::rand::gen_range;
 
 pub mod arcade;
+pub mod arsenal;
+pub mod coop;
 pub mod encounters;
 pub mod minigame;
 pub mod rifts;
 
 pub const COLS: usize = 8;
-pub const SECTORS: u32 = 8;
+/// Campaign length: 20 sectors of 5 levels each = 100 levels.
+pub const SECTORS: u32 = 20;
+/// Levels per sector.
+pub const SUBS: u32 = 5;
+/// Sectors where a campaign can be resumed (levels 1, 26, 51 and 76).
+pub const CHECKPOINTS: [u32; 4] = [1, 6, 11, 16];
 /// Fixed ship height: it only moves sideways.
 pub const PLAYER_Y: f32 = H - 80.0;
 const S: f32 = 3.0;
@@ -272,6 +279,10 @@ enum BKind {
     Dust,
     Lance,
     Charge,
+    Fireball,
+    Plasma,
+    Rail,
+    Meteor,
 }
 
 struct PBullet {
@@ -440,6 +451,7 @@ struct Bolt {
 // Player
 // ---------------------------------------------------------------------------
 
+#[derive(Clone)]
 pub struct Player {
     pub pos: Vec2,
     vel: Vec2,
@@ -460,6 +472,8 @@ pub struct Player {
     tilt: f32,
     focus: bool,
     pub meter: f32,
+    trigger_t: f32,
+    pub charge: f32,
 }
 
 impl Player {
@@ -730,6 +744,7 @@ pub struct RunConfig {
     pub found_logs: Vec<bool>,
     pub trail: usize,
     pub show_hitbox: bool,
+    pub coop: bool,
 }
 
 struct Stage {
@@ -846,6 +861,14 @@ pub struct Game {
     pub enc: encounters::Encounters,
     pub rift: rifts::Rifts,
     pub arcade: arcade::Arcade,
+    /// Second ship in local co-op.
+    pub p2: Option<Player>,
+    /// Input for the second ship, set by the app before each update.
+    pub p2_input: Input,
+    /// True while `with_p2` has the second ship in the `player` slot.
+    cur_p2: bool,
+    /// True once the ships traded slots because player one ran out of lives.
+    p_swapped: bool,
 }
 
 impl Game {
@@ -899,6 +922,8 @@ impl Game {
             tilt: 0.0,
             focus: false,
             meter: if mods.meter_full { 1.0 } else { 0.3 },
+            trigger_t: 0.0,
+            charge: 0.0,
         };
         let mut bg = Background::new();
         bg.set_theme(0);
@@ -914,7 +939,7 @@ impl Game {
         } else {
             cfg.diff.continues() + mods.extra_continue
         };
-        Game {
+        let mut g = Game {
             time: 0.0,
             run_time: 0.0,
             phase: Phase::Intro { t: 0.0 },
@@ -1012,7 +1037,30 @@ impl Game {
             enc: encounters::Encounters::new(&cfg),
             rift: rifts::Rifts::new(),
             arcade: arcade::Arcade::new(),
+            p2: None,
+            p2_input: Input::default(),
+            cur_p2: false,
+            p_swapped: false,
             cfg,
+        };
+        if g.cfg.coop {
+            let mut p2 = g.player.clone();
+            p2.pos.x = W / 2.0 + 60.0;
+            g.player.pos.x = W / 2.0 - 60.0;
+            g.p2 = Some(p2);
+        }
+        g
+    }
+
+    /// Starts a campaign at a later checkpoint. The ship gets the crystals and the weapon
+    /// power a pilot would have gathered on the way, so the jump is fair but not free.
+    pub fn start_at_checkpoint(&mut self, sector: u32) {
+        self.wave = (sector - 1) * SUBS + 1;
+        self.crystals += 45.0 * (sector - 1) as f32;
+        let lv = (1 + sector as i32 / 5).min(4);
+        self.player.level = lv;
+        if let Some(p2) = &mut self.p2 {
+            p2.level = lv;
         }
     }
 
@@ -1056,23 +1104,34 @@ impl Game {
                 } else {
                     kind
                 };
-                let extra = match self.cfg.mode {
-                    Mode::Daily => 0.5,
-                    Mode::Expedition => -((sector - 1) as f32) * 0.1,
-                    _ => 0.0,
+                let level = (sector - 1) * SUBS + sub;
+                let (theme, tier, diff) = match self.cfg.mode {
+                    // 100 levels: the eight regions are spread over 20 sectors and the
+                    // difficulty climbs every single level, steeply in the last quarter.
+                    Mode::Campaign => {
+                        let x = (level - 1) as f32 / 99.0;
+                        (
+                            ((sector - 1) * 8 / SECTORS) as usize,
+                            (sector * 2).div_ceil(3) + self.cycle * 14,
+                            x * 7.0 + x * x * 3.0 + self.cycle as f32 * 4.0,
+                        )
+                    }
+                    Mode::Daily => (
+                        (sector - 1) as usize % 8,
+                        sector * 2,
+                        (sector - 1) as f32 * 1.6 + (sub - 1) as f32 * 0.2 + 1.0,
+                    ),
+                    _ => (
+                        (sector - 1) as usize % 8,
+                        sector + 1,
+                        (sector - 1) as f32 * 0.8 + (sub - 1) as f32 * 0.15 + 0.6,
+                    ),
                 };
                 Stage {
                     kind,
-                    theme: if self.secret_stage {
-                        8
-                    } else {
-                        (sector - 1) as usize % 8
-                    },
-                    tier: sector + self.cycle * 8,
-                    diff: (sector - 1) as f32 * 0.85
-                        + (sub - 1) as f32 * 0.15
-                        + self.cycle as f32 * 4.0
-                        + extra,
+                    theme: if self.secret_stage { 8 } else { theme },
+                    tier,
+                    diff,
                 }
             }
             Mode::Classic => {
@@ -1116,7 +1175,15 @@ impl Game {
         }
     }
     fn sub(&self) -> u32 {
-        (self.wave - 1) % 5 + 1
+        (self.wave - 1) % SUBS + 1
+    }
+    /// Campaign level, 1 to 100.
+    pub fn level(&self) -> u32 {
+        (self.sector() - 1) * SUBS + self.sub()
+    }
+    /// Extra hit points every enemy gets as the campaign goes on.
+    fn armor(&self) -> i32 {
+        (self.diff() / 2.2) as i32
     }
     fn diff(&self) -> f32 {
         self.stage().diff
@@ -1261,7 +1328,7 @@ impl Game {
             WaveKind::Normal => {
                 self.build_normal_wave();
                 self.wave_size = self.enemies.len().max(1);
-                au.music(Some(if st.tier >= 7 {
+                au.music(Some(if st.theme == 7 {
                     Music::Final
                 } else {
                     Music::Stage
@@ -1388,7 +1455,7 @@ impl Game {
             EState::Waiting { path, .. } => path.eval(0.0, None),
             _ => vec2(W / 2.0, -40.0),
         };
-        let hp = if bonus { 1 } else { kind.hp() };
+        let hp = if bonus { 1 } else { kind.hp() + self.armor() };
         let shield = if kind == Kind::Shieldbearer && !bonus {
             3 + (self.diff() / 2.0) as i32
         } else {
@@ -1803,7 +1870,7 @@ impl Game {
                 if t == 0.0 {
                     self.begin_sector();
                     let st = self.stage();
-                    au.music(Some(if st.tier >= 7 {
+                    au.music(Some(if st.theme == 7 {
                         Music::Final
                     } else {
                         Music::Stage
@@ -1988,6 +2055,7 @@ impl Game {
                     self.player.level = 1;
                     self.player.bombs = self.player.bombs.max(2);
                     self.player.dead_t = 0.01;
+                    self.coop_revive();
                     self.combo = 0;
                     au.music(Some(Music::Stage));
                     Phase::Playing
@@ -2015,7 +2083,8 @@ impl Game {
         self.arcade_post_update(au);
 
         let waiting = matches!(self.phase, Phase::GameOver { .. } | Phase::Continue { .. });
-        if !waiting && self.player.lives <= 0 && self.player.dead_t <= 0.0 {
+        self.coop_rotate();
+        if !waiting && self.team_out() {
             au.music(None);
             if self.continues_left > 0 {
                 self.phase = Phase::Continue { t: 10.0 };
@@ -2307,13 +2376,21 @@ impl Game {
             wdt *= 0.6;
         }
         self.update_timers(dt);
-        self.update_player(dt, inp, au);
+        let i2 = self.p2_input.clone();
+        let (in1, in2) = if self.p_swapped {
+            (&i2, inp)
+        } else {
+            (inp, &i2)
+        };
+        self.update_player(dt, in1, au);
+        self.with_p2(|g| g.update_player(dt, in2, au));
         let pace = self.cfg.diff.pace();
         self.update_enemies(wdt * pace, au);
         self.update_boss(wdt * pace, au);
         self.update_hazards(wdt, au);
         self.update_bullets(dt, wdt);
         self.update_drops(dt, au);
+        self.with_p2(|g| g.collect_near(au));
         self.update_abilities(dt, au);
         self.enc_update(dt, au);
         self.rift_update(dt, au);
@@ -2321,6 +2398,7 @@ impl Game {
         self.collisions(au);
         self.rift_collisions(au);
         self.arcade_hazards(au);
+        self.with_p2(|g| g.arcade_hazards(au));
         self.process_deaths(au);
         if self.combo_t > 0.0 {
             self.combo_t -= dt;
@@ -2331,6 +2409,7 @@ impl Game {
     }
 
     fn update_timers(&mut self, dt: f32) {
+        self.update_rails(dt);
         for t in [
             &mut self.frenzy_t,
             &mut self.star_t,
@@ -2353,6 +2432,8 @@ impl Game {
     fn update_player(&mut self, dt: f32, inp: &Input, au: &mut Audio) {
         let ship = self.ship();
         let ice = self.stage().theme == 4 && !self.secret_stage;
+        let spawn_x = self.spawn_x();
+        let lead = !self.cur_p2;
         let p = &mut self.player;
         p.cd -= dt;
         p.missile_cd -= dt;
@@ -2360,7 +2441,7 @@ impl Game {
         if p.dead_t > 0.0 {
             p.dead_t -= dt;
             if p.dead_t <= 0.0 && p.lives > 0 {
-                p.pos = vec2(W / 2.0, H - 80.0);
+                p.pos = vec2(spawn_x, H - 80.0);
                 p.vel = Vec2::ZERO;
                 p.invuln = 2.5;
                 p.tilt = 0.0;
@@ -2413,7 +2494,11 @@ impl Game {
         p.tilt += (d.x - p.tilt) * (dt * 10.0).min(1.0);
 
         let pp = p.pos;
-        let n_drones = self.drones_total() as usize;
+        let n_drones = if lead {
+            self.drones_total() as usize
+        } else {
+            0
+        };
         for (i, dr) in self.drones.iter_mut().enumerate().take(n_drones) {
             let off = match i {
                 0 => vec2(-38.0, 14.0),
@@ -2426,7 +2511,9 @@ impl Game {
             pp.x + (self.time * 1.3).sin() * 70.0,
             (pp.y - 70.0).max(H * 0.5),
         );
-        self.ally_pos += (ally_target - self.ally_pos) * (dt * 3.0).min(1.0);
+        if lead {
+            self.ally_pos += (ally_target - self.ally_pos) * (dt * 3.0).min(1.0);
+        }
 
         if intro {
             return;
@@ -2471,7 +2558,7 @@ impl Game {
                 }
             }
         }
-        if self.ally_sectors > 0 && firing {
+        if self.ally_sectors > 0 && firing && lead {
             self.ally_cd -= dt;
             if self.ally_cd <= 0.0 {
                 self.ally_cd = 0.2;
@@ -2688,6 +2775,9 @@ impl Game {
                     out.push(b);
                 }
                 au.play_vol(Sfx::WaveShot, 0.3);
+            }
+            Weapon::Fireball | Weapon::Plasma | Weapon::Railgun | Weapon::Meteor => {
+                cd = arsenal::fire(weapon, lv, dmg, o, ss, &mut out, au);
             }
             other => {
                 cd = encounters::fire_extra(
@@ -3312,9 +3402,26 @@ impl Game {
                     (BossKind::Twins, false),
                     (BossKind::Queen, false),
                 ];
-                let (k, v) = list[(sec as usize - 1) % 8];
-                let fin = self.cfg.mode == Mode::Campaign && sec == SECTORS;
-                let lvl = 1.0 + 0.3 * (sec - 1) as f32 + self.cycle as f32 * 0.9;
+                let campaign = self.cfg.mode == Mode::Campaign;
+                let theme = self.stage().theme;
+                // The region's own boss waits at the end of each region; the sectors
+                // before it are guarded by the other bosses in rotation.
+                let region_end = !campaign || ((sec * 8) / SECTORS) as usize != theme;
+                let (k, v) = if region_end {
+                    list[if campaign {
+                        theme
+                    } else {
+                        (sec as usize - 1) % 8
+                    }]
+                } else {
+                    list[(sec as usize * 3 + 1) % 7]
+                };
+                let fin = campaign && sec == SECTORS;
+                let lvl = if campaign {
+                    1.0 + 0.16 * (sec - 1) as f32 + self.cycle as f32 * 1.2
+                } else {
+                    1.0 + 0.3 * (sec - 1) as f32
+                };
                 (k, v, fin, lvl)
             }
             Mode::BossRush => {
@@ -3509,6 +3616,10 @@ impl Game {
                 | BKind::Nova
                 | BKind::Dust
                 | BKind::Lance => rifts::move_bullet(b, dt, &targets, boss_pos, pp),
+                BKind::Fireball | BKind::Plasma | BKind::Meteor => {
+                    arsenal::move_bullet(b, dt, &mut self.fx)
+                }
+                BKind::Rail => {}
                 _ => b.pos += b.vel * dt,
             }
             b.life -= dt;
@@ -3772,8 +3883,14 @@ impl Game {
         let time = self.time;
         let mut pirate = false;
         let mut charged5 = false;
+        self.rail_hits(au);
         for b in &mut self.bullets {
             if b.life <= 0.0 || b.kind == BKind::Hole {
+                continue;
+            }
+            // Plasma burns through six enemies, then fades.
+            if b.kind == BKind::Plasma && b.hit.iter().all(|h| *h != 0) {
+                b.life = 0.0;
                 continue;
             }
             for e in &mut self.enemies {
@@ -3783,7 +3900,14 @@ impl Game {
                 if e.alpha(time) < 0.5 {
                     continue;
                 }
-                let r = e.kind.radius() + if b.kind == BKind::Laser { 2.0 } else { 3.0 };
+                let r = e.kind.radius()
+                    + match b.kind {
+                        BKind::Laser => 2.0,
+                        BKind::Plasma => 9.0,
+                        BKind::Fireball => 7.0,
+                        BKind::Meteor => 6.0,
+                        _ => 3.0,
+                    };
                 if b.pos.distance(e.pos) < r {
                     landed += 1;
                     if shield_blocks(e, b.pos) {
@@ -3996,7 +4120,13 @@ impl Game {
         }
         self.rocks.extend(new_rocks);
 
-        // hazards vs player
+        self.player_hazards(au);
+        self.with_p2(|g| g.player_hazards(au));
+    }
+
+    /// Enemy shots, bodies, rocks, lightning and bosses against the ship in `self.player`.
+    fn player_hazards(&mut self, au: &mut Audio) {
+        let time = self.time;
         if !self.player.alive() {
             return;
         }
@@ -4345,16 +4475,19 @@ impl Game {
                 1.0
             };
             self.capsule_pity += 1;
-            let cap_chance = if e.kind == Kind::Beetle { 0.15 } else { 0.035 } * rain;
-            if self.capsule_pity > 28 || gen_range(0.0, 1.0) < cap_chance {
+            let cap_chance = if e.kind == Kind::Beetle { 0.06 } else { 0.011 } * rain;
+            if self.capsule_pity > 70 || gen_range(0.0, 1.0) < cap_chance {
                 self.capsule_pity = 0;
                 let cap = self.make_capsule();
                 self.spawn_drop(e.pos, cap);
-            } else if gen_range(0.0, 1.0) < 0.016 * self.mods.powerup_mul * rain {
+            } else if gen_range(0.0, 1.0) < 0.006 * self.mods.powerup_mul * rain {
                 self.spawn_drop(e.pos, DropKind::Power(PowerKind::random()));
             }
-            let card_chance =
-                if e.kind == Kind::Beetle { 0.012 } else { 0.004 } * self.mods.card_mul;
+            let card_chance = if e.kind == Kind::Beetle {
+                0.006
+            } else {
+                0.0018
+            } * self.mods.card_mul;
             if gen_range(0.0, 1.0) < card_chance {
                 self.spawn_drop(e.pos, DropKind::Card(cards::roll(0)));
             }
@@ -4569,6 +4702,7 @@ impl Game {
                     Item::MysteryBox => self.open_box(au),
                     Item::DamageCore => self.arcade.core += 1,
                 }
+                self.mirror_purchase(it);
                 self.check_mastery();
             }
         }
@@ -4835,6 +4969,9 @@ impl Game {
             }
         }
 
+        for r in &self.arcade.rails {
+            arsenal::draw_rail(r, off);
+        }
         for b in &self.bullets {
             let p = b.pos + off;
             match b.kind {
@@ -4935,6 +5072,10 @@ impl Game {
                 | BKind::Dust
                 | BKind::Lance => rifts::draw_bullet(b, p, self.time),
                 BKind::Charge => arcade::draw_charge_bullet(b, p, self.time),
+                BKind::Fireball | BKind::Plasma | BKind::Meteor => {
+                    arsenal::draw_bullet(b, p, self.time)
+                }
+                BKind::Rail => {}
                 BKind::Flame => {
                     let k = (b.t / 0.45).min(1.0);
                     let c = Color::new(1.0, 0.85 - k * 0.6, 0.3 - k * 0.3, 1.0 - k * 0.7);
@@ -4961,69 +5102,17 @@ impl Game {
             let blink = self.player.invuln > 0.0
                 && self.star_t <= 0.0
                 && (self.time * 18.0) as i32 % 2 == 0;
-            let flame = 6.0 + (self.time * 40.0).sin().abs() * 7.0;
             self.draw_trail(off);
             self.draw_sight(p);
             if !blink {
-                draw_triangle(
-                    p + vec2(-4.0, 20.0),
-                    p + vec2(4.0, 20.0),
-                    p + vec2(0.0, 20.0 + flame),
-                    Color::from_rgba(255, 140, 40, 255),
+                self.draw_ship_body(
+                    &self.player,
+                    self.seat_skin(self.p_swapped as usize),
+                    p,
+                    art,
                 );
-                draw_triangle(
-                    p + vec2(-2.0, 20.0),
-                    p + vec2(2.0, 20.0),
-                    p + vec2(0.0, 18.0 + flame * 0.6),
-                    Color::from_rgba(255, 240, 150, 255),
-                );
-                let spr = &art.ships[self.cfg.ship][self.cfg.skin];
-                let squash = 1.0 - self.player.tilt.abs() * 0.18;
-                let sz = vec2(spr.w * S * squash, spr.h * S);
-                let tint = if self.star_t > 0.0 || self.cfg.skin == 6 {
-                    ui::hsl(self.time * 0.8, 0.8, 0.75)
-                } else if self.web_t > 0.0 {
-                    Color::new(0.8, 0.8, 0.9, 1.0)
-                } else {
-                    WHITE
-                };
-                if self.cfg.ship == 4 {
-                    draw_circle(p.x, p.y, 20.0, Color::new(0.7, 0.6, 1.0, 0.12));
-                }
-                draw_texture_ex(
-                    &spr.tex,
-                    (p.x - sz.x / 2.0).round(),
-                    (p.y - sz.y / 2.0).round(),
-                    tint,
-                    DrawTextureParams {
-                        dest_size: Some(sz),
-                        ..Default::default()
-                    },
-                );
-                if self.web_t > 0.0 {
-                    for k in 0..4 {
-                        let a = k as f32 * 0.8 + self.time;
-                        draw_line(
-                            p.x - a.cos() * 18.0,
-                            p.y - a.sin() * 18.0,
-                            p.x + a.cos() * 18.0,
-                            p.y + a.sin() * 18.0,
-                            1.0,
-                            Color::new(1.0, 1.0, 1.0, 0.6),
-                        );
-                    }
-                }
-                if self.player.shield {
-                    let pulse = (self.time * 5.0).sin() * 2.0;
-                    draw_circle_lines(p.x, p.y, 28.0 + pulse, 2.0, Color::new(0.5, 0.9, 1.0, 0.7));
-                    draw_circle(p.x, p.y, 28.0 + pulse, Color::new(0.4, 0.8, 1.0, 0.08));
-                }
-                if self.player.focus || self.cfg.show_hitbox {
-                    draw_circle(p.x, p.y, self.hit_r() + 1.5, WHITE);
-                    draw_circle(p.x, p.y, self.hit_r() - 1.0, RED);
-                }
                 self.rift_draw_player_fx(p);
-                self.draw_charge(p);
+                self.draw_charge(&self.player, p);
             }
             for d in self.drones.iter().take(self.drones_total() as usize) {
                 sp.drone.draw(*d + off, 2.0, 0.0, WHITE, false);
@@ -5120,6 +5209,7 @@ impl Game {
             draw_circle(p.x, p.y, b.r * 0.5, inner);
         }
 
+        self.coop_draw(off, art);
         if let Some(b) = &self.boss {
             b.draw_beam(self.time);
         }
@@ -5195,7 +5285,72 @@ impl Game {
     }
 
     /// Only the essentials when the side panels show the rest.
+    /// Engine flame, hull, shield and hitbox of one ship (used for both players).
+    fn draw_ship_body(&self, pl: &Player, skin: usize, p: Vec2, art: &Art) {
+        let flame = 6.0 + (self.time * 40.0 + pl.pos.x * 0.01).sin().abs() * 7.0;
+        draw_triangle(
+            p + vec2(-4.0, 20.0),
+            p + vec2(4.0, 20.0),
+            p + vec2(0.0, 20.0 + flame),
+            Color::from_rgba(255, 140, 40, 255),
+        );
+        draw_triangle(
+            p + vec2(-2.0, 20.0),
+            p + vec2(2.0, 20.0),
+            p + vec2(0.0, 18.0 + flame * 0.6),
+            Color::from_rgba(255, 240, 150, 255),
+        );
+        let spr = &art.ships[self.cfg.ship][skin];
+        let squash = 1.0 - pl.tilt.abs() * 0.18;
+        let sz = vec2(spr.w * S * squash, spr.h * S);
+        let tint = if self.star_t > 0.0 || skin == 6 {
+            ui::hsl(self.time * 0.8, 0.8, 0.75)
+        } else if self.web_t > 0.0 {
+            Color::new(0.8, 0.8, 0.9, 1.0)
+        } else {
+            WHITE
+        };
+        if self.cfg.ship == 4 {
+            draw_circle(p.x, p.y, 20.0, Color::new(0.7, 0.6, 1.0, 0.12));
+        }
+        draw_texture_ex(
+            &spr.tex,
+            (p.x - sz.x / 2.0).round(),
+            (p.y - sz.y / 2.0).round(),
+            tint,
+            DrawTextureParams {
+                dest_size: Some(sz),
+                ..Default::default()
+            },
+        );
+        if self.web_t > 0.0 {
+            for k in 0..4 {
+                let a = k as f32 * 0.8 + self.time;
+                draw_line(
+                    p.x - a.cos() * 18.0,
+                    p.y - a.sin() * 18.0,
+                    p.x + a.cos() * 18.0,
+                    p.y + a.sin() * 18.0,
+                    1.0,
+                    Color::new(1.0, 1.0, 1.0, 0.6),
+                );
+            }
+        }
+        if pl.shield {
+            let pulse = (self.time * 5.0).sin() * 2.0;
+            draw_circle_lines(p.x, p.y, 28.0 + pulse, 2.0, Color::new(0.5, 0.9, 1.0, 0.7));
+            draw_circle(p.x, p.y, 28.0 + pulse, Color::new(0.4, 0.8, 1.0, 0.08));
+        }
+        if pl.focus || self.cfg.show_hitbox {
+            draw_circle(p.x, p.y, self.hit_r() + 1.5, WHITE);
+            draw_circle(p.x, p.y, self.hit_r() - 1.0, RED);
+        }
+    }
+
     fn draw_mini_hud(&self) {
+        for (i, (t, c)) in self.coop_status().iter().enumerate() {
+            ui::text(t, 8.0, H - 26.0 + i as f32 * 14.0, 11.0, *c);
+        }
         if let Some(b) = &self.boss
             && b.entered()
             && b.hp > 0.0
@@ -5215,6 +5370,9 @@ impl Game {
     }
 
     fn draw_hud(&self, sp: &Sprites, art: &Art) {
+        for (i, (t, c)) in self.coop_status().iter().enumerate() {
+            ui::text_r(t, W - 8.0, 64.0 + i as f32 * 14.0, 11.0, *c);
+        }
         draw_rectangle(0.0, 0.0, W, 34.0, Color::new(0.0, 0.0, 0.05, 0.55));
         for (i, (ch, got)) in self.letters_line().iter().enumerate() {
             let x = W / 2.0 - 52.0 + i as f32 * 15.0;
@@ -5365,6 +5523,7 @@ impl Game {
             (_, WaveKind::Challenge) => "BONUS".into(),
             (_, WaveKind::Golden) => "???".into(),
             (_, WaveKind::Boss) => "BOSS".into(),
+            (Mode::Campaign, _) if self.cycle == 0 => format!("LEVEL {}/100", self.level()),
             _ => format!("SECTOR {}-{}", self.absolute_sector(), self.sub()),
         }
     }
@@ -5409,6 +5568,10 @@ impl Game {
                     Mode::Campaign | Mode::Daily if self.secret_stage => {
                         ("SECTOR ???".to_string(), "GOLDEN DIMENSION".to_string())
                     }
+                    Mode::Campaign if self.cycle == 0 => (
+                        format!("SECTOR {}/{}", self.sector(), SECTORS),
+                        self.theme_name().to_string(),
+                    ),
                     Mode::Campaign | Mode::Daily | Mode::Expedition => (
                         format!("SECTOR {}", self.absolute_sector()),
                         self.theme_name().to_string(),

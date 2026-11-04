@@ -23,9 +23,8 @@ struct Mine {
 
 #[derive(Default)]
 pub struct Arcade {
+    pub rails: Vec<super::arsenal::RailFx>,
     pub autofire: bool,
-    trigger_t: f32,
-    pub charge: f32,
     pub capacitor: bool,
     pub sight: bool,
     pub core: u32,
@@ -142,9 +141,9 @@ impl Game {
         let chance = if e.kind == Kind::Freighter {
             0.2
         } else if e.elite {
-            0.06
+            0.03
         } else {
-            0.013
+            0.005
         };
         if !on_screen && gen_range(0.0, 1.0) < chance {
             self.drop_letter(e.pos);
@@ -247,7 +246,9 @@ impl Game {
     pub(super) fn offer_warp(&mut self) {
         let ok = matches!(self.cfg.mode, Mode::Campaign | Mode::Expedition)
             && self.sector() + 1 < self.sectors_in_run().min(SECTORS + 100)
-            && (self.cfg.mode == Mode::Expedition || self.sector() <= 6)
+            && (self.cfg.mode == Mode::Expedition || self.sector() <= 12)
+            && self.arcade.warps == 0
+            && gen_range(0, 3) == 0
             && !self.enc.void;
         if ok {
             let x = if self.player.pos.x < W / 2.0 {
@@ -623,22 +624,22 @@ impl Game {
     pub(super) fn trigger(&mut self, inp: &Input, dt: f32, au: &mut Audio) -> bool {
         if inp.fire_p {
             let cd = self.player.cd.max(0.0);
-            self.arcade.trigger_t = (cd + 0.12).min(0.7);
+            self.player.trigger_t = (cd + 0.12).min(0.7);
         }
-        self.arcade.trigger_t -= dt;
+        self.player.trigger_t -= dt;
         if self.arcade.autofire {
-            self.arcade.charge = 0.0;
+            self.player.charge = 0.0;
             return inp.fire;
         }
         if inp.fire {
-            self.arcade.charge += dt;
+            self.player.charge += dt;
         } else {
-            if self.arcade.charge >= self.charge_full() && self.rift.jam_t <= 0.0 {
+            if self.player.charge >= self.charge_full() && self.rift.jam_t <= 0.0 {
                 self.charge_shot(au);
             }
-            self.arcade.charge = 0.0;
+            self.player.charge = 0.0;
         }
-        self.arcade.trigger_t > 0.0
+        self.player.trigger_t > 0.0
     }
 
     fn charge_shot(&mut self, au: &mut Audio) {
@@ -659,9 +660,9 @@ impl Game {
         self.fx.shake = self.fx.shake.max(0.15);
     }
 
-    pub(super) fn draw_charge(&self, p: Vec2) {
+    pub(super) fn draw_charge(&self, pl: &Player, p: Vec2) {
         let full = self.charge_full();
-        let c = self.arcade.charge;
+        let c = pl.charge;
         if c < 0.25 || self.arcade.autofire {
             return;
         }

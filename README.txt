@@ -8,8 +8,9 @@ stardust... and a signal. The signal called the Swarm: millions of
 star insects in attack formation. The fleet fell in hours. What's
 left: a hidden hangar, one ship and you.
 
-Cross 8 sectors, take down whole formations, collect crystals, buy
+Clear 100 levels, take down whole formations, collect crystals, buy
 stronger and stronger weapons and defeat the bosses of the Swarm.
+Alone or with a friend, on the keyboard or with gamepads.
 
 Language: English or Portuguese, in SETTINGS > GAME.
 
@@ -29,6 +30,30 @@ CONTROLS
   Holding the fire button only works with AUTOFIRE, which you buy
   in the shop. With it, the charged shot no longer works.
 
+  GAMEPAD: stick or D-pad move, A fires, X bombs, Y uses the
+  ability, LB is precision mode and Start pauses. In menus, A
+  confirms and B goes back.
+
+
+TWO PLAYERS (CO-OP)
+-------------------
+On the game mode screen, set PLAYERS to 2.
+  No gamepad:   P1 = A D, Space/F fire, G bomb, H ability,
+                     left Shift precision
+                P2 = arrows, comma (or Right Ctrl) fire, period
+                     bomb, slash ability, right Shift precision
+  One gamepad:  P1 on the keyboard, P2 on the gamepad.
+  Two gamepads: one each.
+Both ships share score, crystals and the shop. Each has its own
+lives and bombs. The run ends when both are out.
+
+
+THE CAMPAIGN
+------------
+100 levels in 20 sectors. Each sector has 3 waves, a bonus stage
+and a boss, then the shop. It gets harder at every level, and the
+last quarter is brutal. Reach level 26, 51 or 76 and you can start
+the next campaign from there.
 
 HOW TO GET STRONGER
 -------------------

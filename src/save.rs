@@ -42,6 +42,8 @@ pub struct Save {
     pub kills: u32,
     pub play_time: f64,
     pub best_sector: u32,
+    /// Furthest campaign sector reached (unlocks the checkpoints).
+    pub checkpoint: u32,
     pub victories: u32,
     pub bombs_used: u32,
     pub grazes: u32,
@@ -144,6 +146,7 @@ impl Default for Save {
             kills: 0,
             play_time: 0.0,
             best_sector: 0,
+            checkpoint: 1,
             victories: 0,
             bombs_used: 0,
             grazes: 0,
@@ -292,6 +295,7 @@ impl Save {
                 "kills" => s.kills = num(0),
                 "play_time" => s.play_time = v.parse().unwrap_or(0.0),
                 "best_sector" => s.best_sector = num(0),
+                "checkpoint" => s.checkpoint = num(1).clamp(1, crate::game::SECTORS),
                 "victories" => s.victories = num(0),
                 "bombs_used" => s.bombs_used = num(0),
                 "grazes" => s.grazes = num(0),
@@ -419,6 +423,7 @@ impl Save {
         kv("kills", self.kills.to_string());
         kv("play_time", format!("{:.0}", self.play_time));
         kv("best_sector", self.best_sector.to_string());
+        kv("checkpoint", self.checkpoint.to_string());
         kv("victories", self.victories.to_string());
         kv("bombs_used", self.bombs_used.to_string());
         kv("grazes", self.grazes.to_string());
