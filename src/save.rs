@@ -44,6 +44,8 @@ pub struct Save {
     pub best_sector: u32,
     /// Furthest campaign sector reached (unlocks the checkpoints).
     pub checkpoint: u32,
+    /// Ship flown by player two in co-op.
+    pub ship2: usize,
     pub victories: u32,
     pub bombs_used: u32,
     pub grazes: u32,
@@ -72,6 +74,12 @@ pub struct Save {
     pub particles: u8,
     pub flashes: bool,
     pub show_fps: bool,
+    /// Dynamic lighting (glows around shots and blasts).
+    pub lighting: bool,
+    /// Gamepad vibration.
+    pub rumble: bool,
+    /// Remapped keys and gamepad buttons for both players.
+    pub binds: crate::controls::Bindings,
     pub autofire: bool,
     pub game_speed: u8,
     pub panels: bool,
@@ -147,6 +155,7 @@ impl Default for Save {
             play_time: 0.0,
             best_sector: 0,
             checkpoint: 1,
+            ship2: 0,
             victories: 0,
             bombs_used: 0,
             grazes: 0,
@@ -173,6 +182,9 @@ impl Default for Save {
             particles: 2,
             flashes: true,
             show_fps: false,
+            lighting: true,
+            rumble: true,
+            binds: Default::default(),
             autofire: false,
             game_speed: 0,
             panels: true,
@@ -295,6 +307,7 @@ impl Save {
                 "kills" => s.kills = num(0),
                 "play_time" => s.play_time = v.parse().unwrap_or(0.0),
                 "best_sector" => s.best_sector = num(0),
+                "ship2" => s.ship2 = (num(0) as usize).min(crate::ships::SHIPS.len() - 1),
                 "checkpoint" => s.checkpoint = num(1).clamp(1, crate::game::SECTORS),
                 "victories" => s.victories = num(0),
                 "bombs_used" => s.bombs_used = num(0),
@@ -320,6 +333,10 @@ impl Save {
                 "particles" => s.particles = (num(2) as u8).min(2),
                 "flashes" => s.flashes = v == "1",
                 "show_fps" => s.show_fps = v == "1",
+                "lighting" => s.lighting = v == "1",
+                "rumble" => s.rumble = v == "1",
+                "keys" => s.binds.decode_keys(v),
+                "buttons" => s.binds.decode_pad(v),
                 "autofire" => s.autofire = v == "1",
                 "game_speed" => s.game_speed = (num(0) as u8).min(2),
                 "panels" => s.panels = v == "1",
@@ -424,6 +441,7 @@ impl Save {
         kv("play_time", format!("{:.0}", self.play_time));
         kv("best_sector", self.best_sector.to_string());
         kv("checkpoint", self.checkpoint.to_string());
+        kv("ship2", self.ship2.to_string());
         kv("victories", self.victories.to_string());
         kv("bombs_used", self.bombs_used.to_string());
         kv("grazes", self.grazes.to_string());
@@ -449,6 +467,11 @@ impl Save {
         kv("particles", self.particles.to_string());
         kv("flashes", b(self.flashes));
         kv("show_fps", b(self.show_fps));
+        kv("lighting", b(self.lighting));
+        kv("rumble", b(self.rumble));
+        let (keys, buttons) = self.binds.encode();
+        kv("keys", keys);
+        kv("buttons", buttons);
         kv("autofire", b(self.autofire));
         kv("game_speed", self.game_speed.to_string());
         kv("panels", b(self.panels));

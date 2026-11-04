@@ -18,10 +18,10 @@ Idioma: português ou inglês, em CONFIGURAÇÕES > JOGO.
 CONTROLES
 ---------
   Setas ou A/D ......... mover (a nave anda só para os lados)
-  Espaço / Z / J ....... atirar: cada toque, uma rajada
+  Espaço / Z ........... atirar: cada toque, uma rajada
   Segurar e soltar ..... tiro carregado (atravessa a formação)
-  X / K ................ bomba
-  C / L / V ............ habilidade da nave
+  X / G ................ bomba
+  C / H ................ habilidade da nave
   Shift ................ modo preciso (mais lento, mostra o ponto
                          vulnerável da nave)
   Esc / P .............. pausa
@@ -29,6 +29,9 @@ CONTROLES
 
   Atirar segurando o botão só com o TIRO AUTOMÁTICO, comprado na
   loja. Com ele, o tiro carregado deixa de funcionar.
+
+  Todas as teclas e botões de jogo podem ser trocados, para cada
+  jogador, em CONFIGURAÇÕES > CONTROLES.
 
   CONTROLE: analógico ou direcional movem, A atira, X solta bomba,
   Y usa a habilidade, LB é o modo preciso e Start pausa. Nos menus,
@@ -38,21 +41,27 @@ CONTROLES
 DOIS JOGADORES (CO-OP)
 ----------------------
 Na tela de modo de jogo, coloque JOGADORES em 2.
-  Sem controle:    J1 = A D, Espaço/F atira, G bomba, H habilidade,
-                        Shift esquerdo preciso
+  Sem controle:    J1 = A D, Espaço/Z atira, X/G bomba, C/H
+                        habilidade, Shift esquerdo preciso
                    J2 = setas, vírgula (ou Ctrl direito) atira,
                         ponto bomba, barra habilidade, Shift direito
   Um controle:     J1 no teclado, J2 no controle.
   Dois controles:  um para cada.
-As duas naves dividem pontos, cristais e a loja. Cada uma tem as
-próprias vidas e bombas. A partida só acaba quando as duas caem.
+O J2 escolhe qualquer nave que o J1 já liberou. As duas naves
+dividem pontos, cristais e a loja; cada uma tem as próprias vidas e
+bombas. Voem juntas para encher a barra DUO e apertem a habilidade
+para o RAIO DUPLO. Uma nave sem vidas deixa uma cápsula de resgate:
+voe até ela para trazer o parceiro de volta. Cada nave só pode ser
+resgatada uma vez por partida. A partida acaba quando as duas caem.
 
 
 A CAMPANHA
 ----------
 100 níveis em 20 setores. Cada setor tem 3 ondas, um estágio bônus
 e um chefe, depois a loja. Fica mais difícil a cada nível, e o
-último quarto é brutal. Chegando aos níveis 26, 51 ou 76, você pode
+último quarto é brutal: aparecem inimigos de elite, e os chefes
+mudam o cenário quando enfraquecem (escuridão, chão que sobe,
+meteoros). Chegando aos níveis 26, 51 ou 76, você pode
 começar a próxima campanha dali.
 
 COMO FICAR MAIS FORTE

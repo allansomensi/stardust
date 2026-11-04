@@ -179,6 +179,48 @@ pub const SHIPS: &[ShipDef] = &[
         ab_cost: 0.8,
         unlock: Unlock::Ach(ach::PERFECTIONIST),
     },
+    ShipDef {
+        name: "VALKYRIE",
+        desc: "A war machine: fast, with a hair trigger.",
+        speed: 1.15,
+        lives: 0,
+        fire: 1.2,
+        dmg: 1.0,
+        hit_r: 4.0,
+        ability: Ability::Overdrive,
+        ab_name: "OVERDRIVE",
+        ab_desc: "5 s firing twice as fast, one weapon level higher.",
+        ab_cost: 0.8,
+        unlock: Unlock::Ach(ach::VALKYRIE),
+    },
+    ShipDef {
+        name: "ECLIPSE",
+        desc: "Born in the dark: tiny hitbox, 20% stronger shots, one less life.",
+        speed: 1.05,
+        lives: -1,
+        fire: 1.0,
+        dmg: 1.2,
+        hit_r: 3.2,
+        ability: Ability::TimeWarp,
+        ab_name: "TIME WARP",
+        ab_desc: "5 s with enemies and shots almost frozen.",
+        ab_cost: 0.85,
+        unlock: Unlock::Ach(ach::DARK_DUEL),
+    },
+    ShipDef {
+        name: "TWIN STAR",
+        desc: "Made for two: +1 life and a star fan every 6 shots.",
+        speed: 1.0,
+        lives: 1,
+        fire: 1.05,
+        dmg: 1.0,
+        hit_r: 4.5,
+        ability: Ability::StarPulse,
+        ab_name: "STAR PULSE",
+        ab_desc: "A wave of light wipes nearby shots and hurts enemies.",
+        ab_cost: 0.55,
+        unlock: Unlock::Ach(ach::TWIN_STARS),
+    },
 ];
 
 pub fn ship_unlocked(i: usize, rank: usize, achs: &[bool]) -> bool {
@@ -194,6 +236,9 @@ pub fn unlock_hint(i: usize) -> String {
         Unlock::Ach(a) if a == ach::SECRET_ROOM => "A Honor Insignia".to_string(),
         Unlock::Ach(a) if a == ach::ARCADE_MASTER => "Arcade Insignia".to_string(),
         Unlock::Ach(a) if a == ach::PERFECTIONIST => "Perfectionist Insignia".to_string(),
+        Unlock::Ach(a) if a >= ach::VALKYRIE => {
+            format!("Challenge: {}", crate::progress::ACHS[a].desc)
+        }
         Unlock::Ach(_) => "???".to_string(),
     }
 }

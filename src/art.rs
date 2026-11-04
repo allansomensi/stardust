@@ -73,6 +73,27 @@ fn corsair() -> Vec<String> {
     ])
 }
 
+fn valkyrie() -> Vec<String> {
+    mirror(&[
+        "......k", ".....kw", "k....kc", "kk..kcc", "kck.kcb", ".kckkCb", "..kcCCc", "..kCCbc",
+        ".kCCkCc", "kCCk.kC", "kk...kk",
+    ])
+}
+
+fn eclipse() -> Vec<String> {
+    mirror(&[
+        "...kkkk", "..kbbbw", ".kbCCcc", "kbCkkkc", "kbCk...", "kbCk...", "kbCkkkc", ".kbCCcc",
+        "..kbbbC", "...kkkk",
+    ])
+}
+
+fn twin_star() -> Vec<String> {
+    mirror(&[
+        ".k....k", "kck..kw", "kck..kc", "kcCkkcc", ".kCCcCb", ".kCbbCw", "kCCbbCc", "kCkCCCc",
+        "kk.kCCk", "....kk.",
+    ])
+}
+
 fn aegis() -> Vec<String> {
     mirror(&[
         "...kkkk", "..kcccw", ".kcCCcc", "kcCCbbc", "kcCbbbC", "kcCCbbC", ".kcCCCc", "..kkCCk",
@@ -92,7 +113,10 @@ fn ship_rows(i: usize) -> (Vec<String>, Vec<(char, char)>) {
         6 => (prototype(), vec![('c', 'l'), ('C', 'L')]),
         7 => (probe(), vec![('c', 'w'), ('C', 'g'), ('b', 'y')]),
         8 => (corsair(), vec![('c', 'r'), ('C', 'R'), ('b', 'y')]),
-        _ => (aegis(), vec![('c', 't'), ('C', 'l'), ('b', 'w')]),
+        9 => (aegis(), vec![('c', 't'), ('C', 'l'), ('b', 'w')]),
+        10 => (valkyrie(), vec![('c', 'y'), ('C', 'r'), ('b', 'R')]),
+        11 => (eclipse(), vec![('c', 'v'), ('C', 'V'), ('b', 'k')]),
+        _ => (twin_star(), vec![('c', 'p'), ('C', 'c'), ('b', 'C')]),
     }
 }
 
@@ -211,6 +235,34 @@ fn jumper(frame: usize) -> Vec<String> {
     mirror(&["....kk", "...kmm", "..kmww", eye, "kmmmmm", "kMmmMm", tail])
 }
 
+fn armored(frame: usize) -> Vec<String> {
+    let legs = if frame == 0 { ".k.k.k" } else { "k.k.k." };
+    mirror(&[
+        "...kkk", "..kgGG", ".kgGgg", "kgGkeG", "kGgggg", "kGkGkG", legs,
+    ])
+}
+
+fn healer(frame: usize) -> Vec<String> {
+    let pulse = if frame == 0 { "kLlwww" } else { "kLllww" };
+    mirror(&[
+        "...kkk", "..kLll", ".kLllw", pulse, ".kLllw", "..kLll", "..k.kk",
+    ])
+}
+
+fn mirror_bug(frame: usize) -> Vec<String> {
+    let glint = if frame == 0 { ".kccwc" } else { ".kcwcc" };
+    let feet = if frame == 0 { "..kk.k" } else { "..k.kk" };
+    mirror(&[
+        "....kk", "...kcw", "..kcww", glint, "kCccwc", ".kCcck", feet,
+    ])
+}
+
+fn leader(frame: usize) -> Vec<String> {
+    let eye = if frame == 0 { "kVvwkv" } else { "kVvkwv" };
+    let feet = if frame == 0 { ".kV.kV" } else { "kV.kV." };
+    mirror(&["y..y.y", "kykyky", ".kYYYY", "kVvvvv", eye, "kVvvvv", feet])
+}
+
 pub fn build(sp: &mut Sprites) -> Art {
     let pair = |a: Vec<String>, b: Vec<String>| [Spr::new(a), Spr::new(b)];
     // Extra enemies, in the order of the Kind enum (starting at index 7)
@@ -236,6 +288,11 @@ pub fn build(sp: &mut Sprites) -> Art {
     // Minelayer and Jumper
     sp.enemies.push(pair(minelayer(0), minelayer(1)));
     sp.enemies.push(pair(jumper(0), jumper(1)));
+    // Armored, Healer, Mirror and Leader
+    sp.enemies.push(pair(armored(0), armored(1)));
+    sp.enemies.push(pair(healer(0), healer(1)));
+    sp.enemies.push(pair(mirror_bug(0), mirror_bug(1)));
+    sp.enemies.push(pair(leader(0), leader(1)));
 
     let ships = (0..crate::ships::SHIPS.len())
         .map(|s| (0..SKINS).map(|k| ship_sprite(s, k)).collect())

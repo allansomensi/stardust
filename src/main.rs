@@ -5,11 +5,13 @@ mod art;
 mod audio;
 mod boss;
 mod cards;
+mod controls;
 mod display;
 mod fx;
 mod game;
 mod i18n;
 mod icons;
+mod light;
 mod pad;
 mod progress;
 mod save;
@@ -133,47 +135,50 @@ fn any_pressed(keys: &[KeyCode]) -> bool {
 /// Left: A D move, Space or F fire, G bomb, H ability, left Shift precision.
 /// Right: arrows move, Comma / right Ctrl / keypad 1 fire, Period / keypad 2 bomb,
 /// Slash / keypad 3 ability, right Shift precision.
-fn poll_half(right_half: bool) -> Input {
-    use KeyCode::*;
-    if right_half {
-        Input {
-            left: is_key_down(Left),
-            right: is_key_down(Right),
-            fire: any_down(&[Comma, RightControl, Kp1]),
-            fire_p: any_pressed(&[Comma, RightControl, Kp1]),
-            bomb: any_pressed(&[Period, Kp2]),
-            ability_p: any_pressed(&[Slash, Kp3]),
-            focus: is_key_down(RightShift),
-            ..Default::default()
-        }
-    } else {
-        Input {
-            left: is_key_down(A),
-            right: is_key_down(D),
-            fire: any_down(&[Space, F]),
-            fire_p: any_pressed(&[Space, F]),
-            bomb: is_key_pressed(G),
-            ability_p: is_key_pressed(H),
-            focus: is_key_down(LeftShift),
-            ..Default::default()
-        }
-    }
+/// Reads a player's remapped game keys into `inp`. With `exclude`, keys that the other
+/// player also uses are ignored (two players on one keyboard).
+fn apply_keys(inp: &mut Input, b: &controls::Bindings, player: usize, exclude: Option<usize>) {
+    let other: Vec<KeyCode> = exclude
+        .map(|o| b.keys[o].iter().flatten().flatten().copied().collect())
+        .unwrap_or_default();
+    let keys = |a: usize| -> Vec<KeyCode> {
+        b.keys[player][a]
+            .iter()
+            .flatten()
+            .copied()
+            .filter(|k| !other.contains(k))
+            .collect()
+    };
+    inp.left = any_down(&keys(0));
+    inp.right = any_down(&keys(1));
+    inp.fire = any_down(&keys(2));
+    inp.fire_p = any_pressed(&keys(2));
+    inp.bomb = any_pressed(&keys(3));
+    inp.ability_p = any_pressed(&keys(4));
+    inp.focus = any_down(&keys(5));
 }
 
-/// Adds a gamepad's state on top of an input.
-fn merge_pad(inp: &mut Input, s: &pad::PadState) {
+/// Adds a gamepad's state on top of an input, using a player's button map.
+fn merge_pad(inp: &mut Input, s: &pad::PadState, b: &controls::Bindings, player: usize) {
     if !s.connected {
         return;
     }
+    let held = |a: usize| b.pad[player][a].iter().flatten().any(|x| s.held[x.index()]);
+    let pressed = |a: usize| {
+        b.pad[player][a]
+            .iter()
+            .flatten()
+            .any(|x| s.pressed[x.index()])
+    };
     inp.left |= s.left;
     inp.right |= s.right;
     inp.up |= s.up;
     inp.down |= s.down;
-    inp.fire |= s.fire;
-    inp.fire_p |= s.fire_p;
-    inp.bomb |= s.bomb_p;
-    inp.ability_p |= s.ability_p;
-    inp.focus |= s.focus;
+    inp.fire |= held(2);
+    inp.fire_p |= pressed(2);
+    inp.bomb |= pressed(3);
+    inp.ability_p |= pressed(4);
+    inp.focus |= held(5);
     inp.pause |= s.start_p;
     inp.confirm |= s.confirm_p;
     inp.enter |= s.confirm_p;
@@ -186,40 +191,37 @@ fn merge_pad(inp: &mut Input, s: &pad::PadState) {
 }
 
 /// Builds the inputs for both seats. Menus always use the first one.
-fn seat_inputs(full: Input, pads: &pad::Pads, coop_playing: bool) -> (Input, Input) {
+fn seat_inputs(
+    full: Input,
+    pads: &pad::Pads,
+    b: &controls::Bindings,
+    coop_playing: bool,
+) -> (Input, Input) {
+    let mut a = full;
+    let mut two = Input::default();
     if !coop_playing {
-        let mut a = full;
-        merge_pad(&mut a, &pads.state[0]);
-        merge_pad(&mut a, &pads.state[1]);
-        return (a, Input::default());
+        apply_keys(&mut a, b, 0, None);
+        merge_pad(&mut a, &pads.state[0], b, 0);
+        merge_pad(&mut a, &pads.state[1], b, 0);
+        return (a, two);
     }
     match pads.count() {
         0 => {
-            // Split keyboard: keep the menu keys of the full keyboard for player one.
-            let mut a = poll_half(false);
-            a.pause = full.pause;
-            a.confirm = full.confirm;
-            a.enter = full.enter;
-            a.back = full.back;
-            a.up_p = full.up_p;
-            a.down_p = full.down_p;
-            a.any = full.any;
-            a.key = full.key;
-            (a, poll_half(true))
+            // Split keyboard: each player keeps only their own keys.
+            apply_keys(&mut a, b, 0, Some(1));
+            apply_keys(&mut two, b, 1, None);
         }
         1 => {
-            let mut b = Input::default();
-            merge_pad(&mut b, &pads.state[0]);
-            (full, b)
+            apply_keys(&mut a, b, 0, None);
+            merge_pad(&mut two, &pads.state[0], b, 1);
         }
         _ => {
-            let mut a = full;
-            merge_pad(&mut a, &pads.state[0]);
-            let mut b = Input::default();
-            merge_pad(&mut b, &pads.state[1]);
-            (a, b)
+            apply_keys(&mut a, b, 0, None);
+            merge_pad(&mut a, &pads.state[0], b, 0);
+            merge_pad(&mut two, &pads.state[1], b, 1);
         }
     }
+    (a, two)
 }
 
 fn poll_input(rep: &mut Repeat, dt: f32) -> Input {
@@ -358,6 +360,11 @@ struct App {
     coop: bool,
     /// Index into `game::CHECKPOINTS` chosen on the mode screen.
     start_ckpt: usize,
+    /// Controls tab: which player and device are being remapped.
+    ctl_player: usize,
+    ctl_pad: bool,
+    /// Waiting for a key or button: (action, seconds waited).
+    rebind: Option<(usize, f32)>,
     pads: pad::Pads,
     /// Input for the second ship in co-op.
     inp2: Input,
@@ -427,6 +434,23 @@ const KONAMI: [KeyCode; 10] = [
 impl App {
     fn rank(&self) -> usize {
         self.save.rank()
+    }
+
+    /// Vibrates the gamepads of a seat (None = everyone), if vibration is on.
+    fn rumble(&mut self, seat: Option<usize>, strength: f32, ms: u32) {
+        if !self.save.rumble || self.demo {
+            return;
+        }
+        let coop = self.game.as_ref().map(|g| g.coop()).unwrap_or(false);
+        let slots: Vec<usize> = match (coop, self.pads.count(), seat) {
+            (false, _, _) | (true, _, None) => vec![0, 1],
+            (true, 1, Some(1)) => vec![0],
+            (true, 1, Some(_)) | (true, 0, _) => vec![],
+            (true, _, Some(s)) => vec![s.min(1)],
+        };
+        for s in slots {
+            self.pads.rumble(s, strength, ms);
+        }
     }
 
     /// Campaign sectors the player may start from.
@@ -596,6 +620,11 @@ impl App {
             diff,
             ship,
             skin: self.save.skin,
+            ship2: if ships::ship_unlocked(self.save.ship2, self.rank(), &self.save.achs) {
+                self.save.ship2
+            } else {
+                ship
+            },
             daily,
             equipped: if demo {
                 vec![]
@@ -649,6 +678,9 @@ impl App {
         }
         if dev_env("STARDUST_ROOM").is_some() {
             g.debug_room();
+        }
+        if dev_env("STARDUST_DUO").is_some() {
+            g.co.beam_t = 60.0;
         }
         if dev_env("STARDUST_STAR").is_some() {
             g.debug_star();
@@ -746,6 +778,7 @@ impl App {
             if self.save.flashes { 1.0 } else { 0.3 },
             !self.save.bg_anim,
         );
+        light::set_enabled(self.save.lighting);
     }
 
     fn handle_events(&mut self) {
@@ -785,6 +818,7 @@ impl App {
                 }
                 Event::BossKilled => self.save.bosses += 1,
                 Event::Bomb => self.save.bombs_used += 1,
+                Event::Rumble(seat, strength, ms) => self.rumble(seat, strength, ms),
                 Event::Graze => self.save.grazes += 1,
                 Event::Crystals(n) => self.save.crystals_total += n,
                 Event::Mastery(w) => {
@@ -1288,11 +1322,15 @@ impl App {
         let ckpts = self.checkpoints();
         self.start_ckpt = self.start_ckpt.min(ckpts.len() - 1);
         // Row 3 (checkpoint) sits inside the mode panel and only exists for the campaign.
-        let order: &[usize] = if MODES[sel] == Mode::Campaign && ckpts.len() > 1 {
-            &[0, 3, 1, 2]
-        } else {
-            &[0, 1, 2]
-        };
+        // Row 4 (player two's ship) only exists in co-op.
+        let mut order: Vec<usize> = vec![0];
+        if MODES[sel] == Mode::Campaign && ckpts.len() > 1 {
+            order.push(3);
+        }
+        order.extend([1, 2]);
+        if self.coop {
+            order.push(4);
+        }
         let at = order.iter().position(|&r| r == row).unwrap_or(0);
         if inp.up_p {
             row = order[(at + order.len() - 1) % order.len()];
@@ -1310,6 +1348,18 @@ impl App {
                 3 => {
                     self.start_ckpt =
                         ((self.start_ckpt as i32 + d).rem_euclid(ckpts.len() as i32)) as usize
+                }
+                4 => {
+                    // Player two picks from the ships player one has unlocked.
+                    let n = SHIPS.len() as i32;
+                    let mut s = self.save.ship2 as i32;
+                    for _ in 0..n {
+                        s = (s + d).rem_euclid(n);
+                        if ships::ship_unlocked(s as usize, self.rank(), &self.save.achs) {
+                            break;
+                        }
+                    }
+                    self.save.ship2 = s as usize;
                 }
                 _ => self.coop = !self.coop,
             }
@@ -1509,6 +1559,7 @@ impl App {
                 ("SIDE PANELS".into(), yes(s.panels)),
                 ("ANIMATED BACKGROUND".into(), yes(s.bg_anim)),
                 ("SHOW FPS".into(), yes(s.show_fps)),
+                ("DYNAMIC LIGHTING".into(), yes(s.lighting)),
             ],
             1 => vec![
                 ("MUSIC".into(), bar(s.music)),
@@ -1531,16 +1582,89 @@ impl App {
                         "ENTER".into()
                     },
                 ),
+                ("GAMEPAD VIBRATION".into(), yes(s.rumble)),
             ],
+            3 => {
+                let mut v = vec![
+                    (
+                        "PLAYER".into(),
+                        if self.ctl_player == 0 { "P1" } else { "P2" }.into(),
+                    ),
+                    (
+                        "DEVICE".into(),
+                        if self.ctl_pad { "GAMEPAD" } else { "KEYBOARD" }.into(),
+                    ),
+                ];
+                for a in self.ctl_actions() {
+                    let val = match self.rebind {
+                        Some((r, _)) if r == a => "PRESS...".to_string(),
+                        _ if self.ctl_pad => s.binds.pad_label(self.ctl_player, a),
+                        _ => s.binds.key_label(self.ctl_player, a),
+                    };
+                    v.push((controls::ACTIONS[a].into(), val));
+                }
+                v.push(("RESET THIS PLAYER".into(), "ENTER".into()));
+                v
+            }
             _ => vec![],
         };
         v.push(("BACK".into(), String::new()));
         v
     }
 
+    /// Actions shown on the controls tab for the current device.
+    fn ctl_actions(&self) -> Vec<usize> {
+        if self.ctl_pad {
+            controls::PAD_ACTIONS.to_vec()
+        } else {
+            (0..controls::ACTIONS.len()).collect()
+        }
+    }
+
+    /// Waits for the key or button to bind. Esc cancels.
+    fn update_rebind(&mut self, inp: &Input) {
+        let Some((action, t)) = self.rebind else {
+            return;
+        };
+        let t = t + get_frame_time();
+        // Ignore the press that opened the prompt.
+        if t < 0.2 {
+            self.rebind = Some((action, t));
+            return;
+        }
+        if is_key_pressed(KeyCode::Escape) || t > 6.0 {
+            self.rebind = None;
+            self.audio.play(Sfx::MenuMove);
+            return;
+        }
+        let p = self.ctl_player;
+        if self.ctl_pad {
+            let b = self.pads.state.iter().find_map(|s| s.first_pressed());
+            if let Some(b) = b {
+                self.save.binds.bind_pad(p, action, b);
+                self.rebind = None;
+            }
+        } else if let Some(k) = inp.key
+            && controls::bindable(k)
+        {
+            self.save.binds.bind_key(p, action, k);
+            self.rebind = None;
+        }
+        if self.rebind.is_none() {
+            self.save.write();
+            self.audio.play(Sfx::MenuOk);
+        } else {
+            self.rebind = Some((action, t));
+        }
+    }
+
     fn update_options(&mut self, sel: usize, from_pause: bool, inp: &Input) -> Screen {
         let mut tab = (sel / 100).min(3);
         let mut row = sel % 100;
+        if self.rebind.is_some() {
+            self.update_rebind(inp);
+            return Screen::Options { sel, from_pause };
+        }
         let n = self.opt_rows(tab).len() + 1; // row 0 = tabs
         self.reset_armed = (self.reset_armed - get_frame_time()).max(0.0);
         if inp.up_p {
@@ -1612,6 +1736,40 @@ impl App {
                     s.show_fps = !s.show_fps;
                     changed = true;
                 }
+                (0, 9) if toggle => {
+                    s.lighting = !s.lighting;
+                    changed = true;
+                }
+                (2, 6) if toggle => {
+                    s.rumble = !s.rumble;
+                    changed = true;
+                }
+                (3, 1) if toggle => {
+                    self.ctl_player = 1 - self.ctl_player;
+                    self.audio.play(Sfx::MenuMove);
+                }
+                (3, 2) if toggle => {
+                    self.ctl_pad = !self.ctl_pad;
+                    self.audio.play(Sfx::MenuMove);
+                }
+                (3, r) if inp.confirm && r == last - 1 => {
+                    let d = controls::Bindings::default();
+                    let p = self.ctl_player;
+                    s.binds.keys[p] = d.keys[p];
+                    s.binds.pad[p] = d.pad[p];
+                    changed = true;
+                }
+                (3, r) if inp.confirm && r >= 3 => {
+                    let acts = if self.ctl_pad {
+                        controls::PAD_ACTIONS.to_vec()
+                    } else {
+                        (0..controls::ACTIONS.len()).collect()
+                    };
+                    if let Some(&a) = acts.get(r - 3) {
+                        self.rebind = Some((a, 0.0));
+                        self.audio.play(Sfx::MenuOk);
+                    }
+                }
                 (1, 1) if delta != 0 => {
                     s.music = (s.music as i32 + delta).clamp(0, 10) as u8;
                     changed = true;
@@ -1656,6 +1814,8 @@ impl App {
                         fresh.panels = keep.panels;
                         fresh.bg_anim = keep.bg_anim;
                         fresh.show_fps = keep.show_fps;
+                        fresh.lighting = keep.lighting;
+                        fresh.rumble = keep.rumble;
                         fresh.seen_intro = true;
                         fresh.lang = keep.lang;
                         self.save = fresh;
@@ -2096,25 +2256,52 @@ impl App {
             16.0,
             if row == 2 { WHITE } else { DIM },
         );
+        let mut dy = 0.0;
         if self.coop {
+            let s2 = if ships::ship_unlocked(self.save.ship2, self.rank(), &self.save.achs) {
+                self.save.ship2
+            } else {
+                self.save.ship
+            };
+            let arrows = if row == 4 && (self.time * 3.0) as i32 % 2 == 0 {
+                GOLD
+            } else {
+                DIM
+            };
+            ui::text("<", 70.0, 588.0, 18.0, arrows);
+            ui::text_r(">", W - 70.0, 588.0, 18.0, arrows);
+            ui::text_c(
+                &format!("P2 SHIP: {}", SHIPS[s2].name),
+                W / 2.0,
+                588.0,
+                15.0,
+                if row == 4 { WHITE } else { PINK },
+            );
             let hint = match self.pads.count() {
                 0 => "P1: A D + Space · P2: arrows + , . /",
                 1 => "P1: keyboard · P2: gamepad",
                 _ => "P1: gamepad 1 · P2: gamepad 2",
             };
-            ui::text_c(hint, W / 2.0, 584.0, 11.0, CYAN);
+            ui::text_c(hint, W / 2.0, 606.0, 11.0, CYAN);
+            dy = 24.0;
         }
         // ship summary
         let s = &SHIPS[self.save.ship];
         self.art.ships[self.save.ship][self.save.skin].draw(
-            vec2(60.0, 624.0),
+            vec2(60.0, 624.0 + dy),
             3.0,
             0.0,
             WHITE,
             false,
         );
-        ui::text(&format!("SHIP: {}", s.name), 96.0, 606.0, 16.0, CYAN);
-        ui::text(&format!("ABILITY: {}", s.ab_name), 96.0, 624.0, 13.0, DIM);
+        ui::text(&format!("SHIP: {}", s.name), 96.0, 606.0 + dy, 16.0, CYAN);
+        ui::text(
+            &format!("ABILITY: {}", s.ab_name),
+            96.0,
+            624.0 + dy,
+            13.0,
+            DIM,
+        );
         let eq = if self.save.equipped.is_empty() {
             "no card equipped".to_string()
         } else {
@@ -2125,8 +2312,12 @@ impl App {
                 .collect::<Vec<_>>()
                 .join(", ")
         };
-        for (i, l) in ui::wrap(&eq, 13.0, W - 120.0).iter().take(2).enumerate() {
-            ui::text(l, 96.0, 644.0 + i as f32 * 16.0, 13.0, PINK);
+        for (i, l) in ui::wrap(&eq, 13.0, W - 120.0)
+            .iter()
+            .take(if self.coop { 1 } else { 2 })
+            .enumerate()
+        {
+            ui::text(l, 96.0, 644.0 + dy + i as f32 * 16.0, 13.0, PINK);
         }
         ui::text_c(
             "ARROWS choose  ·  ENTER launch  ·  ESC back",
@@ -3125,30 +3316,21 @@ impl App {
             }
         }
         if tab == 3 {
-            let keys = [
-                ("Move", "Arrows or A/D"),
-                ("Fire", "Tap Space, Z or J"),
-                ("Bomb", "X or K"),
-                ("Ability", "C, L or V"),
-                ("Charged shot", "Hold fire and release"),
-                ("Precision mode", "Shift"),
-                ("Pause", "Esc or P"),
-                ("Fullscreen", "F11 or Alt+Enter"),
-                ("Minigames", "Arrows and Space"),
-            ];
-            let y = 250.0;
-            ui::panel(
-                30.0,
-                y - 30.0,
-                W - 60.0,
-                keys.len() as f32 * 30.0 + 30.0,
-                CYAN,
+            let y = 586.0;
+            ui::text_c(
+                "Fixed: arrows + Enter + Esc in menus · Esc/P/Start pause",
+                W / 2.0,
+                y,
+                12.0,
+                DIM,
             );
-            for (i, (a, k)) in keys.iter().enumerate() {
-                let yy = y + i as f32 * 30.0;
-                ui::text(a, 50.0, yy, 15.0, WHITE);
-                ui::text_r(k, W - 50.0, yy, 15.0, CYAN);
-            }
+            ui::text_c(
+                "F11 fullscreen · hold fire and release: charged shot",
+                W / 2.0,
+                y + 18.0,
+                12.0,
+                DIM,
+            );
         }
         let hint = match (tab, row) {
             (_, 0) => "LEFT/RIGHT switch tab",
@@ -3156,6 +3338,11 @@ impl App {
             (0, 5) => "Soft: explosion flashes much weaker.",
             (0, 6) => "Panels with score and weapon on the sides (wide screens).",
             (0, 7) => "Off: the background barely moves.",
+            (0, 9) => "Glows around shots, beams and explosions.",
+            (2, 6) => "Rumble on explosions and when your ship is hit.",
+            (3, 1) | (3, 2) => "LEFT/RIGHT to switch.",
+            (3, r) if r >= 3 && self.rebind.is_none() => "ENTER, then press the new key or button.",
+            (3, _) if self.rebind.is_some() => "Press a key or button · ESC cancels",
             (2, 1) => "Portuguese or English.",
             (2, 2) => "Always shows your ship's weak spot.",
             (2, 5) => "Erases ranks, cards and achievements. Press twice.",
@@ -3387,16 +3574,17 @@ impl App {
             0 => vec![
                 ("CONTROLS".into(), GOLD),
                 ("Arrows / A D ....... move sideways".into(), WHITE),
-                ("Space / Z / J ...... fire (tap)".into(), WHITE),
+                ("Space / Z .......... fire (tap)".into(), WHITE),
                 ("Hold and release . charged shot".into(), WHITE),
-                ("X / K .............. bomb".into(), WHITE),
-                ("C / L / V .......... ship ability".into(), WHITE),
+                ("X / G .............. bomb".into(), WHITE),
+                ("C / H .............. ship ability".into(), WHITE),
                 ("Shift .............. precision mode".into(), WHITE),
                 ("Esc / P ............ pause".into(), WHITE),
                 ("F11 / Alt+Enter .... fullscreen".into(), WHITE),
                 ("Gamepad: A fire · X bomb · Y ability".into(), CYAN),
                 ("LB precision · Start pause".into(), CYAN),
                 ("Co-op: PLAYERS 2 on the mode screen".into(), PINK),
+                ("Remap keys: SETTINGS > CONTROLS".into(), DIM),
                 ("".into(), WHITE),
                 ("THE GOAL".into(), GOLD),
                 ("Clear 100 levels and defeat the Supreme".into(), WHITE),
@@ -3835,7 +4023,7 @@ impl App {
         let mut y = 60.0;
         ui::text("SHIPS", rx, y, 14.0, DIM);
         let ship = &self.art.ships[g.cfg.ship][g.cfg.skin];
-        for i in 0..p.lives.max(0).min(7) {
+        for i in 0..p.lives.clamp(0, 7) {
             ship.draw(
                 vec2(rx + 10.0 + i as f32 * 24.0, y + 20.0),
                 1.4,
@@ -3846,7 +4034,7 @@ impl App {
         }
         y += 54.0;
         ui::text("BOMBS", rx, y, 14.0, DIM);
-        for i in 0..p.bombs.max(0).min(7) {
+        for i in 0..p.bombs.clamp(0, 7) {
             self.sp.icon(sprites::Icon::Bomb).draw(
                 vec2(rx + 10.0 + i as f32 * 22.0, y + 18.0),
                 1.8,
@@ -4220,6 +4408,9 @@ async fn main() {
         reset_armed: 0.0,
         coop: false,
         start_ckpt: 0,
+        ctl_player: 0,
+        ctl_pad: false,
+        rebind: None,
         pads: pad::Pads::new(),
         inp2: Input::default(),
         panels: false,
@@ -4322,7 +4513,7 @@ async fn main() {
         let full = poll_input(&mut rep, dt);
         let coop_playing = matches!(app.screen, Screen::Playing)
             && app.game.as_ref().map(|g| g.coop()).unwrap_or(false);
-        let (mut inp, inp2) = seat_inputs(full, &app.pads, coop_playing);
+        let (mut inp, inp2) = seat_inputs(full, &app.pads, &app.save.binds, coop_playing);
         app.inp2 = inp2;
         let alt = is_key_down(KeyCode::LeftAlt) || is_key_down(KeyCode::RightAlt);
         if is_key_pressed(KeyCode::F11) || (alt && is_key_pressed(KeyCode::Enter)) {

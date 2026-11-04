@@ -324,6 +324,10 @@ static EXACT: &[(&str, &str)] = &[
         "Um tesouro escondido entre as dimensões...",
     ),
     (
+        "A war machine: fast, with a hair trigger.",
+        "Uma máquina de guerra: rápida e com gatilho sensível.",
+    ),
+    (
         "A wave of light wipes nearby shots and hurts enemies.",
         "Uma onda de luz apaga tiros por perto e fere inimigos.",
     ),
@@ -332,6 +336,7 @@ static EXACT: &[(&str, &str)] = &[
         "Um ala atira ao seu lado por 2 setores.",
     ),
     ("ABILITIES", "HABILIDADES"),
+    ("ABILITY", "HABILIDADE"),
     ("ABILITY  [C]", "HABILIDADE  [C]"),
     ("ABYSSAL WEAVER", "TECELÃ ABISSAL"),
     ("ACE", "ÁS"),
@@ -353,6 +358,7 @@ static EXACT: &[(&str, &str)] = &[
     ("ARCHIVES", "ARQUIVOS"),
     ("ARCHIVES, HONORS tab.", "ARQUIVOS, aba HONRAS."),
     ("ARMOR", "BLINDAGEM"),
+    ("ARMORED", "BLINDADO"),
     (
         "ARROWS choose  ·  ENTER launch  ·  ESC back",
         "SETAS escolhem  ·  ENTER decola  ·  ESC volta",
@@ -485,6 +491,10 @@ static EXACT: &[(&str, &str)] = &[
         "Born from Splitters and Carriers. Small, fast and stubborn.",
         "Nasce dos Divisores e das Portadoras. Pequeno, rápido e teimoso.",
     ),
+    (
+        "Born in the dark: tiny hitbox, 20% stronger shots, one less life.",
+        "Nascida no escuro: alvo minúsculo, tiros 20% mais fortes, uma vida a menos.",
+    ),
     ("Bosses defeated", "Chefes derrotados"),
     (
         "Bouncing shots get 2 extra bounces.",
@@ -496,8 +506,8 @@ static EXACT: &[(&str, &str)] = &[
         "Mas nem todas as perguntas foram respondidas.",
     ),
     (
-        "C / L / V .......... ship ability",
-        "C / L / V .......... habilidade da nave",
+        "C / H .............. ship ability",
+        "C / H .............. habilidade da nave",
     ),
     ("C, L or V", "C, L ou V"),
     ("CADET", "CADETE"),
@@ -708,6 +718,7 @@ static EXACT: &[(&str, &str)] = &[
         "DEMO  -  PRESS ANY KEY",
         "DEMONSTRAÇÃO  -  APERTE QUALQUER TECLA",
     ),
+    ("DEVICE", "DISPOSITIVO"),
     ("DIFFICULTY", "DIFICULDADE"),
     ("DISC", "DISCO"),
     (
@@ -721,8 +732,16 @@ static EXACT: &[(&str, &str)] = &[
     ("DOUBLE CRYSTALS", "CRISTAIS EM DOBRO"),
     ("DOUBLE SHOTS", "TIROS DOBRADOS"),
     ("DRONE", "ZANGÃO"),
+    ("DUO BEAM!", "RAIO DUPLO!"),
+    ("DUO READY: ability", "DUO PRONTO: habilidade"),
+    ("DYNAMIC LIGHTING", "ILUMINAÇÃO DINÂMICA"),
     ("Daily challenges won", "Desafios diários vencidos"),
     ("Dangerous Graze", "Raspão Perigoso"),
+    ("Dark Duel", "Duelo no Escuro"),
+    (
+        "Defeat a boss in the dark without being hit.",
+        "Derrote um chefe no escuro sem ser atingido.",
+    ),
     (
         "Defeat a boss without getting hit.",
         "Derrote um chefe sem ser atingido.",
@@ -741,6 +760,10 @@ static EXACT: &[(&str, &str)] = &[
     (
         "Destroy 25 curses with your shots.",
         "Destrua 25 maldições a tiros.",
+    ),
+    (
+        "Destroy a boss with the co-op DUO BEAM.",
+        "Destrua um chefe com o RAIO DUPLO do co-op.",
     ),
     (
         "Destroy every part of a boss before its body.",
@@ -817,6 +840,10 @@ static EXACT: &[(&str, &str)] = &[
     ("ENTER skips", "ENTER pula"),
     ("ENTER to continue", "ENTER para continuar"),
     ("ENTER to skip", "ENTER para pular"),
+    (
+        "ENTER, then press the new key or button.",
+        "ENTER e depois aperte a nova tecla ou botão.",
+    ),
     ("EPIC", "ÉPICA"),
     ("EQUIPPED", "EQUIPADA"),
     ("EQUIPPED CARDS", "CARTAS EQUIPADAS"),
@@ -925,6 +952,10 @@ static EXACT: &[(&str, &str)] = &[
         "Cada cristal recolhido vira armas melhores no hangar móvel.",
     ),
     (
+        "Every few seconds it pulses and mends the wounds and armor of everyone around it. Kill it first.",
+        "A cada poucos segundos pulsa e cura as feridas e a armadura de todos ao redor. Mate-o primeiro.",
+    ),
+    (
         "Every run gives XP and unlocks ships,",
         "Cada partida dá XP e libera naves,",
     ),
@@ -958,6 +989,10 @@ static EXACT: &[(&str, &str)] = &[
     (
         "F11 / Alt+Enter .... fullscreen",
         "F11 / Alt+Enter .... tela cheia",
+    ),
+    (
+        "F11 fullscreen · hold fire and release: charged shot",
+        "F11 tela cheia · segure e solte o tiro: tiro carregado",
     ),
     ("F11 or Alt+Enter", "F11 ou Alt+Enter"),
     ("FALCON", "FALCÃO"),
@@ -1075,8 +1110,16 @@ static EXACT: &[(&str, &str)] = &[
     ),
     ("First Flight", "Primeiro Voo"),
     (
+        "Fixed: arrows + Enter + Esc in menus · Esc/P/Start pause",
+        "Fixas: setas + Enter + Esc nos menus · Esc/P/Start pausa",
+    ),
+    (
         "Fly into it to skip the boss and the sector!",
         "Entre nele para pular o chefe e o setor!",
+    ),
+    (
+        "Fly into the capsule. Only once per run!",
+        "Voe até a cápsula. Só uma vez por partida!",
     ),
     ("Fool's Gold", "Ouro de Tolo"),
     (
@@ -1107,6 +1150,8 @@ static EXACT: &[(&str, &str)] = &[
     ("GAME", "JOGO"),
     ("GAME MODE", "MODO DE JOGO"),
     ("GAME OVER", "FIM DE JOGO"),
+    ("GAMEPAD", "CONTROLE"),
+    ("GAMEPAD VIBRATION", "VIBRAÇÃO DO CONTROLE"),
     ("GOLD", "OURO"),
     ("GOLD RUSH", "FEBRE DO OURO"),
     (
@@ -1132,6 +1177,10 @@ static EXACT: &[(&str, &str)] = &[
         "Get PERFECT in 5 minigames.",
         "Consiga PERFEITO em 5 minigames.",
     ),
+    (
+        "Glows around shots, beams and explosions.",
+        "Brilho em volta de tiros, raios e explosões.",
+    ),
     ("Golden Dimension", "Dimensão Dourada"),
     ("Golden Multiplier", "Multiplicador Dourado"),
     ("Golden Record", "Disco de Ouro"),
@@ -1150,6 +1199,7 @@ static EXACT: &[(&str, &str)] = &[
     ),
     ("HARD", "DIFÍCIL"),
     ("HATCHLING", "FILHOTE"),
+    ("HEALER", "CURANDEIRO"),
     ("HEART OF THE SWARM", "CORAÇÃO DO ENXAME"),
     ("HELLO, CREATOR!", "OLÁ, CRIADOR!"),
     ("HIGH", "ALTO"),
@@ -1272,10 +1322,15 @@ static EXACT: &[(&str, &str)] = &[
         "It went looking for comet dust",
         "Que buscou poeira de cometa",
     ),
+    (
+        "Its living mirror opens and closes. While open, it throws your own shots back at you.",
+        "Seu espelho vivo abre e fecha. Aberto, devolve seus próprios tiros.",
+    ),
     ("JAM", "PANE"),
     ("JAM!", "PANE!"),
     ("JUMPER", "SALTADOR"),
     ("Jinxed", "Azarado"),
+    ("KEYBOARD", "TECLADO"),
     ("Keen Eye", "Olho Clínico"),
     ("Keeper of Relics", "Guardião das Relíquias"),
     ("Konami Code", "Código Konami"),
@@ -1283,6 +1338,8 @@ static EXACT: &[(&str, &str)] = &[
     ("LASER ONLY", "SÓ LASER"),
     ("LASER SIGHT", "MIRA LASER"),
     ("LB precision · Start pause", "LB precisão · Start pausa"),
+    ("LEADER", "LÍDER"),
+    ("LEFT", "ESQUERDA"),
     (
         "LEFT/RIGHT change mode  ·  ENTER back",
         "ESQ/DIR troca o modo  ·  ENTER volta",
@@ -1296,6 +1353,7 @@ static EXACT: &[(&str, &str)] = &[
         "LEFT/RIGHT tabs  ·  UP/DOWN browse  ·  ESC back",
         "ESQ/DIR abas  ·  CIMA/BAIXO navega  ·  ESC volta",
     ),
+    ("LEFT/RIGHT to switch.", "ESQ/DIR para trocar."),
     ("LEGENDARY", "LENDÁRIA"),
     (
         "LEGENDARY paint and a golden name in the high scores",
@@ -1396,6 +1454,10 @@ static EXACT: &[(&str, &str)] = &[
     ("MUSIC", "MÚSICA"),
     ("MYSTERY BOX", "CAIXA MISTERIOSA"),
     ("MYSTERY CARD", "CARTA MISTERIOSA"),
+    (
+        "Made for two: +1 life and a star fan every 6 shots.",
+        "Feita para dois: +1 vida e um leque de estrelas a cada 6 tiros.",
+    ),
     (
         "Make 100 grazes in one run.",
         "Faça 100 raspões numa partida.",
@@ -1551,6 +1613,7 @@ static EXACT: &[(&str, &str)] = &[
     ("P2", "J2"),
     ("PACIFIST", "PACIFISTA"),
     ("PARTICLES", "PARTÍCULAS"),
+    ("PARTNER RESCUED!", "PARCEIRO RESGATADO!"),
     ("PAUSE", "PAUSA"),
     ("PERFECT!", "PERFEITO!"),
     ("PERFECTIONIST INSIGNIA", "INSÍGNIA DO PERFECCIONISTA"),
@@ -1564,9 +1627,12 @@ static EXACT: &[(&str, &str)] = &[
     ("PILOT", "PILOTO"),
     ("PLASMA trail", "Rastro PLASMA"),
     ("PLAY", "JOGAR"),
+    ("PLAYER", "JOGADOR"),
     ("PLAYERS: 1", "JOGADORES: 1"),
     ("PLAYERS: 2 (CO-OP)", "JOGADORES: 2 (CO-OP)"),
     ("POWER-UPS (falling orbs)", "PODERES (bolinhas que caem)"),
+    ("PRECISION", "PRECISÃO"),
+    ("PRESS...", "APERTE..."),
     ("PRISM", "PRISMA"),
     ("PROBE", "SONDA"),
     (
@@ -1616,6 +1682,10 @@ static EXACT: &[(&str, &str)] = &[
         "Plasma orbs that grow and burn through six enemies.",
         "Orbes de plasma que crescem e atravessam seis inimigos.",
     ),
+    (
+        "Plated from head to claw. Frontal shots only chip the armor: hit it from behind or blow it up.",
+        "Blindado da cabeça às garras. Tiros de frente só lascam a armadura: acerte por trás ou exploda.",
+    ),
     ("Play 25 runs.", "Jogue 25 partidas."),
     ("Play for 2 hours in total.", "Jogue por 2 horas no total."),
     ("Play time", "Tempo de jogo"),
@@ -1634,6 +1704,10 @@ static EXACT: &[(&str, &str)] = &[
     (
         "Press SPACE when the needle",
         "Aperte ESPAÇO quando a agulha",
+    ),
+    (
+        "Press a key or button · ESC cancels",
+        "Aperte uma tecla ou botão · ESC cancela",
     ),
     (
         "Pricier weapons in the shop hit much harder.",
@@ -1687,10 +1761,13 @@ static EXACT: &[(&str, &str)] = &[
     ("RELICS", "RELÍQUIAS"),
     ("REPLAY THE PROLOGUE", "REVER O PRÓLOGO"),
     ("REROLL OFFERS (FREE)", "TROCAR OFERTAS (GRÁTIS)"),
+    ("RESCUE YOUR PARTNER", "RESGATE SEU PARCEIRO"),
+    ("RESET THIS PLAYER", "RESTAURAR ESTE JOGADOR"),
     ("RICOCHET", "RICOCHETE"),
     ("RIFT", "FENDA"),
     ("RIFTS", "FENDAS"),
     ("RIFTS (hexagon with ?)", "FENDAS (hexágono com ?)"),
+    ("RIGHT", "DIREITA"),
     ("RUBY", "RUBI"),
     ("RUBY paint and ORBIT weapon", "Pintura RUBI e arma ÓRBITA"),
     ("RUST", "FERRUGEM"),
@@ -1716,6 +1793,10 @@ static EXACT: &[(&str, &str)] = &[
         "Itens raros na loja e arma COLMEIA",
     ),
     (
+        "Reach level 50 of the campaign.",
+        "Chegue ao nível 50 da campanha.",
+    ),
+    (
         "Reach sector 10 in Expedition.",
         "Chegue ao setor 10 da Expedição.",
     ),
@@ -1731,15 +1812,27 @@ static EXACT: &[(&str, &str)] = &[
     ("Reinforced Hull", "Casco Reforçado"),
     ("Reliquary", "Relicário"),
     (
+        "Remap keys: SETTINGS > CONTROLS",
+        "Trocar teclas: CONFIGURAÇÕES > CONTROLES",
+    ),
+    (
         "Reward: crystals, a weapon level and a power-up.",
         "Prêmio: cristais, nível de arma e um poder.",
     ),
     ("Rock Salt", "Sal Grosso"),
     (
+        "Rock peaks split your lane.",
+        "Picos de rocha dividem sua pista.",
+    ),
+    (
         "Rocks rain down all over the sector.",
         "Pedras despencam por todo o setor.",
     ),
     ("Routine", "Rotina"),
+    (
+        "Rumble on explosions and when your ship is hit.",
+        "Vibra em explosões e quando sua nave é atingida.",
+    ),
     ("Runs", "Partidas"),
     (
         "S  Shield   B  Bomb   $  Crystals",
@@ -1763,6 +1856,7 @@ static EXACT: &[(&str, &str)] = &[
     ("SHIP", "NAVE"),
     ("SHIP LOCKED", "BLOQUEADA"),
     ("SHIPS", "NAVES"),
+    ("SHOOT", "ATIRAR"),
     ("SHOP", "LOJA"),
     ("SHOP AND POWER", "LOJA E PODER"),
     ("SHOW FPS", "MOSTRAR FPS"),
@@ -1887,6 +1981,7 @@ static EXACT: &[(&str, &str)] = &[
         "Derrube a Nave-Mãe misteriosa.",
     ),
     ("Shoot one down to record it.", "Abata um para registrar."),
+    ("Shoot them or dodge them!", "Atire neles ou desvie!"),
     (
         "Shoots sticky webs that slow your ship down for a few seconds.",
         "Dispara teias pegajosas que deixam sua nave lenta por alguns segundos.",
@@ -1928,8 +2023,8 @@ static EXACT: &[(&str, &str)] = &[
         "Algo puxa a nave para dentro...",
     ),
     (
-        "Space / Z / J ...... fire (tap)",
-        "Espaço / Z / J ..... atirar (aperte)",
+        "Space / Z .......... fire (tap)",
+        "Espaço / Z ......... atirar (aperte)",
     ),
     ("Space Pirate", "Pirata Espacial"),
     ("Spare Battery", "Bateria Extra"),
@@ -1991,8 +2086,11 @@ static EXACT: &[(&str, &str)] = &[
     ("THE AMULET PROTECTED YOU!", "O AMULETO PROTEGEU!"),
     ("THE DEVOURER", "O DEVORADOR"),
     ("THE GOAL", "O OBJETIVO"),
+    ("THE GROUND RISES", "O CHÃO SE ERGUE"),
+    ("THE LIGHTS GO OUT", "AS LUZES SE APAGAM"),
     ("THE RIFT CLOSED", "A FENDA SE FECHOU"),
     ("THE STAR OPENED", "A ESTRELA SE ABRIU"),
+    ("THE SWARM REGROUPS!", "O ENXAME SE REAGRUPA!"),
     ("THE THIEF GOT AWAY", "O LADRÃO FUGIU"),
     ("THE TWINS", "AS GÊMEAS"),
     ("THE VOID BEYOND", "O VAZIO ALÉM"),
@@ -2011,6 +2109,7 @@ static EXACT: &[(&str, &str)] = &[
     ("TRAIL EQUIPPED", "RASTRO EQUIPADO"),
     ("TREASURE MAP", "MAPA DO TESOURO"),
     ("TRIGGER", "GATILHO"),
+    ("TWIN STAR", "ESTRELA GÊMEA"),
     (
         "Take 12 different weapons to level 5.",
         "Leve 12 armas diferentes ao nível 5.",
@@ -2116,6 +2215,10 @@ static EXACT: &[(&str, &str)] = &[
         "A base do Enxame. Sozinho é inofensivo; em formação, é uma muralha viva.",
     ),
     (
+        "The crowned commander. When it falls, the formation scatters into new places in a rage.",
+        "O comandante coroado. Quando cai, a formação se embaralha em fúria.",
+    ),
+    (
         "The first ship ever made for this game. Built from nostalgia.",
         "A primeira nave que existiu neste jogo. Feita de nostalgia.",
     ),
@@ -2209,6 +2312,7 @@ static EXACT: &[(&str, &str)] = &[
     ("Triple Fever", "Febre Tripla"),
     ("True Ending", "Final Verdadeiro"),
     ("Turbo Engine", "Motor Turbo"),
+    ("Twin Stars", "Estrelas Gêmeas"),
     (
         "Twinkling stars in a fan. Secret.",
         "Estrelas cintilantes em leque. Secreta.",
@@ -2244,6 +2348,7 @@ static EXACT: &[(&str, &str)] = &[
     ("Untouchable", "Intocável"),
     ("Use 50 bombs in total.", "Use 50 bombas no total."),
     ("Use a Warp Gate.", "Use um Portal de Salto."),
+    ("VALKYRIE", "VALQUÍRIA"),
     ("VANGUARD", "VANGUARDA"),
     ("VEGA ship and GRENADE weapon", "Nave VEGA e arma GRANADA"),
     ("VICE ADMIRAL", "VICE-ALMIRANTE"),
@@ -2251,6 +2356,7 @@ static EXACT: &[(&str, &str)] = &[
     ("VOID", "VAZIO"),
     ("VOID INSIGNIA", "INSÍGNIA DO VAZIO"),
     ("VOID trail", "Rastro VAZIO"),
+    ("Valkyrie", "Valquíria"),
     (
         "Vanishes and reappears. Can only be hit while visible.",
         "Some e reaparece. Só é atingido quando está visível.",
@@ -2341,7 +2447,7 @@ static EXACT: &[(&str, &str)] = &[
         "Vença a campanha 3 vezes para liberar.",
     ),
     ("Without a Scratch", "Sem Arranhões"),
-    ("X / K .............. bomb", "X / K .............. bomba"),
+    ("X / G .............. bomb", "X / G .............. bomba"),
     ("X or K", "X ou K"),
     ("YEAR 2000", "ANO 2000"),
     ("YES", "SIM"),
@@ -2364,6 +2470,10 @@ static EXACT: &[(&str, &str)] = &[
     (
         "Your shots fly 15% faster.",
         "Seus tiros voam 15% mais rápido.",
+    ),
+    (
+        "Your shots light the way.",
+        "Seus tiros iluminam o caminho.",
     ),
     (
         "Your time has been recorded.",
@@ -2556,6 +2666,7 @@ static TEMPLATES: &[(&[&str], &[&str])] = &[
     (&["HIGH SCORE ", ""], &["RECORDE ", ""]),
     (&["shot down: ", ""], &["abatidos: ", ""]),
     (&["", " (", " perfect)"], &["", " (", " perfeitos)"]),
+    (&["Challenge: ", ""], &["Desafio: ", ""]),
     (&["ARCHIVES ", "/", ""], &["ARQUIVOS ", "/", ""]),
     (&["BOSS ", " OF 9"], &["CHEFE ", " DE 9"]),
     (&["CRYSTALS: ", ""], &["CRISTAIS: ", ""]),
@@ -2572,6 +2683,7 @@ static TEMPLATES: &[(&[&str], &[&str])] = &[
     (&["CREDITS: ", ""], &["CRÉDITOS: ", ""]),
     (&["ABILITY: ", ""], &["HABILIDADE: ", ""]),
     (&["", " of ", " logs"], &["", " de ", " registros"]),
+    (&["P2 SHIP: ", ""], &["NAVE J2: ", ""]),
     (&["MIRROR ", "s"], &["ESPELHO ", "s"]),
     (&["GROUP! +", ""], &["GRUPO! +", ""]),
     (&["REWARD: ", ""], &["PRÊMIO: ", ""]),

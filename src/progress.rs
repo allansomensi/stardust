@@ -524,6 +524,17 @@ pub const ACHS: &[AchDef] = &[
         "Shoot down 5 enemies with a single charged shot.",
         500,
     ),
+    a("Valkyrie", "Reach level 50 of the campaign.", 1500),
+    a(
+        "Dark Duel",
+        "Defeat a boss in the dark without being hit.",
+        1500,
+    ),
+    a(
+        "Twin Stars",
+        "Destroy a boss with the co-op DUO BEAM.",
+        1200,
+    ),
 ];
 
 /// Flight logs: the story behind the Swarm.
@@ -806,6 +817,9 @@ pub mod ach {
     pub const SHORTCUT: usize = 73;
     pub const LIGHTNING_WAVE: usize = 74;
     pub const CHARGED: usize = 75;
+    pub const VALKYRIE: usize = 76;
+    pub const DARK_DUEL: usize = 77;
+    pub const TWIN_STARS: usize = 78;
 }
 
 // ---------------------------------------------------------------------------
@@ -931,6 +945,22 @@ pub const BESTIARY: &[Lore] = &[
         name: "JUMPER",
         text: "Never stays in the same spot of the formation. Vanishes in a blink and reappears far away.",
     },
+    Lore {
+        name: "ARMORED",
+        text: "Plated from head to claw. Frontal shots only chip the armor: hit it from behind or blow it up.",
+    },
+    Lore {
+        name: "HEALER",
+        text: "Every few seconds it pulses and mends the wounds and armor of everyone around it. Kill it first.",
+    },
+    Lore {
+        name: "MIRROR",
+        text: "Its living mirror opens and closes. While open, it throws your own shots back at you.",
+    },
+    Lore {
+        name: "LEADER",
+        text: "The crowned commander. When it falls, the formation scatters into new places in a rage.",
+    },
 ];
 
 pub const LORE_BOSS_START: usize = 14;
@@ -982,7 +1012,7 @@ mod tests {
         assert_eq!(names.len(), ACHS.len());
         assert_eq!(ACHS[ach::SLEEPLESS].name, "Sleepless");
         assert_eq!(ACHS[ach::TOURIST].name, "Cosmic Tourist");
-        assert_eq!(ACHS.len(), 76);
+        assert_eq!(ACHS.len(), 79);
         assert_eq!(ACHS[ach::COMET].name, "Comet Hunter");
     }
 }

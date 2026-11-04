@@ -18,10 +18,10 @@ Language: English or Portuguese, in SETTINGS > GAME.
 CONTROLS
 --------
   Arrows or A/D ........ move (your ship only moves sideways)
-  Space / Z / J ........ fire: every tap is a burst
+  Space / Z ............ fire: every tap is a burst
   Hold and release ..... charged shot (pierces the formation)
-  X / K ................ bomb
-  C / L / V ............ ship ability
+  X / G ................ bomb
+  C / H ................ ship ability
   Shift ................ precision mode (slower, shows your ship's
                          weak spot)
   Esc / P .............. pause
@@ -29,6 +29,9 @@ CONTROLS
 
   Holding the fire button only works with AUTOFIRE, which you buy
   in the shop. With it, the charged shot no longer works.
+
+  Every game key and button can be remapped, for each player,
+  in SETTINGS > CONTROLS.
 
   GAMEPAD: stick or D-pad move, A fires, X bombs, Y uses the
   ability, LB is precision mode and Start pauses. In menus, A
@@ -38,21 +41,26 @@ CONTROLS
 TWO PLAYERS (CO-OP)
 -------------------
 On the game mode screen, set PLAYERS to 2.
-  No gamepad:   P1 = A D, Space/F fire, G bomb, H ability,
+  No gamepad:   P1 = A D, Space/Z fire, X/G bomb, C/H ability,
                      left Shift precision
                 P2 = arrows, comma (or Right Ctrl) fire, period
                      bomb, slash ability, right Shift precision
   One gamepad:  P1 on the keyboard, P2 on the gamepad.
   Two gamepads: one each.
-Both ships share score, crystals and the shop. Each has its own
-lives and bombs. The run ends when both are out.
+Player 2 picks any ship player 1 has unlocked. Both ships share
+score, crystals and the shop; each has its own lives and bombs.
+Fly close together to fill the DUO bar, then press the ability
+button for the DUO BEAM. A ship that runs out of lives leaves a
+rescue capsule: fly into it to bring your partner back. Each ship
+can be rescued only once per run. The run ends when both are out.
 
 
 THE CAMPAIGN
 ------------
 100 levels in 20 sectors. Each sector has 3 waves, a bonus stage
 and a boss, then the shop. It gets harder at every level, and the
-last quarter is brutal. Reach level 26, 51 or 76 and you can start
+last quarter is brutal: elite enemies show up, and bosses change
+the stage as they weaken (darkness, rising ground, meteors). Reach level 26, 51 or 76 and you can start
 the next campaign from there.
 
 HOW TO GET STRONGER

@@ -17,8 +17,11 @@ pub mod arcade;
 pub mod arsenal;
 pub mod coop;
 pub mod encounters;
+pub mod glow;
 pub mod minigame;
 pub mod rifts;
+pub mod scenery;
+pub mod vanguard;
 
 pub const COLS: usize = 8;
 /// Campaign length: 20 sectors of 5 levels each = 100 levels.
@@ -56,6 +59,10 @@ pub enum Kind {
     Freighter,
     Minelayer,
     Jumper,
+    Armored,
+    Healer,
+    Mirror,
+    Leader,
 }
 
 impl Kind {
@@ -70,6 +77,10 @@ impl Kind {
             Kind::Thief => 3,
             Kind::Mimic => 4,
             Kind::Minelayer => 2,
+            Kind::Armored => 3,
+            Kind::Healer => 3,
+            Kind::Mirror => 3,
+            Kind::Leader => 6,
             _ => 1,
         }
     }
@@ -94,6 +105,10 @@ impl Kind {
             Kind::Freighter => 300,
             Kind::Minelayer => 160,
             Kind::Jumper => 140,
+            Kind::Armored => 250,
+            Kind::Healer => 300,
+            Kind::Mirror => 260,
+            Kind::Leader => 1500,
         }
     }
     pub fn color(self) -> Color {
@@ -116,13 +131,17 @@ impl Kind {
             Kind::Freighter => Color::from_rgba(255, 170, 60, 255),
             Kind::Minelayer => Color::from_rgba(255, 110, 70, 255),
             Kind::Jumper => Color::from_rgba(255, 150, 255, 255),
+            Kind::Armored => Color::from_rgba(190, 200, 220, 255),
+            Kind::Healer => Color::from_rgba(130, 240, 110, 255),
+            Kind::Mirror => Color::from_rgba(150, 240, 255, 255),
+            Kind::Leader => Color::from_rgba(255, 210, 80, 255),
         }
     }
     fn radius(self) -> f32 {
         match self {
             Kind::Mini => 9.0,
             Kind::Kamikaze => 11.0,
-            Kind::Carrier | Kind::Cow => 17.0,
+            Kind::Carrier | Kind::Cow | Kind::Leader => 17.0,
             Kind::Merchant | Kind::Freighter => 21.0,
             _ => 14.0,
         }
@@ -474,6 +493,8 @@ pub struct Player {
     pub meter: f32,
     trigger_t: f32,
     pub charge: f32,
+    /// Co-op: this ship was already rescued once in this run.
+    revived: bool,
 }
 
 impl Player {
@@ -557,6 +578,8 @@ pub enum Event {
     Room,
     Word,
     Ufo,
+    /// Gamepad vibration for a seat (None = everyone).
+    Rumble(Option<usize>, f32, u32),
 }
 
 // ---------------------------------------------------------------------------
@@ -735,6 +758,8 @@ pub struct RunConfig {
     pub diff: Difficulty,
     pub ship: usize,
     pub skin: usize,
+    /// Co-op: the ship flown by player two (chosen from player one's hangar).
+    pub ship2: usize,
     pub daily: Option<Daily>,
     pub equipped: Vec<usize>,
     pub rank: usize,
@@ -834,6 +859,9 @@ pub struct Game {
     // secrets and events
     pub events: Vec<Event>,
     blasts: Vec<(Vec2, f32, f32, Option<Weapon>)>,
+    pub vg: vanguard::Vanguard,
+    pub sc: scenery::Scenery,
+    pub co: coop::CoopState,
     pub frozen_count: u32,
     pub absorbed: u32,
     seen_run: Vec<bool>,
@@ -881,9 +909,6 @@ impl Game {
         };
         let mut mods = Mods::from_cards(&equipped);
         let ship: &ShipDef = &SHIPS[cfg.ship];
-        if cfg.ship == 3 {
-            mods.star_fan = true;
-        }
         if cfg.ship == 8 {
             mods.crystal_mul *= 1.2;
         }
@@ -919,6 +944,7 @@ impl Game {
             magnet_lvl: 0,
             shots: 0,
             phoenix_used: false,
+            revived: false,
             tilt: 0.0,
             focus: false,
             meter: if mods.meter_full { 1.0 } else { 0.3 },
@@ -1010,6 +1036,9 @@ impl Game {
             nostalgia_t: 0.0,
             events: vec![],
             blasts: vec![],
+            vg: Default::default(),
+            sc: Default::default(),
+            co: Default::default(),
             frozen_count: 0,
             absorbed: 0,
             seen_run: vec![false; crate::progress::BESTIARY.len()],
@@ -1045,6 +1074,9 @@ impl Game {
         };
         if g.cfg.coop {
             let mut p2 = g.player.clone();
+            let s2 = &SHIPS[g.cfg.ship2.min(SHIPS.len() - 1)];
+            p2.lives = (p2.lives - ship.lives + s2.lives).max(1);
+            p2.shield = g.mods.start_shield || g.cfg.ship2 == 2;
             p2.pos.x = W / 2.0 + 60.0;
             g.player.pos.x = W / 2.0 - 60.0;
             g.p2 = Some(p2);
@@ -1065,7 +1097,21 @@ impl Game {
     }
 
     pub fn ship(&self) -> &'static ShipDef {
-        &SHIPS[self.cfg.ship]
+        &SHIPS[self.ship_idx()]
+    }
+
+    /// Hangar index of the ship currently in the `player` slot.
+    pub fn ship_idx(&self) -> usize {
+        self.seat_ship(self.seat())
+    }
+
+    /// Hangar index of the ship flown by a seat (0 = player one).
+    pub fn seat_ship(&self, seat: usize) -> usize {
+        if seat == 1 && self.coop() {
+            self.cfg.ship2.min(SHIPS.len() - 1)
+        } else {
+            self.cfg.ship
+        }
     }
 
     fn classic(&self) -> bool {
@@ -1280,6 +1326,9 @@ impl Game {
     // -----------------------------------------------------------------------
 
     fn begin_sector(&mut self) {
+        if self.cfg.mode == Mode::Campaign && self.cycle == 0 && self.level() >= 50 {
+            self.ach(ach::VALKYRIE);
+        }
         self.rift_begin_sector();
         self.sector_hits = 0;
         self.sector_shots = 0;
@@ -1458,8 +1507,10 @@ impl Game {
         let hp = if bonus { 1 } else { kind.hp() + self.armor() };
         let shield = if kind == Kind::Shieldbearer && !bonus {
             3 + (self.diff() / 2.0) as i32
-        } else {
+        } else if bonus {
             0
+        } else {
+            kind.base_armor(self.diff())
         };
         self.enemies.push(Enemy {
             id: self.next_id,
@@ -1525,6 +1576,9 @@ impl Game {
     }
 
     fn row_kind(&self, row: usize, col: usize) -> Kind {
+        if let Some(k) = self.vanguard_kind(row, col) {
+            return k;
+        }
         let s = self.stage().tier;
         if s > 8 && gen_range(0, 4) == 0 {
             let pool = [
@@ -2311,6 +2365,7 @@ impl Game {
             self.kills += 1;
             self.bosses_killed += 1;
             self.events.push(Event::BossKilled);
+            self.events.push(Event::Rumble(None, 1.0, 700));
             let lore = b.lore_index();
             self.on_boss_killed(&b);
             self.seen(lore);
@@ -2330,6 +2385,12 @@ impl Game {
             }
             if self.boss_hits == 0 {
                 self.ach(ach::NO_SCRATCH);
+                if self.sc.dark_fight {
+                    self.ach(ach::DARK_DUEL);
+                }
+            }
+            if std::mem::take(&mut self.co.duo_boss) {
+                self.ach(ach::TWIN_STARS);
             }
         }
         self.ebullets.clear();
@@ -2376,6 +2437,7 @@ impl Game {
             wdt *= 0.6;
         }
         self.update_timers(dt);
+        self.update_vanguard(wdt);
         let i2 = self.p2_input.clone();
         let (in1, in2) = if self.p_swapped {
             (&i2, inp)
@@ -2383,7 +2445,12 @@ impl Game {
             (inp, &i2)
         };
         self.update_player(dt, in1, au);
-        self.with_p2(|g| g.update_player(dt, in2, au));
+        self.scene_clamp();
+        self.with_p2(|g| {
+            g.update_player(dt, in2, au);
+            g.scene_clamp();
+        });
+        self.update_coop(dt, au);
         let pace = self.cfg.diff.pace();
         self.update_enemies(wdt * pace, au);
         self.update_boss(wdt * pace, au);
@@ -2522,11 +2589,14 @@ impl Game {
         if inp.bomb && self.player.bombs > 0 {
             self.player.bombs -= 1;
             self.events.push(Event::Bomb);
+            self.events.push(Event::Rumble(Some(self.seat()), 0.7, 300));
             self.enc.bombs_sector += 1;
             self.detonate(au, false);
         }
 
-        if inp.ability_p && !self.classic() {
+        if inp.ability_p && self.duo_ready() {
+            self.co.duo_req = true;
+        } else if inp.ability_p && !self.classic() {
             let cost = ship.ab_cost;
             if self.player.meter >= cost - 0.001 {
                 self.player.meter -= cost;
@@ -2799,10 +2869,11 @@ impl Game {
                 out.push(mk(pos, a, 560.0, dmg, BKind::Shot));
             }
         }
+        let star_ship = matches!(self.ship_idx(), 3 | 12);
         let p = &mut self.player;
         p.cd = cd / rate;
         p.shots += 1;
-        if self.mods.star_fan && p.shots.is_multiple_of(6) {
+        if (self.mods.star_fan || star_ship) && p.shots.is_multiple_of(6) {
             for k in 0..6 {
                 let a = -30.0 + k as f32 * 12.0;
                 out.push(mk(o, a, 520.0, 2.0, BKind::Star));
@@ -3072,7 +3143,7 @@ impl Game {
             self.dive_timer -= dt;
             let remaining = self.enemies.len();
             if self.dive_timer <= 0.0 {
-                let mut t = gen_range(1.4, 2.8) / (1.0 + diff * 0.18) / dive_mul;
+                let mut t = gen_range(1.4, 2.8) / (1.0 + diff * 0.18) / dive_mul / self.rage_mul();
                 if remaining < 8 {
                     t *= 0.5;
                 }
@@ -3107,7 +3178,7 @@ impl Game {
             .iter()
             .map(|e| self.slot(e.col, e.row))
             .collect();
-        let formation_rate = 0.018 * (1.0 + diff * 0.3) * self.fire_rate_enemy();
+        let formation_rate = 0.018 * (1.0 + diff * 0.3) * self.fire_rate_enemy() * self.rage_mul();
         let can_shoot = alive
             && ((self.wave_age > 2.5 && self.wave_kind == WaveKind::Normal)
                 || self.wave_kind == WaveKind::Boss);
@@ -3332,6 +3403,7 @@ impl Game {
     }
 
     fn update_boss(&mut self, dt: f32, au: &mut Audio) {
+        self.update_scenery(dt, au);
         if self.boss_warning > 0.0 {
             self.boss_warning -= dt;
             if self.boss_warning <= 0.0 {
@@ -3464,6 +3536,9 @@ impl Game {
             boss.max_hp *= 0.05;
         }
         self.boss = Some(boss);
+        if let Some(k) = crate::dev_env("STARDUST_SCENE").and_then(|v| v.parse::<usize>().ok()) {
+            self.debug_scene(k);
+        }
         au.music(Some(if final_boss || variant || self.enc.void {
             Music::Final
         } else {
@@ -3713,7 +3788,7 @@ impl Game {
         let alive = self.player.alive();
         let magnet = (70.0 + 35.0 * self.player.magnet_lvl as f32)
             * self.mods.magnet_mul
-            * if self.cfg.ship == 7 { 1.5 } else { 1.0 };
+            * if self.ship_idx() == 7 { 1.5 } else { 1.0 };
         let all = self.mods.magnet_all || self.magnet_t > 0.0;
         let card_magnet = self.mods.card_magnet;
         let cap_magnet = self.mods.capsule_magnet;
@@ -3909,6 +3984,22 @@ impl Game {
                         _ => 3.0,
                     };
                 if b.pos.distance(e.pos) < r {
+                    if vanguard::mirror_open(e, time) {
+                        Game::reflect_shot(
+                            &mut self.ebullets,
+                            b.pos,
+                            b.vel,
+                            self.cfg.diff.bullet_speed(),
+                        );
+                        self.fx.sparks(
+                            b.pos,
+                            vec2(0.0, 1.0),
+                            Color::from_rgba(170, 250, 255, 255),
+                            5,
+                        );
+                        b.life = 0.0;
+                        break;
+                    }
                     landed += 1;
                     if shield_blocks(e, b.pos) {
                         e.shield -= 1;
@@ -4252,6 +4343,7 @@ impl Game {
         }
         if self.player.shield {
             self.player.shield = false;
+            self.events.push(Event::Rumble(Some(self.seat()), 0.5, 200));
             self.player.invuln = 1.5;
             au.play(Sfx::Shield);
             self.fx.ring(pp, 300.0, 0.4, CYAN, 4.0);
@@ -4263,6 +4355,7 @@ impl Game {
             self.detonate(au, true);
         }
         au.play(Sfx::PlayerDie);
+        self.events.push(Event::Rumble(Some(self.seat()), 1.0, 450));
         self.fx.explosion(pp, CYAN, true);
         self.fx.shake = 0.9;
         self.hitstop = 0.18;
@@ -4357,6 +4450,7 @@ impl Game {
             self.on_kill(&e, au);
             self.rift_on_kill(&e);
             self.arcade_on_kill(&e);
+            self.vanguard_on_kill(&e);
             self.seen(crate::progress::lore_of_kind(e.kind.index()));
             if !self.classic() {
                 self.player.meter = (self.player.meter + 0.025 * self.mods.meter_mul).min(1.0);
@@ -4730,6 +4824,9 @@ impl Game {
     pub fn draw(&self, sp: &Sprites, art: &Art, shake_on: bool, show_hud: bool) {
         self.bg.draw(sp, self.time);
         let off = self.fx.offset(shake_on);
+        // Lighting, first pass: wide and faint, it lights the background under everything.
+        self.queue_lights(off);
+        crate::light::flush(1.0, 0.42, true);
         let season = crate::progress::season();
 
         for r in &self.rocks {
@@ -4909,7 +5006,8 @@ impl Game {
                 );
             }
             spr.draw(e.pos + off, S, e.rot, tint, e.flash > 0.0);
-            if e.shield > 0 {
+            self.draw_vanguard(e, off);
+            if e.shield > 0 && e.kind == Kind::Shieldbearer {
                 art.plate.draw(
                     e.pos + off + vec2(0.0, 18.0),
                     3.0,
@@ -4969,6 +5067,7 @@ impl Game {
             }
         }
 
+        self.draw_vanguard_fx(off);
         for r in &self.arcade.rails {
             arsenal::draw_rail(r, off);
         }
@@ -5105,9 +5204,11 @@ impl Game {
             self.draw_trail(off);
             self.draw_sight(p);
             if !blink {
+                let seat = self.p_swapped as usize;
                 self.draw_ship_body(
                     &self.player,
-                    self.seat_skin(self.p_swapped as usize),
+                    self.seat_ship(seat),
+                    self.seat_skin(seat),
                     p,
                     art,
                 );
@@ -5162,6 +5263,7 @@ impl Game {
             }
         }
 
+        self.draw_scenery(off);
         for b in &self.ebullets {
             let p = b.pos + off;
             if b.style == 3 {
@@ -5210,11 +5312,14 @@ impl Game {
         }
 
         self.coop_draw(off, art);
+        self.draw_coop_fx(off);
         if let Some(b) = &self.boss {
             b.draw_beam(self.time);
         }
 
         self.fx.draw_world(off);
+        // Lighting, second pass: tight and on top, a bloom for shots, beams and blasts.
+        crate::light::flush(0.45, 0.38, false);
         self.fx.draw_texts();
 
         self.enc_draw_late();
@@ -5286,7 +5391,7 @@ impl Game {
 
     /// Only the essentials when the side panels show the rest.
     /// Engine flame, hull, shield and hitbox of one ship (used for both players).
-    fn draw_ship_body(&self, pl: &Player, skin: usize, p: Vec2, art: &Art) {
+    fn draw_ship_body(&self, pl: &Player, ship: usize, skin: usize, p: Vec2, art: &Art) {
         let flame = 6.0 + (self.time * 40.0 + pl.pos.x * 0.01).sin().abs() * 7.0;
         draw_triangle(
             p + vec2(-4.0, 20.0),
@@ -5300,7 +5405,7 @@ impl Game {
             p + vec2(0.0, 18.0 + flame * 0.6),
             Color::from_rgba(255, 240, 150, 255),
         );
-        let spr = &art.ships[self.cfg.ship][skin];
+        let spr = &art.ships[ship][skin];
         let squash = 1.0 - pl.tilt.abs() * 0.18;
         let sz = vec2(spr.w * S * squash, spr.h * S);
         let tint = if self.star_t > 0.0 || skin == 6 {
@@ -5310,7 +5415,7 @@ impl Game {
         } else {
             WHITE
         };
-        if self.cfg.ship == 4 {
+        if ship == 4 || ship == 11 {
             draw_circle(p.x, p.y, 20.0, Color::new(0.7, 0.6, 1.0, 0.12));
         }
         draw_texture_ex(
@@ -5424,7 +5529,7 @@ impl Game {
         if lives > 5 {
             ui::text(&format!("+{}", lives - 5), 108.0, H - 7.0, 16.0, WHITE);
         }
-        for i in 0..self.player.bombs.max(0).min(4) {
+        for i in 0..self.player.bombs.clamp(0, 4) {
             sp.icon(Icon::Bomb).draw(
                 vec2(146.0 + i as f32 * 17.0, H - 13.0),
                 1.5,
@@ -6097,6 +6202,9 @@ impl Game {
 }
 
 fn shield_blocks(e: &Enemy, from: Vec2) -> bool {
+    if matches!(e.kind, Kind::Armored | Kind::Leader) {
+        return vanguard::armor_blocks(e, from);
+    }
     // The plate protects the front (from below) while the enemy faces down.
     e.shield > 0 && from.y > e.pos.y + 4.0 && (from.x - e.pos.x).abs() < 12.0 && e.rot.abs() < 0.9
 }

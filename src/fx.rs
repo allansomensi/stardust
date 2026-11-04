@@ -40,6 +40,8 @@ pub struct Fx {
     pub shake: f32,
     pub flash: f32,
     pub flash_color: Color,
+    /// Short-lived light sources for the dynamic lighting: (position, radius, color, life).
+    pub lights: Vec<(Vec2, f32, Color, f32)>,
 }
 
 use std::sync::atomic::{AtomicU32, Ordering};
@@ -123,6 +125,20 @@ impl Fx {
     }
 
     pub fn explosion(&mut self, pos: Vec2, color: Color, big: bool) {
+        if self.lights.len() < 40 {
+            let c = Color::new(
+                (color.r * 0.6 + 0.4).min(1.0),
+                (color.g * 0.6 + 0.35).min(1.0),
+                (color.b * 0.5 + 0.2).min(1.0),
+                1.0,
+            );
+            self.lights.push((
+                pos,
+                if big { 230.0 } else { 120.0 },
+                c,
+                if big { 0.6 } else { 0.35 },
+            ));
+        }
         if big {
             self.burst(pos, color, 70, 340.0);
             self.ring(pos, 420.0, 0.5, Color::new(1.0, 0.9, 0.6, 1.0), 4.0);
@@ -144,6 +160,10 @@ impl Fx {
     }
 
     pub fn update(&mut self, dt: f32) {
+        for l in &mut self.lights {
+            l.3 -= dt;
+        }
+        self.lights.retain(|l| l.3 > 0.0);
         for p in &mut self.particles {
             p.pos += p.vel * dt;
             p.vel *= 1.0 - (p.drag * dt).min(0.9);
@@ -234,6 +254,8 @@ pub struct Background {
     planet_y: f32,
     rocks: Vec<Rock>,
     pub speed_mul: f32,
+    /// Distance flown, drives the parallax layers.
+    depth: f32,
 }
 
 pub struct Theme {
@@ -393,6 +415,7 @@ impl Background {
             planet_y: 0.0,
             rocks: vec![],
             speed_mul: 1.0,
+            depth: 0.0,
         }
     }
 
@@ -429,6 +452,7 @@ impl Background {
             }
         }
         self.neb_y = (self.neb_y + 9.0 * dt * sm) % (H * 1.0);
+        self.depth = (self.depth + dt * sm) % 10_000.0;
         self.planet_y += 6.0 * dt * sm;
         for r in &mut self.rocks {
             r.pos.y += r.speed * dt * sm;
@@ -499,6 +523,7 @@ impl Background {
                 );
             }
         }
+        self.draw_depth(time);
         // Scenery per theme
         match self.theme {
             0 => {
@@ -681,6 +706,209 @@ impl Background {
                 (s.size * stretch).max(1.0),
                 s.color,
             );
+        }
+    }
+}
+
+/// Wraps a scrolling coordinate so a layer repeats every `span` pixels.
+fn wrap_y(base: f32, scroll: f32, span: f32) -> f32 {
+    (base + scroll).rem_euclid(H + span) - span / 2.0
+}
+
+fn ringed_planet(c: Vec2, r: f32, body: Color, light: Color, ring: Color, tilt: f32) {
+    draw_ellipse_lines(
+        c.x,
+        c.y,
+        r * 2.1,
+        r * 0.55,
+        tilt,
+        3.0,
+        Color::new(ring.r, ring.g, ring.b, ring.a * 0.5),
+    );
+    draw_circle(c.x, c.y, r, body);
+    draw_circle(c.x - r * 0.25, c.y - r * 0.25, r * 0.72, light);
+    draw_ellipse_lines(c.x, c.y, r * 1.8, r * 0.42, tilt, 2.0, ring);
+}
+
+impl Background {
+    /// Deep parallax layers: far (slow), mid and near (fast), different in every region.
+    fn draw_depth(&self, time: f32) {
+        let far = self.depth * 4.0;
+        let mid = self.depth * 16.0;
+        let near = self.depth * 48.0;
+        let rnd = |i: i32, k: i32| hash(i, k, 7 + self.theme as i32);
+        match self.theme {
+            0 => {
+                let y = wrap_y(120.0, far, 300.0);
+                ringed_planet(
+                    vec2(W * 0.2, y),
+                    26.0,
+                    Color::from_rgba(70, 60, 110, 255),
+                    Color::from_rgba(110, 100, 160, 255),
+                    Color::from_rgba(200, 190, 255, 120),
+                    -0.3,
+                );
+            }
+            1 => {
+                // the asteroid belt: a far band of dust and a mid layer of pebbles
+                for i in 0..90 {
+                    let x = rnd(i, 1) * W;
+                    let y = wrap_y(rnd(i, 2) * H, far * 1.5, 20.0);
+                    let s = 1.0 + (rnd(i, 3) * 2.0).floor();
+                    draw_rectangle(x, y, s, s, Color::new(0.55, 0.45, 0.4, 0.35));
+                }
+                for i in 0..16 {
+                    let x = rnd(i, 4) * W;
+                    let y = wrap_y(rnd(i, 5) * H, mid, 60.0);
+                    let r = 3.0 + rnd(i, 6) * 5.0;
+                    draw_poly(
+                        x,
+                        y,
+                        6,
+                        r,
+                        time * 20.0 * (rnd(i, 7) - 0.5),
+                        Color::from_rgba(70, 58, 52, 220),
+                    );
+                    draw_poly_lines(
+                        x,
+                        y,
+                        6,
+                        r,
+                        time * 20.0 * (rnd(i, 7) - 0.5),
+                        1.0,
+                        Color::from_rgba(120, 100, 90, 200),
+                    );
+                }
+            }
+            2 => {
+                let y = wrap_y(420.0, far, 500.0);
+                ringed_planet(
+                    vec2(W * 0.78, y),
+                    54.0,
+                    Color::from_rgba(90, 20, 40, 255),
+                    Color::from_rgba(150, 40, 50, 255),
+                    Color::from_rgba(255, 170, 120, 140),
+                    0.25,
+                );
+            }
+            3 => {
+                // hive towers on both sides, close to the camera
+                for side in 0..2 {
+                    for k in 0..8 {
+                        let y = wrap_y(k as f32 * 110.0, near, 120.0);
+                        let w = 18.0 + rnd(k, side + 10) * 22.0;
+                        let x = if side == 0 { 0.0 } else { W - w };
+                        draw_rectangle(x, y, w, 100.0, Color::from_rgba(14, 48, 40, 230));
+                        for j in 0..4 {
+                            let cx = x + w / 2.0;
+                            let cy = y + 14.0 + j as f32 * 24.0;
+                            draw_poly_lines(
+                                cx,
+                                cy,
+                                6,
+                                8.0,
+                                30.0,
+                                1.5,
+                                Color::from_rgba(70, 200, 150, 90),
+                            );
+                        }
+                    }
+                }
+            }
+            4 => {
+                for i in 0..5 {
+                    let x = rnd(i, 1) * W;
+                    let y = wrap_y(rnd(i, 2) * H, far * (1.0 + rnd(i, 3)), 80.0);
+                    let r = 6.0 + rnd(i, 4) * 12.0;
+                    draw_circle(x, y, r, Color::from_rgba(120, 160, 200, 160));
+                    draw_circle(
+                        x - r * 0.3,
+                        y - r * 0.3,
+                        r * 0.6,
+                        Color::from_rgba(200, 225, 250, 160),
+                    );
+                }
+            }
+            5 => {
+                // a far spiral galaxy
+                let c = vec2(W * 0.3, wrap_y(200.0, far, 360.0));
+                for i in 0..160 {
+                    let t = i as f32 / 160.0;
+                    for arm in 0..2 {
+                        let a = t * 9.0 + arm as f32 * std::f32::consts::PI + time * 0.05;
+                        let r = 4.0 + t * 90.0;
+                        let p = c + vec2(a.cos() * r, a.sin() * r * 0.45);
+                        let b = (1.0 - t) * 0.6;
+                        draw_rectangle(p.x, p.y, 2.0, 2.0, Color::new(0.6, 0.75, 1.0, b));
+                    }
+                }
+                draw_circle(c.x, c.y, 10.0, Color::new(0.85, 0.9, 1.0, 0.5));
+            }
+            6 => {
+                // a broken ring of an ancient megastructure, very far away
+                let c = vec2(W * 0.65, wrap_y(260.0, far, 600.0));
+                for k in 0..10 {
+                    if k % 3 == 2 {
+                        continue;
+                    }
+                    let a0 = k as f32 / 10.0 * std::f32::consts::TAU + time * 0.02;
+                    let a1 = a0 + 0.5;
+                    let p0 = c + vec2(a0.cos() * 160.0, a0.sin() * 60.0);
+                    let p1 = c + vec2(a1.cos() * 160.0, a1.sin() * 60.0);
+                    draw_line(
+                        p0.x,
+                        p0.y,
+                        p1.x,
+                        p1.y,
+                        6.0,
+                        Color::new(0.55, 0.42, 0.2, 0.35),
+                    );
+                }
+                for i in 0..10 {
+                    let x = rnd(i, 1) * W;
+                    let y = wrap_y(rnd(i, 2) * H, mid, 60.0);
+                    draw_rectangle(
+                        x,
+                        y,
+                        10.0 + rnd(i, 3) * 16.0,
+                        6.0 + rnd(i, 4) * 10.0,
+                        Color::new(0.4, 0.3, 0.17, 0.5),
+                    );
+                }
+            }
+            7 => {
+                // the living hive: walls of flesh that pulse on both sides
+                let flesh = Color::from_rgba(60, 14, 50, 235);
+                let vein = Color::new(1.0, 0.25, 0.45, 0.45 + (time * 3.0).sin().abs() * 0.3);
+                let step = 16.0;
+                let n = (H / step) as i32 + 3;
+                for side in 0..2 {
+                    let mut prev: Option<Vec2> = None;
+                    for k in 0..n {
+                        let y = wrap_y(k as f32 * step, near, step * 3.0);
+                        let w = 26.0
+                            + ((y + near) * 0.03 + time * 2.0 + side as f32).sin() * 9.0
+                            + ((y + near) * 0.11).sin() * 5.0;
+                        let x = if side == 0 { 0.0 } else { W - w };
+                        draw_rectangle(x, y, w, step + 1.0, flesh);
+                        let edge = vec2(if side == 0 { w - 4.0 } else { W - w + 4.0 }, y);
+                        if let Some(p) = prev
+                            && (edge.y - p.y).abs() < step * 2.0
+                        {
+                            draw_line(p.x, p.y, edge.x, edge.y, 2.0, vein);
+                        }
+                        prev = Some(edge);
+                    }
+                }
+                let beat = ((time * 1.8).sin() * 0.5 + 0.5).powf(3.0);
+                draw_circle(
+                    W / 2.0,
+                    -60.0,
+                    200.0 + beat * 18.0,
+                    Color::new(0.6, 0.05, 0.25, 0.12 + beat * 0.08),
+                );
+            }
+            _ => {}
         }
     }
 }
