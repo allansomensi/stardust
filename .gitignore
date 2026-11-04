@@ -1,0 +1,6 @@
+/target/
+/dist/
+/musica_exportada/
+*.zip
+# Spoiler notes stay private and never go into the repository.
+SEGREDOS.md

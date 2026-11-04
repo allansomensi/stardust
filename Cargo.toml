@@ -1,0 +1,22 @@
+[package]
+name = "stardust"
+version = "0.1.0"
+edition = "2024"
+
+[features]
+# Ferramentas de teste (robô, telas diretas, modo deus). Fora do jogo publicado.
+dev = []
+
+[dependencies]
+macroquad = { version = "0.4", features = ["audio"] }
+sys-locale = "0.3"
+
+# Compila as dependências otimizadas mesmo em modo debug (o jogo roda liso no `cargo run`).
+[profile.dev.package."*"]
+opt-level = 2
+
+[profile.release]
+strip = true
+
+[build-dependencies]
+embed-resource = "3.0.12"

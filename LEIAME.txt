@@ -1,0 +1,105 @@
+=====================================================================
+                          S T A R D U S T
+                 um shoot 'em up de formações  ·  v0.1.0
+=====================================================================
+
+Ano 2097. A sonda STARDUST voltou de um cometa distante trazendo
+poeira estelar... e um sinal. O sinal chamou o Enxame: milhões de
+insetos estelares em formação de ataque. A frota caiu em horas.
+Sobrou um hangar escondido, uma nave e você.
+
+Atravesse 8 setores, derrube formações inteiras, recolha cristais,
+compre armas cada vez mais fortes e derrote os chefes do Enxame.
+
+Idioma: português ou inglês, em CONFIGURAÇÕES > JOGO.
+
+
+CONTROLES
+---------
+  Setas ou A/D ......... mover (a nave anda só para os lados)
+  Espaço / Z / J ....... atirar: cada toque, uma rajada
+  Segurar e soltar ..... tiro carregado (atravessa a formação)
+  X / K ................ bomba
+  C / L / V ............ habilidade da nave
+  Shift ................ modo preciso (mais lento, mostra o ponto
+                         vulnerável da nave)
+  Esc / P .............. pausa
+  F11 ou Alt+Enter ..... tela cheia
+
+  Atirar segurando o botão só com o TIRO AUTOMÁTICO, comprado na
+  loja. Com ele, o tiro carregado deixa de funcionar.
+
+
+COMO FICAR MAIS FORTE
+---------------------
+Entre um setor e outro existe a LOJA. Os cristais que você recolhe
+compram:
+* ARMAS: quanto mais estrelas (* a *****), mais forte e mais cara.
+* NÚCLEO DE DANO: +15% de dano em qualquer arma, até 6 vezes.
+* Melhorias de arma, cadência, velocidade, drones, canhões laterais,
+  escudo, bombas, vidas, tiro automático, mira laser e mais.
+Pegar a mesma arma de novo sobe o nível dela (até 5). O painel da
+loja mostra o seu PODER DE FOGO total.
+
+
+O QUE TEM NO JOGO
+-----------------
+* 6 MODOS: Campanha, Clássico, Desafio Diário, Sobrevivência,
+  Chefões e Expedição (setores sem fim com bênçãos).
+* 4 DIFICULDADES: quanto mais difícil, mais rápido o Enxame se move,
+  mergulha e atira.
+* Naves com habilidades próprias, pinturas e rastros de motor.
+* Dezenas de armas, cada uma com seu ícone.
+* Chefes com partes destrutíveis e fases de fúria.
+* Cartas colecionáveis, patentes, Insígnias de Honra, conquistas,
+  bestiário, estatísticas e registros de bordo.
+* Eventos de setor, contratos, modo Febre, minigames e muito mais.
+
+
+DICAS
+-----
+* Só o centro da nave é vulnerável.
+* O ícone da cápsula mostra a arma; o anel em volta mostra quando
+  ela vai trocar.
+* Cristais são diamantes azuis. Tiros inimigos são sempre quentes
+  (rosa, laranja, vermelho ou roxo) com contorno escuro.
+* Caveiras te seguem devagar. Atire nelas antes que cheguem.
+* Explore. Nem tudo está escrito aqui.
+
+
+SEU PROGRESSO
+-------------
+Patente, cartas, conquistas, recordes e configurações ficam em:
+  Windows:  %APPDATA%\Stardust\save.txt
+  Linux:    ~/.local/share/stardust/save.txt
+  macOS:    ~/Library/Application Support/Stardust/save.txt
+
+Para zerar tudo: CONFIGURAÇÕES > JOGO > APAGAR PROGRESSO.
+
+
+MÚSICA PERSONALIZADA
+--------------------
+O jogo compõe a própria trilha chiptune. Para usar suas músicas,
+crie uma pasta "musica" ao lado do stardust.exe (ou dentro da pasta
+de progresso) com arquivos .ogg ou .wav chamados:
+  titulo, fase, chefe, loja, final, creditos
+
+Para exportar a trilha original em .wav:
+  stardust.exe --exportar-musicas
+
+
+AVISO DO WINDOWS
+----------------
+Se aparecer "O Windows protegeu o computador", clique em "Mais
+informações" e depois em "Executar assim mesmo". Isso acontece com
+programas novos que ainda não têm assinatura digital.
+
+
+CRÉDITOS
+--------
+Criação: Allan Somensi
+Feito em Rust com a biblioteca macroquad.
+Toda a arte e a música são geradas pelo próprio jogo.
+Fontes Pixelify Sans e Press Start 2P (SIL Open Font License).
+
+Obrigado por jogar!
