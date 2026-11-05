@@ -443,7 +443,15 @@ impl Game {
                 au.play_vol(Sfx::WaveShot, 0.3);
             }
             Weapon::Fireball | Weapon::Plasma | Weapon::Railgun | Weapon::Meteor => {
-                cd = arsenal::fire(weapon, lv, dmg, o, ss, evo, &mut out, au);
+                let t = arsenal::Trigger {
+                    w: weapon,
+                    lv,
+                    dmg,
+                    o,
+                    ss,
+                    evo,
+                };
+                cd = arsenal::fire(t, &mut out, au);
             }
             other => {
                 cd = encounters::fire_extra(

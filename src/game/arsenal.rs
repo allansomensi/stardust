@@ -19,17 +19,29 @@ pub struct RailFx {
 
 pub(super) const RAIL_LIFE: f32 = 0.22;
 
+/// What one trigger pull of a heavy weapon needs to know.
+pub(super) struct Trigger {
+    pub w: Weapon,
+    pub lv: i32,
+    pub dmg: f32,
+    /// Muzzle position.
+    pub o: Vec2,
+    /// Shot speed multiplier.
+    pub ss: f32,
+    /// The weapon is evolved.
+    pub evo: bool,
+}
+
 /// Builds the shots of one trigger pull. Returns the weapon cooldown.
-pub(super) fn fire(
-    w: Weapon,
-    lv: i32,
-    dmg: f32,
-    o: Vec2,
-    ss: f32,
-    evo: bool,
-    out: &mut Vec<PBullet>,
-    au: &mut Audio,
-) -> f32 {
+pub(super) fn fire(t: Trigger, out: &mut Vec<PBullet>, au: &mut Audio) -> f32 {
+    let Trigger {
+        w,
+        lv,
+        dmg,
+        o,
+        ss,
+        evo,
+    } = t;
     let mk = |pos: Vec2, ang_deg: f32, speed: f32, dmg: f32, kind: BKind| {
         let a = ang_deg.to_radians();
         PBullet::new(pos, vec2(a.sin(), -a.cos()) * speed * ss, dmg, kind, w)
