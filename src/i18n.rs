@@ -84,7 +84,10 @@ fn translate_depth(s: &str, depth: u32) -> String {
         for (i, part) in to.iter().enumerate() {
             out.push_str(part);
             if let Some(v) = vals.get(i) {
-                if let Some(t) = exact(v) {
+                if v.starts_with('{') && v.ends_with('}') {
+                    // input hint tokens like {CONFIRM} are drawn as keys or buttons
+                    out.push_str(v);
+                } else if let Some(t) = exact(v) {
                     out.push_str(t);
                 } else if has_alpha(v) {
                     let t = translate_depth(v, depth + 1);
@@ -385,6 +388,7 @@ static EXACT: &[(&str, &str)] = &[
     ("ARMOR", "BLINDAGEM"),
     ("ARMORED", "BLINDADO"),
     ("ARROWHEAD", "PONTA DE FLECHA"),
+    ("ARROWS", "SETAS"),
     ("ARSENAL", "PAIOL"),
     ("ARSENAL INSIGNIA", "INSÍGNIA DO ARSENAL"),
     ("ART", "ARTE"),

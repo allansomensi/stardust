@@ -666,7 +666,7 @@ fn token_label(tok: &str) -> Option<(String, bool)> {
             if v.pad {
                 (p.clone(), true)
             } else {
-                (k.clone(), false)
+                (crate::i18n::tr(k), false)
             }
         })
     })
