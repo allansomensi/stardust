@@ -543,9 +543,11 @@ pub enum Hot {
     Back,
 }
 
+type HotList = Vec<(Rect, Hot)>;
+
 thread_local! {
     /// (areas of the last finished frame, areas being registered this frame)
-    static HOTS: std::cell::RefCell<(Vec<(Rect, Hot)>, Vec<(Rect, Hot)>)> =
+    static HOTS: std::cell::RefCell<(HotList, HotList)> =
         const { std::cell::RefCell::new((Vec::new(), Vec::new())) };
 }
 

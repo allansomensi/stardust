@@ -138,7 +138,7 @@ pub fn design(n: u32, tier: u32) -> Design {
             Dive::Swarm,
             Dive::Rush,
         ][((a + b * 3) % 5) as usize],
-        salvo: tier >= 3 && n % 3 != 0,
+        salvo: tier >= 3 && !n.is_multiple_of(3),
     }
 }
 

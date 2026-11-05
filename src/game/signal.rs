@@ -502,10 +502,11 @@ impl Game {
                 if lit || done {
                     light::add(p, 60.0, Color::new(c.r, c.g, c.b, 0.7));
                 }
-                if s.show_t > 0.0 && lit {
-                    if let Some(k) = s.order.iter().position(|o| *o == i) {
-                        ui::text_c(&format!("{}", k + 1), p.x, p.y - 22.0, 14.0, WHITE);
-                    }
+                if s.show_t > 0.0
+                    && lit
+                    && let Some(k) = s.order.iter().position(|o| *o == i)
+                {
+                    ui::text_c(&format!("{}", k + 1), p.x, p.y - 22.0, 14.0, WHITE);
                 }
             }
         }

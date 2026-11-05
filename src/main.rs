@@ -472,10 +472,10 @@ impl App {
         let hot = ui::hot_at(mp);
         self.mouse_hot = if self.mouse_t < 3.0 { hot } else { None };
         let click = is_mouse_button_pressed(MouseButton::Left);
-        if moved || click {
-            if let Some(Hot::Row(n) | Hot::Select(n) | Hot::Left(n) | Hot::Right(n)) = hot {
-                inp.hover = Some(n);
-            }
+        if (moved || click)
+            && let Some(Hot::Row(n) | Hot::Select(n) | Hot::Left(n) | Hot::Right(n)) = hot
+        {
+            inp.hover = Some(n);
         }
         if click {
             match hot {
