@@ -31,7 +31,8 @@ CONTROLES
   loja. Com ele, o tiro carregado deixa de funcionar.
 
   Todas as teclas e botões de jogo podem ser trocados, para cada
-  jogador, em CONFIGURAÇÕES > CONTROLES.
+  jogador, em CONFIGURAÇÕES > CONTROLES. Os menus também funcionam
+  com o mouse (botão direito volta).
 
   CONTROLE: analógico ou direcional movem, A atira, X solta bomba,
   Y usa a habilidade, LB é o modo preciso e Start pausa. Nos menus,
@@ -58,7 +59,8 @@ resgatada uma vez por partida. A partida acaba quando as duas caem.
 A CAMPANHA
 ----------
 100 níveis em 20 setores. Cada setor tem 3 ondas, um estágio bônus
-e um chefe, depois a loja. Fica mais difícil a cada nível, e o
+e um chefe, depois a loja. Nenhum nível se repete: cada um tem a
+própria formação, movimento, entradas e truques. Fica mais difícil a cada nível, e o
 último quarto é brutal: aparecem inimigos de elite, e os chefes
 mudam o cenário quando enfraquecem (escuridão, chão que sobe,
 meteoros). Chegando aos níveis 26, 51 ou 76, você pode

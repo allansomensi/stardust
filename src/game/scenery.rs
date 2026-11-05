@@ -110,7 +110,7 @@ impl Game {
     pub(super) fn debug_scene(&mut self, k: usize) {
         let s = [Scene::Darkness, Scene::Ground, Scene::Meteors][k.min(2)];
         self.sc.scene = Some(s);
-        self.sc.marks = 2;
+        self.sc.marks = 1;
         self.sc.t = 0.0;
         self.sc.meteor_cd = 1.0;
         self.sc.peaks = [W * 0.3, W * 0.7];

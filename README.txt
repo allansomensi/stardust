@@ -31,7 +31,8 @@ CONTROLS
   in the shop. With it, the charged shot no longer works.
 
   Every game key and button can be remapped, for each player,
-  in SETTINGS > CONTROLS.
+  in SETTINGS > CONTROLS. The menus also work with the mouse
+  (right click goes back).
 
   GAMEPAD: stick or D-pad move, A fires, X bombs, Y uses the
   ability, LB is precision mode and Start pauses. In menus, A
@@ -58,7 +59,8 @@ can be rescued only once per run. The run ends when both are out.
 THE CAMPAIGN
 ------------
 100 levels in 20 sectors. Each sector has 3 waves, a bonus stage
-and a boss, then the shop. It gets harder at every level, and the
+and a boss, then the shop. No two levels are alike: each has its
+own formation, movement, entry paths and tricks. It gets harder at every level, and the
 last quarter is brutal: elite enemies show up, and bosses change
 the stage as they weaken (darkness, rising ground, meteors). Reach level 26, 51 or 76 and you can start
 the next campaign from there.

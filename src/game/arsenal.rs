@@ -17,7 +17,7 @@ pub struct RailFx {
     pub life: f32,
 }
 
-const RAIL_LIFE: f32 = 0.22;
+pub(super) const RAIL_LIFE: f32 = 0.22;
 
 /// Builds the shots of one trigger pull. Returns the weapon cooldown.
 pub(super) fn fire(

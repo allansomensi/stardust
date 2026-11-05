@@ -535,6 +535,7 @@ pub const ACHS: &[AchDef] = &[
         "Destroy a boss with the co-op DUO BEAM.",
         1200,
     ),
+    h("Signal Lost", "Silence the Signal.", 6000),
 ];
 
 /// Flight logs: the story behind the Swarm.
@@ -820,6 +821,7 @@ pub mod ach {
     pub const VALKYRIE: usize = 76;
     pub const DARK_DUEL: usize = 77;
     pub const TWIN_STARS: usize = 78;
+    pub const SIGNAL_LOST: usize = 79;
 }
 
 // ---------------------------------------------------------------------------
@@ -1012,7 +1014,7 @@ mod tests {
         assert_eq!(names.len(), ACHS.len());
         assert_eq!(ACHS[ach::SLEEPLESS].name, "Sleepless");
         assert_eq!(ACHS[ach::TOURIST].name, "Cosmic Tourist");
-        assert_eq!(ACHS.len(), 79);
+        assert_eq!(ACHS.len(), 80);
         assert_eq!(ACHS[ach::COMET].name, "Comet Hunter");
     }
 }

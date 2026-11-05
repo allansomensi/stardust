@@ -18,9 +18,11 @@ pub mod arsenal;
 pub mod coop;
 pub mod encounters;
 pub mod glow;
+pub mod levels;
 pub mod minigame;
 pub mod rifts;
 pub mod scenery;
+pub mod signal;
 pub mod vanguard;
 
 pub const COLS: usize = 8;
@@ -864,6 +866,11 @@ pub struct Game {
     pub events: Vec<Event>,
     blasts: Vec<(Vec2, f32, f32, Option<Weapon>)>,
     pub vg: vanguard::Vanguard,
+    pub lv: levels::LevelState,
+    pub sig: Option<signal::Signal>,
+    sig_done: bool,
+    /// Development: start the Signal fight at this phase on the next update.
+    pub dbg_signal: Option<u8>,
     pub sc: scenery::Scenery,
     pub co: coop::CoopState,
     pub frozen_count: u32,
@@ -1041,6 +1048,10 @@ impl Game {
             events: vec![],
             blasts: vec![],
             vg: Default::default(),
+            lv: Default::default(),
+            sig: None,
+            sig_done: false,
+            dbg_signal: None,
             sc: Default::default(),
             co: Default::default(),
             frozen_count: 0,
@@ -1278,6 +1289,9 @@ impl Game {
     }
 
     fn slot(&self, col: usize, row: usize) -> Vec2 {
+        if let Some(p) = self.level_slot(col, row) {
+            return p;
+        }
         let breath = if self.stage().tier >= 2 {
             1.0 + 0.07 * (self.time * 1.4).sin()
         } else {
@@ -1379,7 +1393,8 @@ impl Game {
         }
         match st.kind {
             WaveKind::Normal => {
-                self.build_normal_wave();
+                self.level_begin();
+                self.build_level();
                 self.wave_size = self.enemies.len().max(1);
                 au.music(Some(if st.theme == 7 {
                     Music::Final
@@ -1545,40 +1560,6 @@ impl Game {
         self.next_id += 1;
     }
 
-    fn entry_path(template: u32, s: f32) -> Path {
-        let mx = |x: f32| if s < 0.0 { x } else { W - x };
-        let v = |x: f32, y: f32| vec2(mx(x), y);
-        match template % 4 {
-            0 => Path::one(
-                v(-40.0, H * 0.62),
-                v(W * 0.8, H * 0.86),
-                v(W * 0.15, H * 0.12),
-                Vec2::ZERO,
-            ),
-            1 => Path::one(v(180.0, -40.0), v(10.0, 360.0), v(420.0, 273.0), Vec2::ZERO),
-            2 => Path::two(
-                [
-                    v(-30.0, 60.0),
-                    v(W * 0.55, 40.0),
-                    v(W * 0.75, H * 0.55),
-                    v(W * 0.45, H * 0.55),
-                ],
-                [
-                    v(W * 0.45, H * 0.55),
-                    v(W * 0.15, H * 0.55),
-                    v(W * 0.2, H * 0.25),
-                    Vec2::ZERO,
-                ],
-            ),
-            _ => Path::one(
-                v(W * 0.05, -40.0),
-                v(W * 1.1, H * 0.3),
-                v(-W * 0.1, H * 0.45),
-                Vec2::ZERO,
-            ),
-        }
-    }
-
     fn row_kind(&self, row: usize, col: usize) -> Kind {
         if let Some(k) = self.vanguard_kind(row, col) {
             return k;
@@ -1651,52 +1632,10 @@ impl Game {
         }
     }
 
-    fn build_normal_wave(&mut self) {
-        let first = self.wave == 1 && self.cycle == 0;
-        let rows = if first { 4 } else { 5 };
-        let order: Vec<usize> = if rows == 4 {
-            vec![1, 2, 0, 3]
-        } else {
-            vec![3, 1, 2, 0, 4]
-        };
-        let base_t = gen_range(0, 4) as u32;
-        let fast = self.cfg.mode == Mode::Survival;
-        for (gi, &row) in order.iter().enumerate() {
-            let cols: Vec<usize> = if row == 0 {
-                (2..6).collect()
-            } else {
-                (0..COLS).collect()
-            };
-            let template = base_t + gi as u32;
-            let half = cols.len() / 2;
-            for (ci, &col) in cols.iter().enumerate() {
-                let left = ci < half;
-                let s = if left { -1.0 } else { 1.0 };
-                let idx = if left { half - 1 - ci } else { ci - half };
-                let path = Self::entry_path(template, s);
-                let gap = if fast { 1.1 } else { 1.9 };
-                let delay = 0.6 + gi as f32 * gap + idx as f32 * 0.16;
-                let kind = self.row_kind(row, col);
-                self.spawn(
-                    kind,
-                    col,
-                    row,
-                    EState::Waiting {
-                        delay,
-                        path,
-                        dur: 2.3,
-                    },
-                    gi as u32,
-                    false,
-                );
-            }
-        }
-    }
-
     fn flyby_path(template: u32, s: f32) -> Path {
         let mx = |x: f32| if s < 0.0 { x } else { W - x };
         let v = |x: f32, y: f32| vec2(mx(x), y);
-        match template % 4 {
+        match template % 8 {
             0 => Path::two(
                 [
                     v(-30.0, H * 0.3),
@@ -1731,7 +1670,7 @@ impl Game {
                 v(W * 0.5, -H * 0.1),
                 v(W + 40.0, H * 0.7),
             ),
-            _ => Path::two(
+            3 => Path::two(
                 [
                     v(-30.0, H * 0.5),
                     v(W * 0.3, H * 0.2),
@@ -1743,6 +1682,58 @@ impl Game {
                     v(W * 0.9, H * 0.7),
                     v(W * 0.2, H * 0.7),
                     v(-40.0, H * 0.25),
+                ],
+            ),
+            4 => Path::two(
+                // a sine wave across the screen
+                [
+                    v(-30.0, H * 0.25),
+                    v(W * 0.2, H * 0.05),
+                    v(W * 0.3, H * 0.55),
+                    v(W * 0.5, H * 0.3),
+                ],
+                [
+                    v(W * 0.5, H * 0.3),
+                    v(W * 0.7, H * 0.05),
+                    v(W * 0.8, H * 0.55),
+                    v(W + 40.0, H * 0.3),
+                ],
+            ),
+            5 => Path::one(
+                // a U-turn from the top
+                v(W * 0.2, -30.0),
+                v(W * 0.25, H * 0.95),
+                v(W * 0.75, H * 0.95),
+                v(W * 0.8, -40.0),
+            ),
+            6 => Path::two(
+                // a full circle in the middle, then out through the top
+                [
+                    v(-30.0, H * 0.4),
+                    v(W * 0.6, H * 0.15),
+                    v(W * 0.95, H * 0.5),
+                    v(W * 0.5, H * 0.6),
+                ],
+                [
+                    v(W * 0.5, H * 0.6),
+                    v(W * 0.05, H * 0.7),
+                    v(W * 0.15, H * 0.1),
+                    v(W * 0.6, -40.0),
+                ],
+            ),
+            _ => Path::two(
+                // a zigzag down and back up the side
+                [
+                    v(W * 0.05, -30.0),
+                    v(W * 0.95, H * 0.15),
+                    v(W * 0.05, H * 0.3),
+                    v(W * 0.9, H * 0.45),
+                ],
+                [
+                    v(W * 0.9, H * 0.45),
+                    v(W * 1.2, H * 0.6),
+                    v(W * 0.95, H * 0.1),
+                    v(W + 40.0, -40.0),
                 ],
             ),
         }
@@ -1759,12 +1750,35 @@ impl Game {
         ];
         self.challenge_total = 0;
         self.challenge_hits = 0;
-        let groups = if golden { 6 } else { 5 };
+        // Every bonus stage has its own choreography, picked from the sector number.
+        let k = self.sector() + self.cycle * 7;
+        let groups = if golden { 6 } else { 5 + k % 2 };
+        let step = 1 + k % 3;
+        let twin = k % 4 == 3;
+        let spacing = 2.2 + (k % 3) as f32 * 0.3;
         for g in 0..groups {
-            let s = if g % 2 == 0 { -1.0 } else { 1.0 };
-            let path = Self::flyby_path(g + self.wave, s);
+            let s = match k % 3 {
+                0 => {
+                    if g % 2 == 0 {
+                        -1.0
+                    } else {
+                        1.0
+                    }
+                }
+                1 => -1.0,
+                _ => {
+                    if (g / 2) % 2 == 0 {
+                        -1.0
+                    } else {
+                        1.0
+                    }
+                }
+            };
+            let path = Self::flyby_path(k * 3 + g * step, s);
+            let mirror = Self::flyby_path(k * 3 + g * step, -s);
             for j in 0..8 {
-                let delay = 0.8 + g as f32 * 2.6 + j as f32 * 0.14;
+                let delay = 0.8 + g as f32 * spacing + (j / if twin { 2 } else { 1 }) as f32 * 0.14;
+                let path = if twin && j % 2 == 1 { mirror } else { path };
                 let kind = if golden {
                     Kind::Golden
                 } else {
@@ -2011,7 +2025,11 @@ impl Game {
                 let t = t + dt;
                 if t > 3.4 {
                     self.finish_boss(au);
-                    if self.cfg.mode == Mode::Survival {
+                    if self.signal_ready() {
+                        self.enemies.clear();
+                        self.start_signal(au);
+                        Phase::Playing
+                    } else if self.cfg.mode == Mode::Survival {
                         self.wave += 1;
                         self.start_wave(au);
                         Phase::Playing
@@ -2082,6 +2100,11 @@ impl Game {
             Phase::Victory { mut sel, t } => {
                 let t = t + dt;
                 let can_continue = self.cfg.mode == Mode::Campaign;
+                if let Some(h) = inp.hover
+                    && can_continue
+                {
+                    sel = h.min(1);
+                }
                 if can_continue && (inp.up_p || inp.down_p) {
                     sel = 1 - sel;
                     au.play(Sfx::MenuMove);
@@ -2314,6 +2337,16 @@ impl Game {
                 {
                     return Phase::BossDeath { t: 0.0 };
                 }
+                if self.signal_finished() {
+                    self.sig = None;
+                    self.sig_done = true;
+                    let lines = self.sector_tally();
+                    return Phase::SectorClear {
+                        t: 0.0,
+                        lines,
+                        shown: 0,
+                    };
+                }
                 Phase::Playing
             }
         }
@@ -2442,6 +2475,7 @@ impl Game {
         }
         self.update_timers(dt);
         self.update_vanguard(wdt);
+        self.update_salvo(wdt);
         let i2 = self.p2_input.clone();
         let (in1, in2) = if self.p_swapped {
             (&i2, inp)
@@ -2467,6 +2501,15 @@ impl Game {
         self.rift_update(dt, au);
         self.arcade_update(dt, au);
         self.collisions(au);
+        if self.dbg_signal.is_some()
+            && self.wave_age > 1.0
+            && let Some(ph) = self.dbg_signal.take()
+        {
+            self.enemies.clear();
+            self.start_signal(au);
+            self.debug_signal_phase(ph);
+        }
+        self.update_signal(wdt, au);
         self.rift_collisions(au);
         self.arcade_hazards(au);
         self.with_p2(|g| g.arcade_hazards(au));
@@ -3147,7 +3190,11 @@ impl Game {
             self.dive_timer -= dt;
             let remaining = self.enemies.len();
             if self.dive_timer <= 0.0 {
-                let mut t = gen_range(1.4, 2.8) / (1.0 + diff * 0.18) / dive_mul / self.rage_mul();
+                let mut t = gen_range(1.4, 2.8)
+                    / (1.0 + diff * 0.18)
+                    / dive_mul
+                    / self.rage_mul()
+                    / self.dive_rate();
                 if remaining < 8 {
                     t *= 0.5;
                 }
@@ -3171,7 +3218,13 @@ impl Game {
                         .collect();
                     if !candidates.is_empty() {
                         let i = candidates[gen_range(0, candidates.len())];
+                        let partners = self.dive_partners(i);
                         self.start_dive(i);
+                        for j in partners {
+                            if matches!(self.enemies[j].state, EState::Formation) {
+                                self.start_dive(j);
+                            }
+                        }
                     }
                 }
             }
@@ -3408,6 +3461,7 @@ impl Game {
 
     fn update_boss(&mut self, dt: f32, au: &mut Audio) {
         self.update_scenery(dt, au);
+        self.update_boss_trait(dt);
         if self.boss_warning > 0.0 {
             self.boss_warning -= dt;
             if self.boss_warning <= 0.0 {
@@ -3540,6 +3594,12 @@ impl Game {
             boss.max_hp *= 0.05;
         }
         self.boss = Some(boss);
+        if matches!(
+            self.cfg.mode,
+            Mode::Campaign | Mode::Daily | Mode::Expedition
+        ) {
+            self.boss_trait_begin();
+        }
         if let Some(k) = crate::dev_env("STARDUST_SCENE").and_then(|v| v.parse::<usize>().ok()) {
             self.debug_scene(k);
         }
@@ -4324,6 +4384,9 @@ impl Game {
         {
             hurt = true;
         }
+        if !hurt && self.signal_touches(pp, hr) {
+            hurt = true;
+        }
         if hurt {
             self.hurt_player(au);
         }
@@ -4733,6 +4796,15 @@ impl Game {
 
     fn update_shop(&mut self, inp: &Input, au: &mut Audio) -> Phase {
         let n = self.shop_offers.len() + 2;
+        if let Some(h) = inp.hover
+            && h < n
+            && h != self.shop_sel
+        {
+            self.shop_sel = h;
+            au.play_vol(Sfx::MenuMove, 0.5);
+        }
+        // Mouse: a click on the selected row buys it.
+        let mouse_buy = inp.select_click == Some(self.shop_sel);
         if inp.up_p {
             self.shop_sel = (self.shop_sel + n - 1) % n;
             au.play(Sfx::MenuMove);
@@ -4745,7 +4817,7 @@ impl Game {
             self.shop_sel = n - 1;
             au.play(Sfx::MenuMove);
         }
-        if inp.confirm {
+        if inp.confirm || mouse_buy {
             let i = self.shop_sel;
             if i == n - 1 {
                 au.play(Sfx::MenuOk);
@@ -5061,6 +5133,7 @@ impl Game {
         if let Some(b) = &self.boss {
             b.draw(sp, art, self.time, off);
         }
+        self.draw_signal(off, art);
 
         for b in &self.bolts {
             for w in b.pts.windows(2) {
@@ -5488,6 +5561,7 @@ impl Game {
             draw_rectangle_lines(20.0, 10.0, w, 8.0, 1.0, WHITE);
             ui::text_c(b.name(), W / 2.0, 36.0, 16.0, PINK);
         }
+        self.draw_signal_bar();
     }
 
     fn draw_hud(&self, sp: &Sprites, art: &Art) {
@@ -5997,8 +6071,25 @@ impl Game {
                     WHITE,
                 );
                 ui::text_c("ESC gives up", W / 2.0, H * 0.68, 15.0, DIM);
+                ui::button(
+                    "CONTINUE",
+                    W / 2.0 - 70.0,
+                    H * 0.76,
+                    16.0,
+                    ui::Hot::Confirm,
+                    false,
+                );
+                ui::button(
+                    "GIVE UP",
+                    W / 2.0 + 70.0,
+                    H * 0.76,
+                    16.0,
+                    ui::Hot::Back,
+                    false,
+                );
             }
             Phase::GameOver { t } => {
+                ui::hot(Rect::new(0.0, 0.0, W, H), ui::Hot::Confirm);
                 let a = (t * 1.5).min(1.0);
                 draw_rectangle(0.0, 0.0, W, H, Color::new(0.0, 0.0, 0.0, a * 0.5));
                 ui::text_outline(
@@ -6143,6 +6234,10 @@ impl Game {
                 Color::new(0.1, 0.1, 0.2, 0.5)
             };
             draw_rectangle(20.0, y, W - 40.0, row_h - 5.0, bg);
+            ui::hot(
+                Rect::new(20.0, y, W - 40.0, row_h - 5.0),
+                ui::Hot::Select(i),
+            );
             if sel {
                 draw_rectangle_lines(20.0, y, W - 40.0, row_h - 5.0, 2.0, GOLD);
             }
@@ -6186,6 +6281,14 @@ impl Game {
         };
         let c = if self.shop_sel == n { GOLD } else { DIM };
         ui::text_c(&label, W / 2.0, y + 14.0, 18.0, c);
+        ui::hot(
+            Rect::new(60.0, y - 6.0, W - 120.0, 28.0),
+            ui::Hot::Select(n),
+        );
+        ui::hot(
+            Rect::new(40.0, y + 26.0, W - 80.0, 32.0),
+            ui::Hot::Select(n + 1),
+        );
         let next = match self.cfg.mode {
             Mode::BossRush => format!("FACE THE BOSS {}", self.wave + 1),
             _ => format!("DEPART FOR SECTOR {}", self.absolute_sector() + 1),

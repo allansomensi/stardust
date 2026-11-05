@@ -5,7 +5,10 @@ A formation shoot 'em up with the soul of the 2000s shareware classics, written 
 and the crystals you collect buy stronger and stronger weapons between sectors.
 
 - **100-level campaign** (20 sectors of 5 levels) with a steep difficulty curve and checkpoints at levels
-  26, 51 and 76.
+  26, 51 and 76. Every level is different: its own formation (chevron, ring, spiral, star...), its own
+  way of moving, entry paths, featured enemy, diving style and salvos. Bonus stages and boss fights
+  change from sector to sector too.
+- **Mouse support** in every menu, with the game's own cursor.
 - **Local co-op for two players**: two gamepads, keyboard plus gamepad, or both on one keyboard.
 - **Gamepad support** (Xbox, PlayStation and generic controllers) in menus and in game.
 - Heavy weapons such as **Fireball**, **Plasma**, **Railgun** and **Meteor**.
@@ -87,6 +90,7 @@ cargo build --release --target x86_64-pc-windows-gnu
 | `src/game/minigame.rs` | the rift minigames |
 | `src/game/arsenal.rs` | heavy weapons: Fireball, Plasma, Railgun and Meteor |
 | `src/game/coop.rs` | local two-player co-op, duo beam and rescue |
+| `src/game/levels.rs` | level designs: formations, motions, entries, dive styles, salvos |
 | `src/game/vanguard.rs` | elite enemies: Armored, Healer, Mirror and Leader |
 | `src/game/scenery.rs` | boss fight scenery: darkness, rising ground, meteor shower |
 | `src/game/glow.rs`, `src/light.rs` | dynamic lighting |
@@ -141,6 +145,10 @@ cargo run --release --features dev
 | `STARDUST_COOP=1` | two-player co-op (the bot flies both ships) |
 | `STARDUST_DUO=1` | co-op with the duo beam always on |
 | `STARDUST_SCENE=0..2` | boss fights start in darkness, rising ground or meteor shower |
+| `STARDUST_NOFIRE=1` | the bot does not shoot (to look at formations) |
+| `STARDUST_PROFILE=1` | prints CPU time per frame and slow frames |
+| `STARDUST_RESIZE=1` | resizes the window to 4K after 4 s (fullscreen test) |
+| `STARDUST_FONTBENCH=1` | measures font rebuilds and exits |
 | `STARDUST_EASYBOSS=1` | bosses with 5% health |
 | `STARDUST_XP=N` | start with N experience |
 | `STARDUST_MODE=0..5` / `STARDUST_DIFF=0..3` | mode and difficulty used by the bot |

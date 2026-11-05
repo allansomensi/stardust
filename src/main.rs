@@ -95,6 +95,12 @@ pub struct Input {
     pub chars: Vec<char>,
     pub any: bool,
     pub key: Option<KeyCode>,
+    /// Mouse: the menu row under the pointer (when it moved or clicked).
+    pub hover: Option<usize>,
+    /// Mouse: a setting row was clicked (it selects; clicking it again confirms).
+    pub select_click: Option<usize>,
+    /// Mouse: a tab header was clicked.
+    pub tab: Option<usize>,
 }
 
 #[derive(Default)]
@@ -258,6 +264,7 @@ fn poll_input(rep: &mut Repeat, dt: f32) -> Input {
         chars,
         any: key.is_some(),
         key,
+        ..Default::default()
     }
 }
 
@@ -365,6 +372,11 @@ struct App {
     ctl_pad: bool,
     /// Waiting for a key or button: (action, seconds waited).
     rebind: Option<(usize, f32)>,
+    /// Mouse: seconds since it last moved, last position (window units) and the clickable
+    /// area under it.
+    mouse_t: f32,
+    mouse_last: Vec2,
+    pub mouse_hot: Option<ui::Hot>,
     pads: pad::Pads,
     /// Input for the second ship in co-op.
     inp2: Input,
@@ -434,6 +446,70 @@ const KONAMI: [KeyCode; 10] = [
 impl App {
     fn rank(&self) -> usize {
         self.save.rank()
+    }
+
+    /// True when the mouse should drive the menus (not during the action).
+    fn mouse_menus(&self) -> bool {
+        match &self.screen {
+            Screen::Playing => self.game.as_ref().is_some_and(|g| {
+                !self.demo
+                    && matches!(
+                        g.phase,
+                        game::Phase::Shop
+                            | game::Phase::Victory { .. }
+                            | game::Phase::Continue { .. }
+                            | game::Phase::GameOver { .. }
+                    )
+            }),
+            _ => true,
+        }
+    }
+
+    /// Turns the mouse into menu input: hovering selects, clicking confirms, the right
+    /// button goes back and the wheel scrolls.
+    fn apply_mouse(&mut self, inp: &mut Input, mp: Vec2, moved: bool) {
+        use ui::Hot;
+        let hot = ui::hot_at(mp);
+        self.mouse_hot = if self.mouse_t < 3.0 { hot } else { None };
+        let click = is_mouse_button_pressed(MouseButton::Left);
+        if moved || click {
+            if let Some(Hot::Row(n) | Hot::Select(n) | Hot::Left(n) | Hot::Right(n)) = hot {
+                inp.hover = Some(n);
+            }
+        }
+        if click {
+            match hot {
+                Some(Hot::Row(_)) | Some(Hot::Confirm) => {
+                    inp.confirm = true;
+                    inp.enter = true;
+                }
+                Some(Hot::Select(n)) => inp.select_click = Some(n),
+                Some(Hot::Left(_)) => inp.left_p = true,
+                Some(Hot::Right(_)) => inp.right_p = true,
+                Some(Hot::Tab(t)) => inp.tab = Some(t),
+                Some(Hot::Back) => inp.back = true,
+                None => {
+                    // Screens that only wait for a key move on with a click anywhere.
+                    if matches!(
+                        self.screen,
+                        Screen::Summary { .. } | Screen::Prologue { .. } | Screen::Sheet
+                    ) {
+                        inp.confirm = true;
+                        inp.enter = true;
+                    }
+                }
+            }
+            inp.any = true;
+        }
+        if is_mouse_button_pressed(MouseButton::Right) {
+            inp.back = true;
+        }
+        let (_, wy) = mouse_wheel();
+        if wy > 0.0 {
+            inp.up_p = true;
+        } else if wy < 0.0 {
+            inp.down_p = true;
+        }
     }
 
     /// Vibrates the gamepads of a seat (None = everyone), if vibration is on.
@@ -678,6 +754,9 @@ impl App {
         }
         if dev_env("STARDUST_ROOM").is_some() {
             g.debug_room();
+        }
+        if let Some(ph) = dev_env("STARDUST_SIGNAL").and_then(|v| v.parse::<u8>().ok()) {
+            g.dbg_signal = Some(ph);
         }
         if dev_env("STARDUST_DUO").is_some() {
             g.co.beam_t = 60.0;
@@ -1016,6 +1095,9 @@ impl App {
             }
             Screen::Paused { mut sel, tip } => {
                 let items = 3;
+                if let Some(h) = inp.hover {
+                    sel = h.min(items - 1);
+                }
                 if inp.up_p {
                     sel = (sel + items - 1) % items;
                     self.audio.play(Sfx::MenuMove);
@@ -1192,6 +1274,9 @@ impl App {
         self.audio.music(Some(Music::Title));
         let vis = self.title_visible();
         let n = vis.len();
+        if let Some(h) = inp.hover {
+            sel = h;
+        }
         sel = sel.min(n - 1);
         // Konami
         if let Some(k) = inp.key {
@@ -1331,6 +1416,11 @@ impl App {
         if self.coop {
             order.push(4);
         }
+        if let Some(h) = inp.hover
+            && order.contains(&h)
+        {
+            row = h;
+        }
         let at = order.iter().position(|&r| r == row).unwrap_or(0);
         if inp.up_p {
             row = order[(at + order.len() - 1) % order.len()];
@@ -1400,6 +1490,11 @@ impl App {
         inp: &Input,
     ) -> Screen {
         let n = SHIPS.len();
+        if let Some(h) = inp.hover {
+            row = h.min(2);
+        }
+        // Mouse: clicking the selected row again equips it.
+        let confirm = inp.confirm || inp.select_click == Some(row);
         if inp.up_p {
             row = (row + 2) % 3;
             self.audio.play(Sfx::MenuMove);
@@ -1421,7 +1516,7 @@ impl App {
             }
             self.audio.play(Sfx::MenuMove);
         }
-        if inp.confirm && row == 2 {
+        if confirm && row == 2 {
             if progress::trail_unlocked(self.hangar_trail, &self.save) {
                 self.save.trail = self.hangar_trail;
                 self.save.write();
@@ -1430,7 +1525,7 @@ impl App {
             } else {
                 self.audio.play(Sfx::Deny);
             }
-        } else if inp.confirm {
+        } else if confirm {
             let ok_ship = ships::ship_unlocked(sel, self.rank(), &self.save.achs);
             let ok_skin = self.skin_ok(skin);
             if ok_ship && ok_skin {
@@ -1665,6 +1760,21 @@ impl App {
             self.update_rebind(inp);
             return Screen::Options { sel, from_pause };
         }
+        if let Some(t) = inp.tab
+            && t != tab
+        {
+            self.audio.play(Sfx::MenuMove);
+            return Screen::Options {
+                sel: t.min(3) * 100 + 1,
+                from_pause,
+            };
+        }
+        if let Some(h) = inp.hover
+            && h >= 1
+            && h <= self.opt_rows(tab).len()
+        {
+            row = h;
+        }
         let n = self.opt_rows(tab).len() + 1; // row 0 = tabs
         self.reset_armed = (self.reset_armed - get_frame_time()).max(0.0);
         if inp.up_p {
@@ -1855,6 +1965,102 @@ impl App {
     // -----------------------------------------------------------------------
 
     fn draw(&self) {
+        self.draw_screen();
+        self.draw_mouse_buttons();
+    }
+
+    /// Clickable extras for the mouse: a BACK button on every sub-screen, page arrows and
+    /// a LAUNCH button on the game mode screen. Keyboard and gamepad users can ignore them.
+    fn draw_mouse_buttons(&self) {
+        use ui::Hot;
+        let hov = |h: Hot| self.mouse_hot == Some(h);
+        let back = matches!(
+            self.screen,
+            Screen::ModeSelect { .. }
+                | Screen::Hangar { .. }
+                | Screen::Album { .. }
+                | Screen::Archives { .. }
+                | Screen::Options { .. }
+                | Screen::HowTo { .. }
+                | Screen::Scores { .. }
+        );
+        if back && self.rebind.is_none() {
+            ui::button("< BACK", 58.0, 30.0, 13.0, Hot::Back, hov(Hot::Back));
+        }
+        let pages = matches!(
+            self.screen,
+            Screen::Album { .. }
+                | Screen::Archives { .. }
+                | Screen::HowTo { .. }
+                | Screen::Scores { .. }
+        );
+        if pages {
+            ui::button("<", 30.0, H - 40.0, 18.0, Hot::Left(0), hov(Hot::Left(0)));
+            ui::button(
+                ">",
+                W - 30.0,
+                H - 40.0,
+                18.0,
+                Hot::Right(0),
+                hov(Hot::Right(0)),
+            );
+        }
+        match &self.screen {
+            Screen::ModeSelect { sel, .. } => {
+                ui::button(
+                    "LAUNCH >",
+                    W - 70.0,
+                    30.0,
+                    13.0,
+                    Hot::Confirm,
+                    hov(Hot::Confirm),
+                );
+                // rows: 0 mode, 1 difficulty, 2 players, 3 checkpoint, 4 player two's ship
+                let rows: [(usize, f32, f32, f32); 5] = [
+                    (0, 120.0, 250.0, 176.0),
+                    (1, 390.0, 160.0, 456.0),
+                    (2, 548.0, 28.0, 566.0),
+                    (3, 306.0, 30.0, 326.0),
+                    (4, 570.0, 28.0, 588.0),
+                ];
+                for (r, y, h, ay) in rows {
+                    if (r == 3 && !(MODES[*sel] == Mode::Campaign && self.checkpoints().len() > 1))
+                        || (r == 4 && !self.coop)
+                    {
+                        continue;
+                    }
+                    ui::hot(Rect::new(30.0, y, W - 60.0, h), Hot::Select(r));
+                    let aw = if r <= 1 { 60.0 } else { 44.0 };
+                    let ax = if r <= 1 { 30.0 } else { 52.0 };
+                    ui::hot(Rect::new(ax, ay - 30.0, aw, 40.0), Hot::Left(r));
+                    ui::hot(Rect::new(W - ax - aw, ay - 30.0, aw, 40.0), Hot::Right(r));
+                }
+            }
+            Screen::Hangar { .. } => {
+                ui::hot(Rect::new(30.0, 100.0, W - 60.0, 380.0), Hot::Select(0));
+                ui::hot(Rect::new(20.0, 170.0, 60.0, 60.0), Hot::Left(0));
+                ui::hot(Rect::new(W - 80.0, 170.0, 60.0, 60.0), Hot::Right(0));
+                for (r, y) in [(1usize, 584.0f32), (2, 664.0)] {
+                    ui::hot(Rect::new(30.0, y - 40.0, W - 60.0, 56.0), Hot::Select(r));
+                    ui::hot(Rect::new(40.0, y - 26.0, 44.0, 36.0), Hot::Left(r));
+                    ui::hot(Rect::new(W - 84.0, y - 26.0, 44.0, 36.0), Hot::Right(r));
+                }
+            }
+            Screen::NameEntry { .. } => {
+                ui::button(
+                    "OK",
+                    W / 2.0,
+                    H - 60.0,
+                    18.0,
+                    Hot::Confirm,
+                    hov(Hot::Confirm),
+                );
+            }
+            _ => {}
+        }
+    }
+
+    fn draw_screen(&self) {
         match &self.screen {
             Screen::Playing => {
                 if let Some(g) = &self.game {
@@ -3262,6 +3468,7 @@ impl App {
         for (i, t) in tabs.iter().enumerate() {
             let x = 20.0 + i as f32 * tw;
             let on = i == tab;
+            ui::hot(Rect::new(x + 2.0, 96.0, tw - 4.0, 30.0), ui::Hot::Tab(i));
             draw_rectangle(
                 x + 2.0,
                 96.0,
@@ -3291,6 +3498,10 @@ impl App {
         for (i, (label, val)) in rows.iter().enumerate() {
             let y = y0 + i as f32 * gap;
             let on = row == i + 1;
+            ui::hot(
+                Rect::new(30.0, y - 24.0, W - 60.0, 34.0),
+                ui::Hot::Row(i + 1),
+            );
             let c = if on { GOLD } else { DIM };
             if on {
                 draw_rectangle(
@@ -4147,9 +4358,10 @@ impl App {
 // ---------------------------------------------------------------------------
 
 fn bot_input(g: &Game, t: f32) -> Input {
+    let shoot = dev_env("STARDUST_NOFIRE").is_none();
     let mut inp = Input {
-        fire: true,
-        fire_p: true,
+        fire: shoot,
+        fire_p: shoot,
         ..Default::default()
     };
     let p = g.player.pos;
@@ -4447,6 +4659,9 @@ async fn main() {
         ctl_player: 0,
         ctl_pad: false,
         rebind: None,
+        mouse_t: 99.0,
+        mouse_last: Vec2::ZERO,
+        mouse_hot: None,
         pads: pad::Pads::new(),
         inp2: Input::default(),
         panels: false,
@@ -4542,6 +4757,8 @@ async fn main() {
     }
     app.apply_settings();
 
+    // The game draws its own cursor (only in menus).
+    show_mouse(false);
     let mut rep = Repeat::default();
     // Development: CPU time spent per frame (update + draw submission).
     let profile = dev_env("STARDUST_PROFILE").is_some();
@@ -4574,6 +4791,22 @@ async fn main() {
             }
         }
         let l = Screens::layout();
+        // Mouse: window coordinates -> play-area coordinates.
+        let mp_win = Vec2::from(mouse_position());
+        let moved = (mp_win - app.mouse_last).length() > 0.5;
+        app.mouse_last = mp_win;
+        app.mouse_t = if moved { 0.0 } else { app.mouse_t + dt };
+        let mp = vec2(
+            (mp_win.x - l.dest.x) / l.dest.w * l.ww - l.play_x,
+            (mp_win.y - l.dest.y) / l.dest.h * H,
+        );
+        let menus = app.mouse_menus();
+        if menus && !app.autoplay {
+            app.apply_mouse(&mut inp, mp, moved);
+        } else {
+            app.mouse_hot = None;
+        }
+        ui::hot_frame();
         app.panels = l.panels && app.save.panels;
         let pre_ms = frame_t0.elapsed().as_secs_f64() * 1000.0;
         if resize_test && app.time > 4.0 && app.time - dt <= 4.0 {
@@ -4618,6 +4851,9 @@ async fn main() {
         }
         let t_pres = std::time::Instant::now();
         screens.present(&l, app.save.crt);
+        if menus && app.mouse_t < 3.0 {
+            ui::cursor(mp_win, 2.0 * l.dest.w / l.ww, app.time);
+        }
         let pres_ms = t_pres.elapsed().as_secs_f64() * 1000.0;
         app.audio.end_frame();
         if profile {

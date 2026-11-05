@@ -404,6 +404,10 @@ pub fn hsl(h: f32, s: f32, l: f32) -> Color {
 pub fn menu(items: &[String], sel: usize, x: f32, y: f32, spacing: f32, size: f32, time: f32) {
     for (i, it) in items.iter().enumerate() {
         let yy = y + i as f32 * spacing;
+        hot(
+            Rect::new(x - 160.0, yy - size - 4.0, 320.0, spacing.min(size + 16.0)),
+            Hot::Row(i),
+        );
         if i == sel {
             let w = width(it, size);
             let pulse = (time * 6.0).sin() * 3.0;
@@ -515,4 +519,107 @@ pub fn card_face(
         let gx = x + w / 2.0 + (g as f32 - (gems as f32 - 1.0) / 2.0) * 9.0 * scale;
         draw_poly(gx, y + h - 8.0 * scale, 4, 3.5 * scale, 45.0, rc);
     }
+}
+
+// ---------------------------------------------------------------------------
+// Mouse: clickable areas and the cursor
+// ---------------------------------------------------------------------------
+
+/// What a clickable area does.
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum Hot {
+    /// A menu entry: hovering selects it, clicking selects and confirms.
+    Row(usize),
+    /// A setting row: hovering selects it, clicking does not confirm.
+    Select(usize),
+    /// The "<" and ">" arrows of a row.
+    Left(usize),
+    Right(usize),
+    /// A tab header.
+    Tab(usize),
+    /// A button that confirms (launch, buy, continue...).
+    Confirm,
+    /// A button that goes back.
+    Back,
+}
+
+thread_local! {
+    /// (areas of the last finished frame, areas being registered this frame)
+    static HOTS: std::cell::RefCell<(Vec<(Rect, Hot)>, Vec<(Rect, Hot)>)> =
+        const { std::cell::RefCell::new((Vec::new(), Vec::new())) };
+}
+
+/// Registers a clickable area (in play-area coordinates) for the frame being drawn.
+pub fn hot(r: Rect, h: Hot) {
+    HOTS.with(|v| v.borrow_mut().1.push((r, h)));
+}
+
+/// Call once per frame, before drawing: the areas drawn last frame become the live ones.
+pub fn hot_frame() {
+    HOTS.with(|v| {
+        let mut v = v.borrow_mut();
+        let (cur, next) = &mut *v;
+        std::mem::swap(cur, next);
+        next.clear();
+    });
+}
+
+/// The topmost clickable area under `p`.
+pub fn hot_at(p: Vec2) -> Option<Hot> {
+    HOTS.with(|v| {
+        v.borrow()
+            .0
+            .iter()
+            .rev()
+            .find(|(r, _)| r.contains(p))
+            .map(|(_, h)| *h)
+    })
+}
+
+/// A small clickable button with a label; returns nothing, the click arrives as input.
+pub fn button(label: &str, cx: f32, y: f32, size: f32, h: Hot, hovered: bool) {
+    let w = width(label, size) + 28.0;
+    let r = Rect::new(cx - w / 2.0, y - size - 6.0, w, size + 14.0);
+    let c = if hovered { GOLD } else { DIM };
+    draw_rectangle(r.x, r.y, r.w, r.h, Color::new(0.08, 0.06, 0.18, 0.85));
+    draw_rectangle_lines(r.x, r.y, r.w, r.h, if hovered { 2.0 } else { 1.0 }, c);
+    text_c(label, cx, y, size, if hovered { WHITE } else { c });
+    hot(r, h);
+}
+
+/// The mouse cursor: a small pixel-art star pointer in the game's palette. `pos` is in
+/// window coordinates and `scale` is the size of one pixel.
+pub fn cursor(pos: Vec2, scale: f32, time: f32) {
+    const ROWS: [&str; 12] = [
+        "k.........",
+        "kk........",
+        "kwk.......",
+        "kwck......",
+        "kwcck.....",
+        "kwccck....",
+        "kwcccck...",
+        "kwccckkk..",
+        "kwkkck....",
+        "kk..kck...",
+        "k....kck..",
+        ".....kk...",
+    ];
+    let px = scale.max(1.0).round();
+    for (y, row) in ROWS.iter().enumerate() {
+        for (x, ch) in row.chars().enumerate() {
+            let c = match ch {
+                'k' => Color::from_rgba(18, 14, 34, 255),
+                'w' => WHITE,
+                'c' => CYAN,
+                _ => continue,
+            };
+            draw_rectangle(pos.x + x as f32 * px, pos.y + y as f32 * px, px, px, c);
+        }
+    }
+    // a twinkling star at the tip
+    let a = 0.5 + (time * 5.0).sin() * 0.5;
+    let s = px * (1.5 + a);
+    let c = Color::new(1.0, 0.9, 0.5, 0.5 + a * 0.5);
+    draw_rectangle(pos.x - s * 0.5, pos.y - px * 0.5, s, px, c);
+    draw_rectangle(pos.x - px * 0.5, pos.y - s * 0.5, px, s, c);
 }
