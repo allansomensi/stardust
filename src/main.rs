@@ -186,6 +186,9 @@ fn merge_pad(inp: &mut Input, s: &pad::PadState, b: &controls::Bindings, player:
     inp.ability_p |= pressed(4);
     inp.focus |= held(5);
     inp.pause |= s.start_p;
+    // shoulder buttons switch tabs in the menus
+    inp.swap |=
+        s.pressed[controls::PadButton::LB.index()] || s.pressed[controls::PadButton::RB.index()];
     inp.confirm |= s.confirm_p;
     inp.enter |= s.confirm_p;
     inp.back |= s.back_p;
@@ -376,6 +379,8 @@ struct App {
     /// area under it.
     mouse_t: f32,
     mouse_last: Vec2,
+    /// The hints show gamepad buttons (the gamepad was used last).
+    pad_hints: bool,
     pub mouse_hot: Option<ui::Hot>,
     pads: pad::Pads,
     /// Input for the second ship in co-op.
@@ -407,7 +412,7 @@ const PROLOGUE: [&str; 9] = [
 
 const TIPS: [&str; 22] = [
     "Grazing enemy shots fills the ability bar.",
-    "Hold SHIFT to see exactly where your ship can be hit.",
+    "Hold {FOCUS} to see exactly where your ship can be hit.",
     "Shieldbearers only protect their front. Diagonal shots get through.",
     "The Eye only feels pain with its eyelid open.",
     "In the Ice Belt your ship slides. Plan ahead.",
@@ -446,6 +451,45 @@ const KONAMI: [KeyCode; 10] = [
 impl App {
     fn rank(&self) -> usize {
         self.save.rank()
+    }
+
+    /// Tells the UI which device the player is using and what each hint token is called.
+    fn update_hints(&mut self, keyboard: bool, moved: bool) {
+        if keyboard || moved {
+            self.pad_hints = false;
+        }
+        if self.pads.state.iter().any(|s| s.any_p) {
+            self.pad_hints = true;
+        }
+        if dev_env("STARDUST_PADHINTS").is_some() {
+            self.pad_hints = true;
+        }
+        let b = &self.save.binds;
+        let key = |a: usize| {
+            b.keys[0][a][0]
+                .map(|k| controls::key_name(k).to_uppercase())
+                .unwrap_or_else(|| "-".into())
+        };
+        let pad = |a: usize| {
+            b.pad[0][a][0]
+                .map(|k| k.name().to_string())
+                .unwrap_or_else(|| "-".into())
+        };
+        let s = |x: &str| x.to_string();
+        ui::set_hints(ui::HintLabels {
+            pad: self.pad_hints,
+            map: vec![
+                ("CONFIRM", s("ENTER"), s("A")),
+                ("BACK", s("ESC"), s("B")),
+                ("MOVE", s("ARROWS"), s("D-PAD")),
+                ("TAB", s("Q/TAB"), s("LB/RB")),
+                ("PAUSE", s("ESC"), s("START")),
+                ("FIRE", key(2), pad(2)),
+                ("BOMB", key(3), pad(3)),
+                ("ABILITY", key(4), pad(4)),
+                ("FOCUS", key(5), pad(5)),
+            ],
+        });
     }
 
     /// True when the mouse should drive the menus (not during the action).
@@ -739,6 +783,10 @@ impl App {
         }
         if let Some(w) = dev_env("STARDUST_WEAPON").and_then(|v| v.parse::<usize>().ok()) {
             g.player.weapon = WEAPONS[w.min(WEAPONS.len() - 1)];
+        }
+        if dev_env("STARDUST_EVOLVE").is_some() {
+            g.player.level = 5;
+            g.player.evolved_weapon = Some(g.player.weapon);
         }
         if dev_env("STARDUST_DROPS").is_some() {
             g.debug_showcase();
@@ -2095,7 +2143,7 @@ impl App {
                     ui::panel(30.0, H * 0.6, W - 60.0, 70.0, CYAN);
                     ui::text_c("TIP", W / 2.0, H * 0.6 + 22.0, 14.0, CYAN);
                     for (i, l) in ui::wrap(TIPS[*tip], 15.0, W - 90.0).iter().enumerate() {
-                        ui::text_c(l, W / 2.0, H * 0.6 + 44.0 + i as f32 * 17.0, 15.0, WHITE);
+                        ui::hint_c(l, W / 2.0, H * 0.6 + 44.0 + i as f32 * 17.0, 15.0, WHITE);
                     }
                 }
                 if let Some(g) = &self.game
@@ -2261,8 +2309,8 @@ impl App {
             13.0,
             Color::new(0.4, 0.4, 0.5, 1.0),
         );
-        ui::text_r(
-            "ARROWS · ENTER · ESC",
+        ui::hint_r(
+            "{MOVE} · {CONFIRM} · {BACK}",
             W - 8.0,
             H - 10.0,
             13.0,
@@ -2525,8 +2573,8 @@ impl App {
         {
             ui::text(l, 96.0, 644.0 + dy + i as f32 * 16.0, 13.0, PINK);
         }
-        ui::text_c(
-            "ARROWS choose  ·  ENTER launch  ·  ESC back",
+        ui::hint_c(
+            "{MOVE} choose  ·  {CONFIRM} launch  ·  {BACK} back",
             W / 2.0,
             H - 14.0,
             13.0,
@@ -2697,19 +2745,14 @@ impl App {
             }
         }
         let current = if row == 2 {
-            "ENTER equips the trail"
+            "{CONFIRM} equips the trail"
         } else if self.save.ship == sel && self.save.skin == skin {
             "EQUIPPED"
         } else {
-            "ENTER equips"
+            "{CONFIRM} equips"
         };
-        ui::text_c(
-            &format!("{current}  ·  UP/DOWN: ship, paint, trail"),
-            W / 2.0,
-            H - 12.0,
-            12.0,
-            DIM,
-        );
+        ui::hint_c(current, W / 2.0, H - 30.0, 12.0, DIM);
+        ui::text_c("UP/DOWN: ship, paint, trail", W / 2.0, H - 12.0, 12.0, DIM);
     }
 
     fn draw_summary(&self, t: f32, gain: u64, from_xp: u64) {
@@ -2770,7 +2813,7 @@ impl App {
             }
         }
         if t > 3.0 && (t * 2.0) as i32 % 2 == 0 {
-            ui::text_c("ENTER continues", W / 2.0, H - 40.0, 16.0, DIM);
+            ui::hint_c("{CONFIRM} continues", W / 2.0, H - 40.0, 16.0, DIM);
         }
     }
 
@@ -2867,8 +2910,8 @@ impl App {
             ui::text_r(&e.sector.to_string(), 336.0, y, 19.0, c);
             ui::text_r(&format!("{:08}", e.score), W - 40.0, y, 19.0, c);
         }
-        ui::text_c(
-            "LEFT/RIGHT change mode  ·  ENTER back",
+        ui::hint_c(
+            "{MOVE} change mode  ·  {CONFIRM} back",
             W / 2.0,
             600.0,
             14.0,
@@ -2975,8 +3018,8 @@ impl App {
                 DIM,
             );
             let eq = self.save.equipped.contains(&sel);
-            ui::text_r(
-                if eq { "EQUIPPED" } else { "ENTER equips" },
+            ui::hint_r(
+                if eq { "EQUIPPED" } else { "{CONFIRM} equips" },
                 W - 24.0,
                 dy + 120.0,
                 13.0,
@@ -3442,8 +3485,8 @@ impl App {
                 }
             }
         }
-        ui::text_c(
-            "LEFT/RIGHT tabs  ·  UP/DOWN browse  ·  ESC back",
+        ui::hint_c(
+            "{MOVE} tabs and browse  ·  {BACK} back",
             W / 2.0,
             H - 12.0,
             13.0,
@@ -3557,9 +3600,9 @@ impl App {
             (2, 1) => "Portuguese or English.",
             (2, 2) => "Always shows your ship's weak spot.",
             (2, 5) => "Erases ranks, cards and achievements. Press twice.",
-            _ => "Q/TAB switch tab  ·  LEFT/RIGHT adjust  ·  ESC back",
+            _ => "{TAB} switch tab  ·  LEFT/RIGHT adjust  ·  {BACK} back",
         };
-        ui::text_c(hint, W / 2.0, H - 70.0, 13.0, DIM);
+        ui::hint_c(hint, W / 2.0, H - 70.0, 13.0, DIM);
         let path = save::data_dir();
         let p = path.display().to_string();
         let p = if ui::width(&p, 11.0) > W - 20.0 {
@@ -3756,7 +3799,7 @@ impl App {
             Color::from_rgba(40, 20, 0, 255),
         );
         if t > 1.0 {
-            ui::text_c("ENTER to skip", W / 2.0, H - 16.0, 12.0, DIM);
+            ui::hint_c("{CONFIRM} to skip", W / 2.0, H - 16.0, 12.0, DIM);
         }
     }
 
@@ -3772,8 +3815,8 @@ impl App {
         ui::panel(20.0, 106.0, W - 40.0, 548.0, CYAN);
         if page == 1 {
             self.draw_weapons_page();
-            ui::text_c(
-                &format!("< {} / 6 >   ·   ESC back", page + 1),
+            ui::hint_c(
+                &format!("< {} / 6 >   ·   {{BACK}} back", page + 1),
                 W / 2.0,
                 690.0,
                 15.0,
@@ -3784,13 +3827,61 @@ impl App {
         let lines: Vec<(String, Color)> = match page {
             0 => vec![
                 ("CONTROLS".into(), GOLD),
-                ("Arrows / A D ....... move sideways".into(), WHITE),
-                ("Space / Z .......... fire (tap)".into(), WHITE),
+                (
+                    if ui::pad_mode() {
+                        "D-pad / stick ...... move sideways"
+                    } else {
+                        "Arrows / A D ....... move sideways"
+                    }
+                    .into(),
+                    WHITE,
+                ),
+                (
+                    if ui::pad_mode() {
+                        "A / RT ............. fire (tap)"
+                    } else {
+                        "Space / Z .......... fire (tap)"
+                    }
+                    .into(),
+                    WHITE,
+                ),
                 ("Hold and release . charged shot".into(), WHITE),
-                ("X / G .............. bomb".into(), WHITE),
-                ("C / H .............. ship ability".into(), WHITE),
-                ("Shift .............. precision mode".into(), WHITE),
-                ("Esc / P ............ pause".into(), WHITE),
+                (
+                    if ui::pad_mode() {
+                        "X / B .............. bomb"
+                    } else {
+                        "X / G .............. bomb"
+                    }
+                    .into(),
+                    WHITE,
+                ),
+                (
+                    if ui::pad_mode() {
+                        "Y / RB ............. ship ability"
+                    } else {
+                        "C / H .............. ship ability"
+                    }
+                    .into(),
+                    WHITE,
+                ),
+                (
+                    if ui::pad_mode() {
+                        "LB / LT ............ precision mode"
+                    } else {
+                        "Shift .............. precision mode"
+                    }
+                    .into(),
+                    WHITE,
+                ),
+                (
+                    if ui::pad_mode() {
+                        "START .............. pause"
+                    } else {
+                        "Esc / P ............ pause"
+                    }
+                    .into(),
+                    WHITE,
+                ),
                 ("F11 / Alt+Enter .... fullscreen".into(), WHITE),
                 ("Gamepad: A fire · X bomb · Y ability".into(), CYAN),
                 ("LB precision · Start pause".into(), CYAN),
@@ -3914,8 +4005,8 @@ impl App {
             };
             ui::text(l, 38.0, 140.0 + i as f32 * step, size, *c);
         }
-        ui::text_c(
-            &format!("< {} / 6 >   ·   ESC back", page + 1),
+        ui::hint_c(
+            &format!("< {} / 6 >   ·   {{BACK}} back", page + 1),
             W / 2.0,
             690.0,
             15.0,
@@ -4078,7 +4169,7 @@ impl App {
             ui::text_c("TIP OF THE DAY", lc, 160.0, 15.0, CYAN);
             let tip = TIPS[((self.time / 8.0) as usize) % TIPS.len()];
             for (i, l) in ui::wrap(tip, 15.0, cw).iter().enumerate() {
-                ui::text_c(l, lc, 186.0 + i as f32 * 18.0, 15.0, WHITE);
+                ui::hint_c(l, lc, 186.0 + i as f32 * 18.0, 15.0, WHITE);
             }
             for i in 0..5 {
                 let kind = ((self.time * 0.3) as usize + i) % 11;
@@ -4271,6 +4362,9 @@ impl App {
         let name_w = ui::width(w.name(), 18.0);
         icons::weapon_badge(w, vec2(rx + cw - name_w - 16.0, y - 6.0), 11.0, 1.0);
         ui::text_r(w.name(), rx + cw, y, 18.0, w.color());
+        if g.evolved() {
+            ui::text_r("EVOLVED", rx + cw, y - 18.0, 11.0, GOLD);
+        }
         y += 12.0;
         let lv = g.effective_level();
         for i in 0..5 {
@@ -4619,7 +4713,7 @@ async fn main() {
         screens.present(&l, false);
         t += get_frame_time();
         next_frame().await;
-        if job.finished() && built.is_some() && (ui::warm_done() || t > 8.0) {
+        if job.title_ready() && built.is_some() && (ui::warm_done() || t > 8.0) {
             break;
         }
     }
@@ -4661,6 +4755,7 @@ async fn main() {
         rebind: None,
         mouse_t: 99.0,
         mouse_last: Vec2::ZERO,
+        pad_hints: false,
         mouse_hot: None,
         pads: pad::Pads::new(),
         inp2: Input::default(),
@@ -4767,8 +4862,10 @@ async fn main() {
     loop {
         let dt = get_frame_time().min(1.0 / 30.0);
         let frame_t0 = std::time::Instant::now();
+        app.audio.poll().await;
         app.pads.update(dt);
         let full = poll_input(&mut rep, dt);
+        let full_any = full.any;
         let coop_playing = matches!(app.screen, Screen::Playing)
             && app.game.as_ref().map(|g| g.coop()).unwrap_or(false);
         let (mut inp, inp2) = seat_inputs(full, &app.pads, &app.save.binds, coop_playing);
@@ -4800,6 +4897,7 @@ async fn main() {
             (mp_win.x - l.dest.x) / l.dest.w * l.ww - l.play_x,
             (mp_win.y - l.dest.y) / l.dest.h * H,
         );
+        app.update_hints(full_any, moved);
         let menus = app.mouse_menus();
         if menus && !app.autoplay {
             app.apply_mouse(&mut inp, mp, moved);

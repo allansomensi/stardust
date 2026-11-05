@@ -247,9 +247,11 @@ impl Game {
             * (1.0 + 0.1 * p.fire_lvl as f32)
             * if self.frenzy_t > 0.0 { 2.0 } else { 1.0 }
             * if self.overdrive_t > 0.0 { 2.0 } else { 1.0 }
-            * daily_x2;
+            * daily_x2
+            * if self.evolved() { 1.1 } else { 1.0 };
+        let evo = self.evolved();
         let lv = self.effective_level();
-        let dmg = ship.dmg * self.power_mul();
+        let dmg = ship.dmg * self.power_mul() * if evo { 1.3 } else { 1.0 };
         let o = p.pos - vec2(0.0, 18.0);
         let pos = p.pos;
         let weapon = p.weapon;
@@ -269,6 +271,7 @@ impl Game {
                     2 => &[],
                     3 => &[-8.0, 0.0, 8.0],
                     4 => &[-11.0, 11.0],
+                    _ if evo => &[-27.0, -18.0, -8.0, 0.0, 8.0, 18.0, 27.0],
                     _ => &[-18.0, -8.0, 0.0, 8.0, 18.0],
                 };
                 if lv == 2 || lv == 4 {
@@ -298,7 +301,13 @@ impl Game {
                 };
                 for (x, a, dm) in spec {
                     let mut b = mk(o + vec2(*x, x.abs() * 0.4), *a, sp, dm * dmg, BKind::Laser);
-                    b.pierce = if lv >= 3 { 3 } else { 2 };
+                    b.pierce = if evo {
+                        8
+                    } else if lv >= 3 {
+                        3
+                    } else {
+                        2
+                    };
                     out.push(b);
                 }
                 au.play_vol(Sfx::Laser, 0.4);
@@ -317,7 +326,8 @@ impl Game {
                 }
                 if self.player.missile_cd <= 0.0 {
                     self.player.missile_cd = 0.42 / rate;
-                    let n = [1, 2, 2, 3, 4][(lv - 1).clamp(0, 4) as usize];
+                    let n =
+                        [1, 2, 2, 3, 4][(lv - 1).clamp(0, 4) as usize] + if evo { 2 } else { 0 };
                     for k in 0..n {
                         let side = if n == 1 {
                             if shots_before.is_multiple_of(2) {
@@ -433,7 +443,7 @@ impl Game {
                 au.play_vol(Sfx::WaveShot, 0.3);
             }
             Weapon::Fireball | Weapon::Plasma | Weapon::Railgun | Weapon::Meteor => {
-                cd = arsenal::fire(weapon, lv, dmg, o, ss, &mut out, au);
+                cd = arsenal::fire(weapon, lv, dmg, o, ss, evo, &mut out, au);
             }
             other => {
                 cd = encounters::fire_extra(

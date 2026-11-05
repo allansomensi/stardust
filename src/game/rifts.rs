@@ -1023,7 +1023,7 @@ impl Game {
             self.fx.flash_color = WHITE;
             self.player.invuln = self.player.invuln.max(2.0);
             au.play(Sfx::Portal);
-            au.music(Some(Music::Stage));
+            au.music(Some(self.region_music()));
         }
     }
 
@@ -1866,8 +1866,8 @@ impl Game {
                 );
             }
         }
-        crate::ui::text_c(
-            "LEFT/RIGHT choose · ENTER confirm",
+        crate::ui::hint_c(
+            "LEFT/RIGHT choose · {CONFIRM} confirm",
             W / 2.0,
             520.0,
             14.0,

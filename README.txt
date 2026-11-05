@@ -69,6 +69,8 @@ HOW TO GET STRONGER
 -------------------
 Between sectors there is the SHOP. The crystals you collect buy:
 * WEAPONS: the more stars (* to *****), the stronger and pricier.
+* EVOLUTION: a weapon at level 5 can be evolved into a stronger
+  form (a mini sun, twin beams, a seven-way fan...).
 * DAMAGE CORE: +15% damage on any weapon, up to 6 times.
 * Weapon upgrades, fire rate, speed, drones, side cannons, shield,
   bombs, lives, autofire, laser sight and more.
@@ -116,7 +118,8 @@ CUSTOM MUSIC
 The game composes its own chiptune soundtrack. To use your own
 music, create a "music" folder next to stardust.exe (or inside the
 save folder) with .ogg or .wav files named:
-  title, stage, boss, shop, final, credits
+  title, stage, boss, shop, final, credits,
+  region1 ... region8 (one per region), special
 
 To export the original soundtrack as .wav:
   stardust.exe --export-music

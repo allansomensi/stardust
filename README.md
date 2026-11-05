@@ -11,7 +11,11 @@ and the crystals you collect buy stronger and stronger weapons between sectors.
 - **Mouse support** in every menu, with the game's own cursor.
 - **Local co-op for two players**: two gamepads, keyboard plus gamepad, or both on one keyboard.
 - **Gamepad support** (Xbox, PlayStation and generic controllers) in menus and in game.
-- Heavy weapons such as **Fireball**, **Plasma**, **Railgun** and **Meteor**.
+- Heavy weapons such as **Fireball**, **Plasma**, **Railgun** and **Meteor**, each with its own sound.
+- **Weapon evolution:** once a weapon reaches level 5, the shop offers to evolve it (the Fireball becomes a
+  mini sun, the Railgun fires twin beams, the Blaster a seven-way fan...).
+- A theme song for every region of the campaign.
+- Hints show key caps on the keyboard and colored buttons on a gamepad, following the last device used.
 - Elite enemies in the later levels (Armored, Healer, Mirror, Leader) and boss fights that change the
   stage: darkness, rising ground and meteor showers.
 - Co-op **DUO BEAM** and a one-time rescue for a fallen partner.
@@ -90,6 +94,11 @@ cargo build --release --target x86_64-pc-windows-gnu
 | `src/game/minigame.rs` | the rift minigames |
 | `src/game/arsenal.rs` | heavy weapons: Fireball, Plasma, Railgun and Meteor |
 | `src/game/coop.rs` | local two-player co-op, duo beam and rescue |
+| `src/game/waves.rs`, `update.rs` | wave building, bonus stages and the run's state machine |
+| `src/game/player.rs`, `enemies.rs` | the ship and its weapons; enemies, bosses, hazards and bullets |
+| `src/game/drops.rs`, `collisions.rs` | pickups; hits and deaths |
+| `src/game/shop.rs`, `evolution.rs` | the shop; weapon evolution |
+| `src/game/draw.rs`, `hud.rs` | drawing the play field; HUD, overlays and credits |
 | `src/game/levels.rs` | level designs: formations, motions, entries, dive styles, salvos |
 | `src/game/vanguard.rs` | elite enemies: Armored, Healer, Mirror and Leader |
 | `src/game/scenery.rs` | boss fight scenery: darkness, rising ground, meteor shower |
@@ -126,8 +135,10 @@ cargo build --release --target x86_64-pc-windows-gnu
 
 ## Custom music
 
-Put `.ogg` or `.wav` files named `title`, `stage`, `boss`, `shop`, `final` and `credits` in a `music`
-folder next to the executable (or inside the save folder).
+Put `.ogg` or `.wav` files named `title`, `stage`, `boss`, `shop`, `final`, `credits`, `region1` to
+`region8` (one per campaign region) and `special` in a `music` folder next to the executable (or inside the
+save folder). The soundtrack is composed on worker threads: the game starts as soon as the title theme is
+ready and the other songs arrive in the background.
 
 ## Development build
 
@@ -146,6 +157,8 @@ cargo run --release --features dev
 | `STARDUST_DUO=1` | co-op with the duo beam always on |
 | `STARDUST_SCENE=0..2` | boss fights start in darkness, rising ground or meteor shower |
 | `STARDUST_NOFIRE=1` | the bot does not shoot (to look at formations) |
+| `STARDUST_EVOLVE=1` | the starting weapon begins evolved at level 5 |
+| `STARDUST_PADHINTS=1` | hints always show gamepad buttons |
 | `STARDUST_PROFILE=1` | prints CPU time per frame and slow frames |
 | `STARDUST_RESIZE=1` | resizes the window to 4K after 4 s (fullscreen test) |
 | `STARDUST_FONTBENCH=1` | measures font rebuilds and exits |

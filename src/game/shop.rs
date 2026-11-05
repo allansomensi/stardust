@@ -66,6 +66,10 @@ impl Game {
         if self.arcade.core < 6 {
             self.shop_offers.push(Item::DamageCore);
         }
+        // The long-term goal of a run: evolving a level 5 weapon.
+        if self.can_evolve() {
+            self.shop_offers.push(Item::Evolve(self.player.weapon));
+        }
         self.shop_offers.extend(offers);
     }
 
@@ -120,6 +124,8 @@ impl Game {
             Item::LaserSight if self.arcade.sight => Some("OWNED"),
             Item::Capacitor if self.arcade.capacitor => Some("OWNED"),
             Item::DamageCore if self.arcade.core >= 6 => Some("MAX"),
+            Item::Evolve(w) if self.player.evolved_weapon == Some(w) => Some("OWNED"),
+            Item::Evolve(w) if w != self.player.weapon || self.player.level < 5 => Some("LV 5"),
             _ => None,
         }
     }
@@ -213,6 +219,7 @@ impl Game {
                     Item::Capacitor => self.arcade.capacitor = true,
                     Item::MysteryBox => self.open_box(au),
                     Item::DamageCore => self.arcade.core += 1,
+                    Item::Evolve(_) => self.evolve(au),
                 }
                 self.mirror_purchase(it);
                 self.check_mastery();

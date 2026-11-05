@@ -220,7 +220,11 @@ fn with_font<R>(title: bool, size: u16, f: impl FnOnce(Option<&Font>, f32) -> R)
 }
 
 fn measure(s: &str, size: u16, title: bool) -> f32 {
-    let s = &crate::i18n::tr(s);
+    measure_raw(&crate::i18n::tr(s), size, title)
+}
+
+/// Like `measure`, for text that is already translated.
+fn measure_raw(s: &str, size: u16, title: bool) -> f32 {
     with_font(title, size, |font, k| {
         let (fs, sc) = raster(size, if title { TITLE_SF } else { BODY_SF }, k);
         measure_text(s, font, fs, sc).width
@@ -236,7 +240,11 @@ pub fn title_width(s: &str, size: f32) -> f32 {
 }
 
 fn raw_font(s: &str, x: f32, y: f32, size: u16, color: Color, title: bool) {
-    let s = &crate::i18n::tr(s);
+    font_text(&crate::i18n::tr(s), x, y, size, color, title);
+}
+
+/// Like `raw_font`, for text that is already translated.
+fn font_text(s: &str, x: f32, y: f32, size: u16, color: Color, title: bool) {
     with_font(title, size, |font, k| {
         let (fs, sc) = raster(size, if title { TITLE_SF } else { BODY_SF }, k);
         draw_text_ex(
@@ -624,4 +632,206 @@ pub fn cursor(pos: Vec2, scale: f32, time: f32) {
     let c = Color::new(1.0, 0.9, 0.5, 0.5 + a * 0.5);
     draw_rectangle(pos.x - s * 0.5, pos.y - px * 0.5, s, px, c);
     draw_rectangle(pos.x - px * 0.5, pos.y - s * 0.5, px, s, c);
+}
+
+// ---------------------------------------------------------------------------
+// Input hints: keys or gamepad buttons, whichever the player is using
+// ---------------------------------------------------------------------------
+
+/// Labels for the hint tokens, for the keyboard and for the gamepad.
+#[derive(Clone, Default)]
+pub struct HintLabels {
+    pub pad: bool,
+    /// (token, keyboard label, gamepad label)
+    pub map: Vec<(&'static str, String, String)>,
+}
+
+thread_local! {
+    static HINTS: std::cell::RefCell<HintLabels> = std::cell::RefCell::new(HintLabels::default());
+}
+
+/// Sets which device the hints show and the labels of every token.
+pub fn set_hints(h: HintLabels) {
+    HINTS.with(|v| *v.borrow_mut() = h);
+}
+
+pub fn pad_mode() -> bool {
+    HINTS.with(|v| v.borrow().pad)
+}
+
+fn token_label(tok: &str) -> Option<(String, bool)> {
+    HINTS.with(|v| {
+        let v = v.borrow();
+        v.map.iter().find(|(t, _, _)| *t == tok).map(|(_, k, p)| {
+            if v.pad {
+                (p.clone(), true)
+            } else {
+                (k.clone(), false)
+            }
+        })
+    })
+}
+
+/// Splits a hint into plain text and tokens like `{CONFIRM}`.
+fn hint_parts(s: &str) -> Vec<(String, bool)> {
+    let mut out = vec![];
+    let mut rest = s;
+    while let Some(a) = rest.find('{') {
+        let Some(b) = rest[a..].find('}') else { break };
+        if a > 0 {
+            out.push((rest[..a].to_string(), false));
+        }
+        out.push((rest[a + 1..a + b].to_string(), true));
+        rest = &rest[a + b + 1..];
+    }
+    if !rest.is_empty() {
+        out.push((rest.to_string(), false));
+    }
+    out
+}
+
+/// Color of a gamepad button glyph.
+fn pad_color(label: &str) -> Option<Color> {
+    match label {
+        "A" => Some(Color::from_rgba(90, 200, 90, 255)),
+        "B" => Some(Color::from_rgba(230, 80, 80, 255)),
+        "X" => Some(Color::from_rgba(80, 140, 240, 255)),
+        "Y" => Some(Color::from_rgba(240, 200, 60, 255)),
+        _ => None,
+    }
+}
+
+/// Width of a key cap or button glyph.
+fn glyph_w(label: &str, pad: bool, size: f32) -> f32 {
+    let s = size * 0.78;
+    if pad && pad_color(label).is_some() {
+        size * 1.1
+    } else {
+        measure_raw(label, snap(s), false) + size * 0.7
+    }
+}
+
+/// Draws one key cap (keyboard) or button (gamepad) with its left edge at `x`.
+fn glyph(label: &str, pad: bool, x: f32, y: f32, size: f32, color: Color) -> f32 {
+    let w = glyph_w(label, pad, size);
+    let h = size * 1.05;
+    let top = y - size * 0.86;
+    let s = size * 0.78;
+    if pad && let Some(c) = pad_color(label) {
+        let r = h * 0.52;
+        let cx = x + w / 2.0;
+        let cy = top + h / 2.0;
+        draw_circle(
+            cx,
+            cy,
+            r,
+            Color::new(c.r * 0.35, c.g * 0.35, c.b * 0.35, color.a),
+        );
+        draw_circle_lines(cx, cy, r, 1.5, Color::new(c.r, c.g, c.b, color.a));
+        let lw = measure_raw(label, snap(s), false);
+        font_text(
+            label,
+            cx - lw / 2.0,
+            y - size * 0.06,
+            snap(s),
+            Color::new(c.r, c.g, c.b, color.a),
+            false,
+        );
+    } else {
+        let fill = Color::new(0.12, 0.12, 0.22, 0.9 * color.a);
+        let edge = Color::new(color.r, color.g, color.b, color.a * 0.9);
+        if pad {
+            // a pill for the other gamepad buttons (D-PAD, START, LB...)
+            let r = h / 2.0;
+            draw_rectangle(x + r, top, w - r * 2.0, h, fill);
+            draw_circle(x + r, top + r, r, fill);
+            draw_circle(x + w - r, top + r, r, fill);
+        } else {
+            // a key cap
+            draw_rectangle(x, top, w, h, fill);
+            draw_rectangle_lines(x, top, w, h, 1.0, edge);
+            draw_line(
+                x + 1.0,
+                top + h - 1.5,
+                x + w - 1.0,
+                top + h - 1.5,
+                1.5,
+                edge,
+            );
+        }
+        let lw = measure_raw(label, snap(s), false);
+        font_text(
+            label,
+            x + w / 2.0 - lw / 2.0,
+            y - size * 0.06,
+            snap(s),
+            color,
+            false,
+        );
+    }
+    w
+}
+
+/// Draws a hint where tokens like `{CONFIRM}` become key caps or gamepad buttons.
+/// `align`: -1 left at `x`, 0 centered on `x`, 1 right at `x`.
+pub fn hint(s: &str, x: f32, y: f32, size: f32, color: Color, align: i32) {
+    let s = crate::i18n::tr(s);
+    let parts: Vec<(String, Option<(String, bool)>)> = hint_parts(&s)
+        .into_iter()
+        .map(|(t, is_tok)| {
+            if is_tok {
+                match token_label(&t) {
+                    Some(l) => (t, Some(l)),
+                    None => (format!("{{{t}}}"), None),
+                }
+            } else {
+                (t, None)
+            }
+        })
+        .collect();
+    let gap = 3.0;
+    let total: f32 = parts
+        .iter()
+        .map(|(t, l)| match l {
+            Some((lab, pad)) => glyph_w(lab, *pad, size) + gap * 2.0,
+            None => measure_raw(t, snap(size), false),
+        })
+        .sum();
+    let mut cx = match align {
+        a if a < 0 => x,
+        0 => x - total / 2.0,
+        _ => x - total,
+    };
+    for (t, l) in parts {
+        match l {
+            Some((lab, pad)) => cx += glyph(&lab, pad, cx + gap, y, size, color) + gap * 2.0,
+            None => {
+                raw_text_left(&t, cx, y, size, color);
+                cx += measure_raw(&t, snap(size), false);
+            }
+        }
+    }
+}
+
+pub fn hint_c(s: &str, x: f32, y: f32, size: f32, color: Color) {
+    hint(s, x, y, size, color, 0);
+}
+
+pub fn hint_r(s: &str, x: f32, y: f32, size: f32, color: Color) {
+    hint(s, x, y, size, color, 1);
+}
+
+/// Draws already-translated text at its left edge (no second translation).
+fn raw_text_left(s: &str, x: f32, y: f32, size: f32, color: Color) {
+    let fs = snap(size);
+    let sh = (fs as f32 / 16.0).clamp(0.75, 2.0);
+    font_text(
+        s,
+        x + sh,
+        y + sh,
+        fs,
+        Color::new(0.0, 0.0, 0.0, color.a * 0.7),
+        false,
+    );
+    font_text(s, x, y, fs, color, false);
 }

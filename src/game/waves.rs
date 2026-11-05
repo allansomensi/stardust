@@ -56,11 +56,7 @@ impl Game {
                 self.level_begin();
                 self.build_level();
                 self.wave_size = self.enemies.len().max(1);
-                au.music(Some(if st.theme == 7 {
-                    Music::Final
-                } else {
-                    Music::Stage
-                }));
+                au.music(Some(self.region_music()));
                 self.maybe_specials();
                 self.enc_wave_start();
                 self.rift_wave_start();

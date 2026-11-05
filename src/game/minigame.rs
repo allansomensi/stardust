@@ -39,14 +39,17 @@ impl MgKind {
         match self {
             MgKind::CrystalRain => ["Catch the falling crystals.", "Dodge the rocks!"],
             MgKind::Vault => [
-                "Press SPACE when the needle",
+                "Press {FIRE} when the needle",
                 "is on the golden band. 3 locks.",
             ],
             MgKind::Sequence => [
                 "Memorize the stars that light up",
                 "and repeat them with the ARROWS.",
             ],
-            MgKind::Targets => ["Hit the targets with SPACE.", "Golden ones are worth more."],
+            MgKind::Targets => [
+                "Hit the targets with {FIRE}.",
+                "Golden ones are worth more.",
+            ],
             MgKind::Asteroids => ["Survive for 12 seconds.", "Every crash costs you."],
         }
     }
@@ -519,8 +522,8 @@ impl Minigame {
             0 => {
                 ui::text_c("STAR RIFT", W / 2.0, 250.0, 16.0, DIM);
                 let how = self.kind.how();
-                ui::text_c(how[0], W / 2.0, 320.0, 18.0, WHITE);
-                ui::text_c(how[1], W / 2.0, 346.0, 18.0, WHITE);
+                ui::hint_c(how[0], W / 2.0, 320.0, 18.0, WHITE);
+                ui::hint_c(how[1], W / 2.0, 346.0, 18.0, WHITE);
                 let n = 3 - (self.t / 0.75) as i32;
                 ui::text_outline(&format!("{}", n.max(1)), W / 2.0, 450.0, 60.0, c, BLACK);
                 return;
@@ -645,7 +648,7 @@ impl Minigame {
                         if self.flash_ok { GOLD } else { RED },
                     );
                 }
-                ui::text_c("SPACE to lock", W / 2.0, y + 150.0, 14.0, DIM);
+                ui::hint_c("{FIRE} to lock", W / 2.0, y + 150.0, 14.0, DIM);
             }
             MgKind::Sequence => {
                 let center = vec2(W / 2.0, H / 2.0 + 20.0);

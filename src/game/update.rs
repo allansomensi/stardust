@@ -41,12 +41,7 @@ impl Game {
             Phase::Intro { t } => {
                 if t == 0.0 {
                     self.begin_sector();
-                    let st = self.stage();
-                    au.music(Some(if st.theme == 7 {
-                        Music::Final
-                    } else {
-                        Music::Stage
-                    }));
+                    au.music(Some(self.region_music()));
                     if self.wave == 1 && self.cycle == 0 {
                         self.player.pos = vec2(W / 2.0, H + 40.0);
                     }
@@ -238,7 +233,11 @@ impl Game {
                     self.player.dead_t = 0.01;
                     self.coop_revive();
                     self.combo = 0;
-                    au.music(Some(Music::Stage));
+                    au.music(Some(if self.wave_kind == WaveKind::Boss {
+                        Music::Boss
+                    } else {
+                        self.region_music()
+                    }));
                     Phase::Playing
                 } else if nt <= 0.0 || inp.back {
                     au.music(None);

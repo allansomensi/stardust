@@ -1,6 +1,7 @@
 //! Sound: chiptune effects and songs synthesized at startup.
 //! To use your own music, put .ogg or .wav files in a `music/` folder next to the game:
-//! title, stage, boss, shop, final, credits (e.g. `music/stage.ogg`).
+//! title, stage, boss, shop, final, credits, region1 to region8 and special
+//! (e.g. `music/region3.ogg`).
 
 use macroquad::audio::{
     PlaySoundParams, Sound, load_sound_from_bytes, play_sound, set_sound_volume, stop_sound,
@@ -209,12 +210,65 @@ pub enum Sfx {
     Devour,
     Curse,
     Relic,
+    Fireball,
+    Plasma,
+    Railgun,
+    Meteor,
 }
 
-const SFX_COUNT: usize = 47;
+const SFX_COUNT: usize = 51;
 
 fn sfx_samples(s: Sfx) -> Vec<f32> {
     match s {
+        // a roaring whoosh with a crackle of embers
+        Sfx::Fireball => {
+            let mut a = noise(0.34, 0.42, 0.35, 13, 1.3);
+            mix(&mut a, &sweep(240.0, 90.0, 0.28, 0.2, 0.5), 0);
+            mix(
+                &mut a,
+                &noise(0.12, 0.18, 0.85, 61, 3.0),
+                (0.06 * RATE_F) as usize,
+            );
+            a
+        }
+        // an unstable, wobbling electric hum that rises
+        Sfx::Plasma => {
+            let n = (0.3 * RATE_F) as usize;
+            let mut ph = 0.0;
+            let mut ph2 = 0.0;
+            (0..n)
+                .map(|i| {
+                    let k = i as f32 / n as f32;
+                    let f = 260.0 + 520.0 * k + (k * 70.0).sin() * 90.0;
+                    ph += f / RATE_F;
+                    ph2 += f * 1.5 / RATE_F;
+                    let env = (k * 20.0).min(1.0) * (1.0 - k).powf(1.4);
+                    (pulse(ph, 0.25) * 0.5 + tri(ph2) * 0.4) * env * 0.22
+                })
+                .collect()
+        }
+        // a short charge, then a sharp metallic crack
+        Sfx::Railgun => {
+            let mut a = sweep(220.0, 2600.0, 0.07, 0.12, 0.5);
+            mix(
+                &mut a,
+                &noise(0.22, 0.6, 0.2, 99, 2.6),
+                (0.07 * RATE_F) as usize,
+            );
+            mix(
+                &mut a,
+                &sweep(3200.0, 500.0, 0.2, 0.18, 0.125),
+                (0.07 * RATE_F) as usize,
+            );
+            a
+        }
+        // a heavy rock launched with a deep thud
+        Sfx::Meteor => {
+            let mut a = kick(0.45);
+            mix(&mut a, &noise(0.26, 0.32, 0.3, 57, 2.0), 0);
+            mix(&mut a, &sweep(170.0, 60.0, 0.22, 0.2, 0.5), 0);
+            a
+        }
         Sfx::Blaster => sweep(1400.0, 420.0, 0.06, 0.22, 0.5),
         Sfx::Laser => {
             let mut a = sweep(2200.0, 1500.0, 0.09, 0.14, 0.25);
@@ -472,6 +526,9 @@ pub enum Music {
     Shop,
     Final,
     Credits,
+    /// The theme of a campaign region (0 to 7).
+    Region(u8),
+    Signal,
 }
 
 struct Song {
@@ -603,6 +660,188 @@ const CREDITS: Song = Song {
     lead_duty: 0.125,
     lead_vol: 0.14,
     arp_vol: 0.05,
+};
+
+// One theme for each region of the campaign, and one for the Signal.
+
+const REGION_ORBIT: Song = Song {
+    bpm: 132.0,
+    chords: &["D", "A", "Bm", "G", "D", "A", "G", "A"],
+    lead: &[
+        "F#5 - - - A5 - D6 - - - C#6 - A5 - - -",
+        "E5 - - - A5 - C#6 - - - B5 - A5 - E5 -",
+        "D5 - - - F#5 - B5 - - - A5 - F#5 - D5 -",
+        "G5 - - - B5 - D6 - - - B5 - G5 - - -",
+        "A5 - - - F#5 - D5 - F#5 - A5 - D6 - - -",
+        "C#6 - - - A5 - E5 - A5 - C#6 - E6 - - -",
+        "D6 - - - B5 - G5 - B5 - D6 - B5 - G5 -",
+        "A5 - - - - - - - C#6 - - - E6 - - -",
+    ],
+    drums: "K...S.h.K.h.S.h.",
+    bass_octaves: false,
+    lead_duty: 0.25,
+    lead_vol: 0.13,
+    arp_vol: 0.05,
+};
+
+const REGION_ASTEROIDS: Song = Song {
+    bpm: 156.0,
+    chords: &["Em", "D", "C", "D", "Em", "D", "C", "B"],
+    lead: &[
+        "E5 . E5 . G5 . B5 . E5 . G5 . B5 - A5 -",
+        "F#5 - - - D5 - A4 - D5 . F#5 . A5 - F#5 -",
+        "G5 - E5 - C5 - E5 - G5 - - - E5 - C5 -",
+        "D5 - F#5 - A5 - - - F#5 - D5 - A4 - - -",
+        "B5 . B5 . G5 . E5 . B5 . G5 . E5 - G5 -",
+        "A5 - - - F#5 - D5 - F#5 - A5 - D6 - - -",
+        "C6 - B5 - G5 - E5 - G5 - C6 - E6 - - -",
+        "D#6 - - - B5 - - - F#5 - - - D#5 - B4 -",
+    ],
+    drums: "K.hhS.hhK.KhS.hh",
+    bass_octaves: true,
+    lead_duty: 0.5,
+    lead_vol: 0.11,
+    arp_vol: 0.04,
+};
+
+const REGION_NEBULA: Song = Song {
+    bpm: 144.0,
+    chords: &["Cm", "Ab", "Bb", "G", "Cm", "Ab", "Fm", "G"],
+    lead: &[
+        "C5 - - - Eb5 - G5 - - - C6 - Bb5 - G5 -",
+        "Ab5 - - - G5 - Eb5 - C5 - Eb5 - Ab5 - - -",
+        "Bb5 - - - F5 - D5 - F5 - Bb5 - D6 - - -",
+        "B5 - - - G5 - D5 - B4 - D5 - G5 - - -",
+        "C6 - - - G5 - Eb5 - G5 - C6 - Eb6 - - -",
+        "Ab5 - C6 - Eb6 - - - C6 - Ab5 - Eb5 - - -",
+        "F5 - Ab5 - C6 - - - Ab5 - F5 - C5 - - -",
+        "D6 - - - B5 - - - G5 - - - B5 - D6 -",
+    ],
+    drums: "K...S..hK..hS...",
+    bass_octaves: true,
+    lead_duty: 0.25,
+    lead_vol: 0.12,
+    arp_vol: 0.045,
+};
+
+const REGION_HIVE: Song = Song {
+    bpm: 138.0,
+    chords: &["F#m", "D", "E", "C#", "F#m", "D", "Bm", "C#"],
+    lead: &[
+        "F#5 - - - A5 - - - C#6 - - - A5 - F#5 -",
+        "D5 - - - F#5 - A5 - F#5 - - - D5 - - -",
+        "E5 - G#5 - B5 - - - G#5 - E5 - B4 - - -",
+        "C#5 - - - F5 - G#5 - - - F5 - C#5 - - -",
+        "F#5 . F#5 . A5 . C#6 . F#6 - - - C#6 - A5 -",
+        "D6 - - - A5 - F#5 - A5 - D6 - F#6 - - -",
+        "B5 - - - F#5 - D5 - F#5 - B5 - D6 - - -",
+        "C#6 - - - - - - - G#5 - - - F5 - - -",
+    ],
+    drums: "K.h.K.h.S.hhK.h.",
+    bass_octaves: false,
+    lead_duty: 0.125,
+    lead_vol: 0.13,
+    arp_vol: 0.05,
+};
+
+const REGION_ICE: Song = Song {
+    bpm: 120.0,
+    chords: &["A", "E", "F#m", "D", "A", "E", "D", "E"],
+    lead: &[
+        "C#6 - E6 - A6 - E6 - C#6 - A5 - E5 - - -",
+        "B5 - G#5 - E5 - G#5 - B5 - E6 - - - - -",
+        "A5 - C#6 - F#6 - C#6 - A5 - F#5 - C#5 - - -",
+        "D6 - - - A5 - F#5 - A5 - D6 - F#6 - - -",
+        "E6 - - - C#6 - A5 - C#6 - E6 - A6 - - -",
+        "G#6 - - - E6 - B5 - G#5 - B5 - E6 - - -",
+        "F#6 - - - D6 - A5 - F#5 - A5 - D6 - - -",
+        "E6 - - - - - - - B5 - - - G#5 - - -",
+    ],
+    drums: "K.......S...h...",
+    bass_octaves: false,
+    lead_duty: 0.125,
+    lead_vol: 0.12,
+    arp_vol: 0.07,
+};
+
+const REGION_STORM: Song = Song {
+    bpm: 172.0,
+    chords: &["Gm", "Eb", "F", "D", "Gm", "Eb", "Cm", "D"],
+    lead: &[
+        "G5 . G5 . Bb5 . D6 . G5 . Bb5 . D6 - C6 -",
+        "Bb5 - G5 - Eb5 - G5 - Bb5 - Eb6 - - - - -",
+        "A5 - F5 - C5 - F5 - A5 - C6 - F6 - - -",
+        "F#5 - A5 - D6 - - - A5 - F#5 - D5 - - -",
+        "D6 . D6 . Bb5 . G5 . D6 . G6 . D6 - Bb5 -",
+        "Eb6 - - - Bb5 - G5 - Eb5 - G5 - Bb5 - - -",
+        "C6 - Eb6 - G6 - - - Eb6 - C6 - G5 - - -",
+        "F#6 - - - D6 - A5 - F#5 - A5 - D6 - - -",
+    ],
+    drums: "KhhhS.hhKhKhS.SS",
+    bass_octaves: true,
+    lead_duty: 0.5,
+    lead_vol: 0.1,
+    arp_vol: 0.04,
+};
+
+const REGION_RUINS: Song = Song {
+    bpm: 112.0,
+    chords: &["Dm", "G", "Dm", "C", "Dm", "G", "Am", "Dm"],
+    lead: &[
+        "D5 - - - - - F5 - A5 - - - G5 - F5 -",
+        "G5 - - - B5 - - - D6 - - - B5 - - -",
+        "A5 - - - F5 - D5 - - - E5 - F5 - - -",
+        "E5 - - - G5 - C6 - - - G5 - E5 - - -",
+        "D6 - - - A5 - - - F5 - A5 - D6 - - -",
+        "B5 - - - D6 - - - G6 - - - D6 - B5 -",
+        "C6 - - - A5 - E5 - - - A5 - C6 - - -",
+        "D6 - - - - - - - A5 - - - D5 - - -",
+    ],
+    drums: "K.....h.S.....h.",
+    bass_octaves: false,
+    lead_duty: 0.25,
+    lead_vol: 0.14,
+    arp_vol: 0.05,
+};
+
+const REGION_HEART: Song = Song {
+    bpm: 180.0,
+    chords: &["Bm", "G", "A", "F#", "Bm", "G", "Em", "F#"],
+    lead: &[
+        "B5 . B5 . D6 . F#6 . B5 . D6 . F#6 - E6 -",
+        "D6 - B5 - G5 - B5 - D6 - G6 - - - - -",
+        "C#6 - A5 - E5 - A5 - C#6 - E6 - A6 - - -",
+        "A#5 - - - F#5 - C#5 - F#5 - A#5 - C#6 - - -",
+        "F#6 - - - D6 - B5 - D6 - F#6 - B6 - - -",
+        "G6 - - - D6 - B5 - G5 - B5 - D6 - - -",
+        "E6 - G6 - B6 - - - G6 - E6 - B5 - - -",
+        "A#5 - - - C#6 - - - F#6 - - - - - - -",
+    ],
+    drums: "KKhKS.hKKKhKSSSS",
+    bass_octaves: true,
+    lead_duty: 0.25,
+    lead_vol: 0.1,
+    arp_vol: 0.04,
+};
+
+const SIGNAL: Song = Song {
+    bpm: 104.0,
+    chords: &["Em", "Fm", "Em", "Fm", "C", "B", "C", "B"],
+    lead: &[
+        "E5 - - - - - G5 - - - B5 - - - - -",
+        "F5 - - - - - Ab5 - - - C6 - - - - -",
+        "B5 - - - G5 - - - E5 - - - D#5 - - -",
+        "C6 - - - Ab5 - - - F5 - - - E5 - - -",
+        "G5 - C6 - E6 - - - D6 - C6 - G5 - - -",
+        "F#5 - B5 - D#6 - - - C6 - B5 - F#5 - - -",
+        "E6 - - - C6 - - - G5 - - - E5 - - -",
+        "D#6 - - - - - - - B5 - - - . . . .",
+    ],
+    drums: "K.......S..h....",
+    bass_octaves: false,
+    lead_duty: 0.125,
+    lead_vol: 0.14,
+    arp_vol: 0.06,
 };
 
 fn chord_tones(name: &str) -> [f32; 3] {
@@ -823,6 +1062,8 @@ pub struct Audio {
     pub music_vol: f32,
     pub sfx_vol: f32,
     played_this_frame: [u8; SFX_COUNT],
+    /// Songs still being composed in the background.
+    job: Option<SynthJob>,
 }
 
 const ALL_SFX: [Sfx; SFX_COUNT] = [
@@ -873,34 +1114,67 @@ const ALL_SFX: [Sfx; SFX_COUNT] = [
     Sfx::Devour,
     Sfx::Curse,
     Sfx::Relic,
+    Sfx::Fireball,
+    Sfx::Plasma,
+    Sfx::Railgun,
+    Sfx::Meteor,
 ];
 
 impl Audio {
-    /// Turns the sounds prepared by a finished `SynthJob` into an `Audio`.
-    pub async fn from_job(job: SynthJob) -> Audio {
+    /// Turns the sounds prepared so far by a `SynthJob` into an `Audio`; the songs still
+    /// being composed arrive later through `poll`.
+    pub async fn from_job(mut job: SynthJob) -> Audio {
         let mut sfx = Vec::with_capacity(SFX_COUNT);
-        for bytes in job.sfx {
+        for bytes in std::mem::take(&mut job.sfx) {
             let snd = match bytes {
                 Some(b) => load_sound_from_bytes(&b).await.ok(),
                 None => None,
             };
             sfx.push(snd);
         }
-        let mut music = Vec::with_capacity(SONGS.len());
-        for (i, bytes) in job.music.into_iter().enumerate() {
-            let snd = match bytes {
-                Some(b) => load_sound_from_bytes(&b).await.ok(),
-                None => None,
-            };
-            music.push((SONGS[i].0, snd));
-        }
-        Audio {
+        let music = SONGS.iter().map(|(m, _, _)| (*m, None)).collect();
+        let mut a = Audio {
             sfx,
             music,
             current: None,
             music_vol: 0.6,
             sfx_vol: 0.8,
             played_this_frame: [0; SFX_COUNT],
+            job: Some(job),
+        };
+        a.poll().await;
+        a
+    }
+
+    /// Loads songs that finished composing in the background. If the one that should be
+    /// playing just arrived, it starts.
+    pub async fn poll(&mut self) {
+        let Some(job) = &mut self.job else { return };
+        job.poll();
+        let ready: Vec<(usize, Vec<u8>)> = job
+            .music
+            .iter_mut()
+            .enumerate()
+            .filter_map(|(i, b)| b.take().map(|b| (i, b)))
+            .collect();
+        if job.finished() && ready.is_empty() {
+            self.job = None;
+            return;
+        }
+        for (i, bytes) in ready {
+            let snd = load_sound_from_bytes(&bytes).await.ok();
+            if let (Some(s), Some(cur)) = (&snd, self.current)
+                && cur == SONGS[i].0
+            {
+                play_sound(
+                    s,
+                    PlaySoundParams {
+                        looped: true,
+                        volume: self.music_vol * 0.8,
+                    },
+                );
+            }
+            self.music[i].1 = snd;
         }
     }
 
@@ -965,13 +1239,22 @@ impl Audio {
 
 /// Used by the export tool (`--export-music`).
 /// The soundtrack, with the file names used for custom music.
-const SONGS: [(Music, &Song, &str); 6] = [
+const SONGS: [(Music, &Song, &str); 15] = [
     (Music::Title, &TITLE, "title"),
     (Music::Stage, &STAGE, "stage"),
     (Music::Boss, &BOSS, "boss"),
     (Music::Shop, &SHOP, "shop"),
     (Music::Final, &FINAL, "final"),
     (Music::Credits, &CREDITS, "credits"),
+    (Music::Region(0), &REGION_ORBIT, "region1"),
+    (Music::Region(1), &REGION_ASTEROIDS, "region2"),
+    (Music::Region(2), &REGION_NEBULA, "region3"),
+    (Music::Region(3), &REGION_HIVE, "region4"),
+    (Music::Region(4), &REGION_ICE, "region5"),
+    (Music::Region(5), &REGION_STORM, "region6"),
+    (Music::Region(6), &REGION_RUINS, "region7"),
+    (Music::Region(7), &REGION_HEART, "region8"),
+    (Music::Signal, &SIGNAL, "special"),
 ];
 
 enum Ready {
@@ -1000,13 +1283,27 @@ impl SynthJob {
                 .collect();
             let _ = t.send(Ready::Sfx(all));
         });
-        for (i, (_, song, file)) in SONGS.iter().enumerate() {
+        // A few workers take the songs in order of need: the title theme first, then the
+        // first regions; the game starts as soon as the title theme is ready.
+        let queue: std::sync::Arc<std::sync::Mutex<Vec<usize>>> =
+            std::sync::Arc::new(std::sync::Mutex::new((0..SONGS.len()).rev().collect()));
+        let workers = std::thread::available_parallelism()
+            .map(|n| n.get().saturating_sub(1))
+            .unwrap_or(2)
+            .clamp(1, 3);
+        for _ in 0..workers {
             let t = tx.clone();
-            let song: &'static Song = song;
-            let file: &'static str = file;
+            let queue = queue.clone();
             std::thread::spawn(move || {
-                let bytes = custom_music(file).unwrap_or_else(|| wav_bytes(&render_song(song)));
-                let _ = t.send(Ready::Song(i, bytes));
+                loop {
+                    let next = queue.lock().ok().and_then(|mut q| q.pop());
+                    let Some(i) = next else { break };
+                    let (_, song, file) = SONGS[i];
+                    let bytes = custom_music(file).unwrap_or_else(|| wav_bytes(&render_song(song)));
+                    if t.send(Ready::Song(i, bytes)).is_err() {
+                        break;
+                    }
+                }
             });
         }
         SynthJob {
@@ -1038,6 +1335,11 @@ impl SynthJob {
     pub fn finished(&self) -> bool {
         self.sfx_done && self.songs_done == SONGS.len()
     }
+
+    /// The sound effects and the title theme are ready: the game can start.
+    pub fn title_ready(&self) -> bool {
+        self.sfx_done && self.music[0].is_some()
+    }
 }
 
 /// Bytes of a custom music file (.ogg or .wav) named `file`, if the player added one.
@@ -1054,14 +1356,7 @@ fn custom_music(file: &str) -> Option<Vec<u8>> {
 
 pub fn export_music(dir: &str) -> std::io::Result<()> {
     std::fs::create_dir_all(dir)?;
-    for (song, name) in [
-        (&TITLE, "title"),
-        (&STAGE, "stage"),
-        (&BOSS, "boss"),
-        (&SHOP, "shop"),
-        (&FINAL, "final"),
-        (&CREDITS, "credits"),
-    ] {
+    for (_, song, name) in SONGS {
         std::fs::write(format!("{dir}/{name}.wav"), wav_bytes(&render_song(song)))?;
     }
     Ok(())
@@ -1133,5 +1428,21 @@ mod tests {
         let s = render_song(&STAGE);
         assert!(s.iter().all(|x| x.abs() <= 1.0));
         assert!(s.iter().map(|x| x.abs()).fold(0.0, f32::max) > 0.3);
+    }
+}
+
+#[cfg(test)]
+mod weapon_sound_tests {
+    use super::*;
+
+    #[test]
+    fn weapon_sounds_are_audible_and_do_not_clip() {
+        for s in [Sfx::Fireball, Sfx::Plasma, Sfx::Railgun, Sfx::Meteor] {
+            let a = sfx_samples(s);
+            let peak = a.iter().fold(0.0f32, |m, v| m.max(v.abs()));
+            let secs = a.len() as f32 / RATE_F;
+            assert!(peak > 0.05 && peak <= 1.0, "peak {peak}");
+            assert!(secs > 0.1 && secs < 0.6, "length {secs}");
+        }
     }
 }

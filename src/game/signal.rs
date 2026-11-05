@@ -141,7 +141,7 @@ impl Game {
                 if s.phase_t > 4.0 {
                     s.phase = 1;
                     s.phase_t = 0.0;
-                    au.music(Some(Music::Final));
+                    au.music(Some(Music::Signal));
                     self.banner = Some(("ECHO".into(), "It fires what you fire.".into(), 2.5));
                 }
             }

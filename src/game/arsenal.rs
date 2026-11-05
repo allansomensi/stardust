@@ -26,6 +26,7 @@ pub(super) fn fire(
     dmg: f32,
     o: Vec2,
     ss: f32,
+    evo: bool,
     out: &mut Vec<PBullet>,
     au: &mut Audio,
 ) -> f32 {
@@ -40,38 +41,43 @@ pub(super) fn fire(
             for a in angles {
                 let mut b = mk(o, *a, 420.0, (1.5 + lvf * 0.3) * dmg, BKind::Fireball);
                 b.life = 0.9;
-                // blast radius
-                b.phase = 38.0 + lvf * 6.0;
-                b.base_x = (2.2 + lvf * 0.55) * dmg;
+                // blast radius and blast damage (an evolved fireball is a mini sun)
+                b.phase = (38.0 + lvf * 6.0) * if evo { 1.6 } else { 1.0 };
+                b.base_x = (2.2 + lvf * 0.55) * dmg * if evo { 1.5 } else { 1.0 };
+                b.evo = evo;
                 out.push(b);
             }
-            au.play_vol(Sfx::Flame, 0.5);
-            au.play_vol(Sfx::Missile, 0.25);
+            au.play_vol(Sfx::Fireball, 0.6);
             0.46
         }
         Weapon::Plasma => {
             let angles: &[f32] = match lv {
                 1 | 2 => &[0.0],
                 3 | 4 => &[-5.0, 5.0],
+                _ if evo => &[-16.0, -9.0, 0.0, 9.0, 16.0],
                 _ => &[-9.0, 0.0, 9.0],
             };
             for (k, a) in angles.iter().enumerate() {
                 let mut b = mk(o, *a, 430.0, (1.5 + lvf * 0.25) * dmg, BKind::Plasma);
+                b.evo = evo;
                 b.pierce = 255;
                 b.life = 2.0;
                 b.phase = k as f32 * 1.7;
                 out.push(b);
             }
-            au.play_vol(Sfx::Portal, 0.22);
-            au.play_vol(Sfx::Laser, 0.2);
+            au.play_vol(Sfx::Plasma, 0.55);
             0.27
         }
         Weapon::Railgun => {
             let main = (4.5 + lvf * 1.4) * dmg;
-            let mut b = mk(o, 0.0, 0.0, main, BKind::Rail);
-            b.phase = 5.0 + lvf * 2.0;
-            b.life = 1.0;
-            out.push(b);
+            // evolved: twin beams side by side
+            let xs: &[f32] = if evo { &[-9.0, 9.0] } else { &[0.0] };
+            for x in xs {
+                let mut b = mk(o + vec2(*x, 0.0), 0.0, 0.0, main, BKind::Rail);
+                b.phase = 5.0 + lvf * 2.0;
+                b.life = 1.0;
+                out.push(b);
+            }
             if lv >= 4 {
                 for x in [-16.0, 16.0] {
                     let mut s = mk(o + vec2(x, 6.0), 0.0, 0.0, main * 0.35, BKind::Rail);
@@ -80,7 +86,7 @@ pub(super) fn fire(
                     out.push(s);
                 }
             }
-            au.play_vol(Sfx::Thunder, 0.45);
+            au.play_vol(Sfx::Railgun, 0.6);
             0.58
         }
         Weapon::Meteor => {
@@ -88,14 +94,15 @@ pub(super) fn fire(
             for k in 0..n {
                 let a = (k as f32 - (n - 1) as f32 / 2.0) * 12.0;
                 let mut b = mk(o, a, 520.0, (2.4 + lvf * 0.5) * dmg, BKind::Meteor);
-                b.pierce = 2;
+                b.pierce = if evo { 5 } else { 2 };
                 b.life = 0.62;
+                b.evo = evo;
                 // shard count and shard damage
-                b.phase = (4 + lv) as f32;
+                b.phase = ((4 + lv) * if evo { 2 } else { 1 }) as f32;
                 b.base_x = 0.9 * dmg;
                 out.push(b);
             }
-            au.play_vol(Sfx::Pellet, 0.45);
+            au.play_vol(Sfx::Meteor, 0.6);
             0.4
         }
         _ => 0.2,
@@ -132,13 +139,21 @@ pub(super) fn move_bullet(b: &mut PBullet, dt: f32, fx: &mut Fx) {
 
 /// Plasma orbs grow while they fly.
 fn plasma_r(b: &PBullet) -> f32 {
-    6.0 + (b.t * 9.0).min(8.0)
+    6.0 + (b.t * 9.0).min(8.0) + if b.evo { 4.0 } else { 0.0 }
 }
 
 pub(super) fn draw_bullet(b: &PBullet, p: Vec2, time: f32) {
     match b.kind {
         BKind::Fireball => {
-            let pulse = 1.0 + (time * 30.0).sin() * 0.08;
+            let pulse = (1.0 + (time * 30.0).sin() * 0.08) * if b.evo { 1.6 } else { 1.0 };
+            if b.evo {
+                // the mini sun's corona
+                for k in 0..8 {
+                    let ang = time * 3.0 + k as f32 / 8.0 * std::f32::consts::TAU;
+                    let q = p + vec2(ang.cos(), ang.sin()) * 18.0 * pulse;
+                    draw_line(p.x, p.y, q.x, q.y, 2.0, Color::new(1.0, 0.8, 0.3, 0.6));
+                }
+            }
             draw_circle(
                 p.x,
                 p.y + 6.0,
@@ -312,9 +327,9 @@ impl Game {
     }
 
     /// Embers left by a fireball blast.
-    pub(super) fn fireball_embers(&mut self, pos: Vec2, dmg: f32) {
-        for k in 0..8 {
-            let a = k as f32 / 8.0 * TAU + gen_range(-0.2, 0.2);
+    pub(super) fn fireball_embers(&mut self, pos: Vec2, dmg: f32, n: usize) {
+        for k in 0..n {
+            let a = k as f32 / n as f32 * TAU + gen_range(-0.2, 0.2);
             let mut e = PBullet::new(
                 pos,
                 vec2(a.cos(), a.sin()) * gen_range(160.0, 260.0),

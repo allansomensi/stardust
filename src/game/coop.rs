@@ -225,7 +225,7 @@ impl Game {
         }
         Some(if self.co.duo >= 1.0 {
             (
-                "DUO READY: ability".to_string(),
+                "DUO READY: {ABILITY}".to_string(),
                 Color::from_rgba(255, 140, 240, 255),
             )
         } else {
@@ -337,6 +337,7 @@ impl Game {
         };
         match it {
             Item::Weapon(w) => p2.weapon = w,
+            Item::Evolve(_) if p2.level >= 5 => p2.evolved_weapon = Some(p2.weapon),
             Item::Upgrade => p2.level = (p2.level + 1).min(5),
             Item::ExtraLife => p2.lives += 1,
             Item::Bomb => p2.bombs += 1,

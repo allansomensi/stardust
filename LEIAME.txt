@@ -71,6 +71,8 @@ COMO FICAR MAIS FORTE
 Entre um setor e outro existe a LOJA. Os cristais que você recolhe
 compram:
 * ARMAS: quanto mais estrelas (* a *****), mais forte e mais cara.
+* EVOLUÇÃO: uma arma no nível 5 pode evoluir para uma forma mais
+  forte (um mini sol, feixes gêmeos, um leque de sete tiros...).
 * NÚCLEO DE DANO: +15% de dano em qualquer arma, até 6 vezes.
 * Melhorias de arma, cadência, velocidade, drones, canhões laterais,
   escudo, bombas, vidas, tiro automático, mira laser e mais.
@@ -118,7 +120,8 @@ MÚSICA PERSONALIZADA
 O jogo compõe a própria trilha chiptune. Para usar suas músicas,
 crie uma pasta "music" ao lado do stardust.exe (ou dentro da pasta
 de progresso) com arquivos .ogg ou .wav chamados:
-  title, stage, boss, shop, final, credits
+  title, stage, boss, shop, final, credits,
+  region1 ... region8 (uma por região), special
 
 Para exportar a trilha original em .wav:
   stardust.exe --export-music

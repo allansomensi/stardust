@@ -809,7 +809,7 @@ impl Game {
             let cow = weapon == Some(Weapon::Cow);
             let fire = weapon == Some(Weapon::Fireball);
             if fire {
-                self.fireball_embers(pos, dmg);
+                self.fireball_embers(pos, dmg, if r > 80.0 { 16 } else { 8 });
                 self.fx
                     .burst(pos, Color::from_rgba(255, 140, 40, 255), 18, 200.0);
             }

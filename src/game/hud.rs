@@ -5,7 +5,7 @@ use super::*;
 impl Game {
     pub(super) fn draw_mini_hud(&self) {
         for (i, (t, c)) in self.coop_status().iter().enumerate() {
-            ui::text(t, 8.0, H - 26.0 + i as f32 * 14.0, 11.0, *c);
+            ui::hint(t, 8.0, H - 26.0 + i as f32 * 14.0, 11.0, *c, -1);
         }
         if let Some(b) = &self.boss
             && b.entered()
@@ -28,7 +28,7 @@ impl Game {
 
     pub(super) fn draw_hud(&self, sp: &Sprites, art: &Art) {
         for (i, (t, c)) in self.coop_status().iter().enumerate() {
-            ui::text_r(t, W - 8.0, 64.0 + i as f32 * 14.0, 11.0, *c);
+            ui::hint_r(t, W - 8.0, 64.0 + i as f32 * 14.0, 11.0, *c);
         }
         draw_rectangle(0.0, 0.0, W, 34.0, Color::new(0.0, 0.0, 0.05, 0.55));
         for (i, (ch, got)) in self.letters_line().iter().enumerate() {
@@ -113,6 +113,9 @@ impl Game {
         ui::text_r(w.name(), W - 62.0, H - 7.0, 15.0, w.color());
         let nx = W - 66.0 - ui::width(w.name(), 15.0);
         crate::icons::weapon_badge(w, vec2(nx - 9.0, H - 12.0), 9.0, 1.0);
+        if self.evolved() {
+            ui::text_r("EVOLVED", W - 62.0, H - 24.0, 10.0, GOLD);
+        }
         for i in 0..5 {
             let c = if i < self.effective_level() {
                 w.color()
@@ -367,8 +370,8 @@ impl Game {
                     ui::text_r(&val, W - 64.0, y, 20.0, if *crystal { CYAN } else { GOLD });
                 }
                 if *shown >= lines.len() && (t * 2.0) as i32 % 2 == 0 {
-                    ui::text_c(
-                        "ENTER to continue",
+                    ui::hint_c(
+                        "{CONFIRM} to continue",
                         W / 2.0,
                         y0 + 100.0 + lines.len() as f32 * 32.0,
                         16.0,
@@ -525,14 +528,14 @@ impl Game {
                     20.0,
                     CYAN,
                 );
-                ui::text_c(
-                    "ENTER continues (lose half your points)",
+                ui::hint_c(
+                    "{CONFIRM} continues (lose half your points)",
                     W / 2.0,
                     H * 0.65,
                     15.0,
                     WHITE,
                 );
-                ui::text_c("ESC gives up", W / 2.0, H * 0.68, 15.0, DIM);
+                ui::hint_c("{BACK} gives up", W / 2.0, H * 0.68, 15.0, DIM);
                 ui::button(
                     "CONTINUE",
                     W / 2.0 - 70.0,
@@ -641,7 +644,7 @@ impl Game {
             y += size * 1.6;
         }
         if t > 4.0 {
-            ui::text_c("ENTER skips", W / 2.0, H - 12.0, 13.0, DIM);
+            ui::hint_c("{CONFIRM} skips", W / 2.0, H - 12.0, 13.0, DIM);
         }
     }
 }

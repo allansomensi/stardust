@@ -21,6 +21,7 @@ mod draw;
 mod drops;
 pub mod encounters;
 mod enemies;
+pub mod evolution;
 pub mod glow;
 mod hud;
 pub mod levels;
@@ -331,6 +332,8 @@ struct PBullet {
     base_x: f32,
     phase: f32,
     weapon: Option<Weapon>,
+    /// Fired by an evolved weapon (drawn bigger).
+    evo: bool,
 }
 
 impl PBullet {
@@ -347,6 +350,7 @@ impl PBullet {
             base_x: pos.x,
             phase: 0.0,
             weapon: Some(weapon),
+            evo: false,
         }
     }
 }
@@ -510,6 +514,8 @@ pub struct Player {
     pub charge: f32,
     /// Co-op: this ship was already rescued once in this run.
     revived: bool,
+    /// The weapon this ship has evolved (the evolution stays with that weapon).
+    pub evolved_weapon: Option<Weapon>,
 }
 
 impl Player {
@@ -627,6 +633,7 @@ enum Item {
     Capacitor,
     MysteryBox,
     DamageCore,
+    Evolve(Weapon),
 }
 
 impl Item {
@@ -656,6 +663,7 @@ impl Item {
             Item::Capacitor => "CAPACITOR".into(),
             Item::MysteryBox => "MYSTERY BOX".into(),
             Item::DamageCore => "DAMAGE CORE".into(),
+            Item::Evolve(w) => format!("EVOLVE {}", w.name()),
         }
     }
     fn desc(self) -> &'static str {
@@ -684,6 +692,7 @@ impl Item {
             Item::Capacitor => "Charged shot 40% faster and stronger.",
             Item::MysteryBox => "Who knows what's inside? It's almost always good.",
             Item::DamageCore => "+15% damage on every weapon. Stacks up to 6x.",
+            Item::Evolve(w) => evolution::evolution_desc(w),
         }
     }
     fn icon(self) -> Icon {
@@ -702,7 +711,7 @@ impl Item {
             Item::Autofire | Item::Capacitor => Icon::Bolt,
             Item::LaserSight => Icon::Target,
             Item::MysteryBox => Icon::Bag,
-            Item::DamageCore => Icon::Star,
+            Item::DamageCore | Item::Evolve(_) => Icon::Star,
         }
     }
     fn price(self) -> u32 {
@@ -731,6 +740,7 @@ impl Item {
             Item::Capacitor => 50,
             Item::MysteryBox => 20,
             Item::DamageCore => 70,
+            Item::Evolve(w) => 170 + 40 * w.tier(),
         }
     }
     /// Unique key (different weapons count separately).
@@ -760,6 +770,7 @@ impl Item {
             Item::Capacitor => 21,
             Item::MysteryBox => 22,
             Item::DamageCore => 23,
+            Item::Evolve(_) => 24,
         }
     }
 }
@@ -965,6 +976,7 @@ impl Game {
             shots: 0,
             phoenix_used: false,
             revived: false,
+            evolved_weapon: None,
             tilt: 0.0,
             focus: false,
             meter: if mods.meter_full { 1.0 } else { 0.3 },
@@ -1117,6 +1129,15 @@ impl Game {
         self.player.level = lv;
         if let Some(p2) = &mut self.p2 {
             p2.level = lv;
+        }
+    }
+
+    /// The theme of the region being played (normal waves).
+    pub(super) fn region_music(&self) -> Music {
+        match self.stage().theme {
+            t @ 0..=7 => Music::Region(t as u8),
+            8 => Music::Shop,
+            _ => Music::Final,
         }
     }
 
