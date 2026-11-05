@@ -101,14 +101,14 @@ impl Difficulty {
         }
     }
     pub fn bullet_speed(self) -> f32 {
-        [0.8, 1.0, 1.15, 1.3][self as usize]
+        [0.85, 1.1, 1.25, 1.4][self as usize]
     }
     pub fn fire_rate(self) -> f32 {
-        [0.55, 1.0, 1.25, 1.5][self as usize]
+        [0.65, 1.25, 1.55, 1.9][self as usize]
     }
     /// Enemy pace (movement, dives and bosses).
     pub fn pace(self) -> f32 {
-        [0.8, 1.0, 1.15, 1.3][self as usize]
+        [0.85, 1.05, 1.18, 1.32][self as usize]
     }
     pub fn lives(self) -> i32 {
         [2, 0, -1, -1][self as usize]
@@ -120,7 +120,7 @@ impl Difficulty {
         [0.5, 1.0, 1.5, 2.0][self as usize]
     }
     pub fn continues(self) -> u32 {
-        [3, 2, 1, 0][self as usize]
+        [2, 1, 0, 0][self as usize]
     }
     pub fn from_index(i: u8) -> Difficulty {
         DIFFS.get(i as usize).copied().unwrap_or(Difficulty::Normal)

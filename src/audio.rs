@@ -876,46 +876,23 @@ const ALL_SFX: [Sfx; SFX_COUNT] = [
 ];
 
 impl Audio {
-    pub async fn load(mut progress: impl FnMut(f32)) -> Audio {
-        let mut sfx = Vec::new();
-        for (i, s) in ALL_SFX.iter().enumerate() {
-            sfx.push(
-                load_sound_from_bytes(&wav_bytes(&sfx_samples(*s)))
-                    .await
-                    .ok(),
-            );
-            progress(i as f32 / SFX_COUNT as f32 * 0.3);
+    /// Turns the sounds prepared by a finished `SynthJob` into an `Audio`.
+    pub async fn from_job(job: SynthJob) -> Audio {
+        let mut sfx = Vec::with_capacity(SFX_COUNT);
+        for bytes in job.sfx {
+            let snd = match bytes {
+                Some(b) => load_sound_from_bytes(&b).await.ok(),
+                None => None,
+            };
+            sfx.push(snd);
         }
-        let mut music = Vec::new();
-        // Custom music file names.
-        let list = [
-            (Music::Title, &TITLE, "title"),
-            (Music::Stage, &STAGE, "stage"),
-            (Music::Boss, &BOSS, "boss"),
-            (Music::Shop, &SHOP, "shop"),
-            (Music::Final, &FINAL, "final"),
-            (Music::Credits, &CREDITS, "credits"),
-        ];
-        for (i, (id, song, file)) in list.iter().enumerate() {
-            let mut snd = None;
-            'search: for dir in music_dirs() {
-                for ext in ["ogg", "wav"] {
-                    let path = dir.join(format!("{file}.{ext}"));
-                    if let Ok(bytes) = std::fs::read(&path) {
-                        snd = load_sound_from_bytes(&bytes).await.ok();
-                        if snd.is_some() {
-                            break 'search;
-                        }
-                    }
-                }
-            }
-            if snd.is_none() {
-                snd = load_sound_from_bytes(&wav_bytes(&render_song(song)))
-                    .await
-                    .ok();
-            }
-            music.push((*id, snd));
-            progress(0.3 + (i + 1) as f32 / list.len() as f32 * 0.7);
+        let mut music = Vec::with_capacity(SONGS.len());
+        for (i, bytes) in job.music.into_iter().enumerate() {
+            let snd = match bytes {
+                Some(b) => load_sound_from_bytes(&b).await.ok(),
+                None => None,
+            };
+            music.push((SONGS[i].0, snd));
         }
         Audio {
             sfx,
@@ -987,6 +964,94 @@ impl Audio {
 }
 
 /// Used by the export tool (`--export-music`).
+/// The soundtrack, with the file names used for custom music.
+const SONGS: [(Music, &Song, &str); 6] = [
+    (Music::Title, &TITLE, "title"),
+    (Music::Stage, &STAGE, "stage"),
+    (Music::Boss, &BOSS, "boss"),
+    (Music::Shop, &SHOP, "shop"),
+    (Music::Final, &FINAL, "final"),
+    (Music::Credits, &CREDITS, "credits"),
+];
+
+enum Ready {
+    Sfx(Vec<Option<Vec<u8>>>),
+    Song(usize, Vec<u8>),
+}
+
+/// Synthesizes the sound effects and the soundtrack on worker threads, so the window keeps
+/// drawing (and handles resizing and fullscreen) while the game starts.
+pub struct SynthJob {
+    rx: std::sync::mpsc::Receiver<Ready>,
+    sfx: Vec<Option<Vec<u8>>>,
+    music: Vec<Option<Vec<u8>>>,
+    sfx_done: bool,
+    songs_done: usize,
+}
+
+impl SynthJob {
+    pub fn start() -> SynthJob {
+        let (tx, rx) = std::sync::mpsc::channel();
+        let t = tx.clone();
+        std::thread::spawn(move || {
+            let all = ALL_SFX
+                .iter()
+                .map(|s| Some(wav_bytes(&sfx_samples(*s))))
+                .collect();
+            let _ = t.send(Ready::Sfx(all));
+        });
+        for (i, (_, song, file)) in SONGS.iter().enumerate() {
+            let t = tx.clone();
+            let song: &'static Song = song;
+            let file: &'static str = file;
+            std::thread::spawn(move || {
+                let bytes = custom_music(file).unwrap_or_else(|| wav_bytes(&render_song(song)));
+                let _ = t.send(Ready::Song(i, bytes));
+            });
+        }
+        SynthJob {
+            rx,
+            sfx: vec![],
+            music: vec![None; SONGS.len()],
+            sfx_done: false,
+            songs_done: 0,
+        }
+    }
+
+    /// Collects finished work. Returns the progress, from 0 to 1.
+    pub fn poll(&mut self) -> f32 {
+        while let Ok(r) = self.rx.try_recv() {
+            match r {
+                Ready::Sfx(v) => {
+                    self.sfx = v;
+                    self.sfx_done = true;
+                }
+                Ready::Song(i, b) => {
+                    self.music[i] = Some(b);
+                    self.songs_done += 1;
+                }
+            }
+        }
+        (self.sfx_done as usize + self.songs_done) as f32 / (SONGS.len() + 1) as f32
+    }
+
+    pub fn finished(&self) -> bool {
+        self.sfx_done && self.songs_done == SONGS.len()
+    }
+}
+
+/// Bytes of a custom music file (.ogg or .wav) named `file`, if the player added one.
+fn custom_music(file: &str) -> Option<Vec<u8>> {
+    for dir in music_dirs() {
+        for ext in ["ogg", "wav"] {
+            if let Ok(bytes) = std::fs::read(dir.join(format!("{file}.{ext}"))) {
+                return Some(bytes);
+            }
+        }
+    }
+    None
+}
+
 pub fn export_music(dir: &str) -> std::io::Result<()> {
     std::fs::create_dir_all(dir)?;
     for (song, name) in [

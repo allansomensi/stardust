@@ -9,6 +9,9 @@ use macroquad::prelude::*;
 use macroquad::rand::gen_range;
 use std::f32::consts::{PI, TAU};
 
+/// How far (in radians) the Eye's beams swing to each side of their aim.
+const BEAM_SWING: f32 = 0.2;
+
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum BossKind {
     Queen,
@@ -121,6 +124,9 @@ pub struct Boss {
     open: bool,
     lid_t: f32,
     beam_angles: Vec<f32>,
+    /// Center angle of each beam's sweep and the time spent sweeping.
+    beam_base: Vec<f32>,
+    beam_t: f32,
     beam_warn: f32,
     beam_on: f32,
     gaze: Option<(Vec2, f32)>,
@@ -279,6 +285,8 @@ impl Boss {
             open: true,
             lid_t: 0.0,
             beam_angles: vec![],
+            beam_base: vec![],
+            beam_t: 0.0,
             beam_warn: 0.0,
             beam_on: 0.0,
             gaze: None,
@@ -450,6 +458,7 @@ impl Boss {
             self.dying += dt;
             self.beam = None;
             self.beam_angles.clear();
+            self.beam_base.clear();
             self.gaze = None;
             self.explode_cd -= dt;
             if self.explode_cd <= 0.0 {
@@ -592,13 +601,18 @@ impl Boss {
                 out.sfx.push(Sfx::Thunder);
             }
         } else if self.beam_on > 0.0 {
+            // Each beam swings back and forth inside its own sector (shown during the
+            // warning), so part of the lane is always safe.
             self.beam_on -= dt;
+            self.beam_t += dt;
             let dir = if self.variant { -1.0 } else { 1.0 };
-            for a in &mut self.beam_angles {
-                *a += dt * 0.55 * dir * (1.0 + ph as f32 * 0.2);
+            let swing = (self.beam_t * 1.5 * (1.0 + ph as f32 * 0.15)).sin() * BEAM_SWING * dir;
+            for (a, base) in self.beam_angles.iter_mut().zip(&self.beam_base) {
+                *a = base + swing;
             }
             if self.beam_on <= 0.0 {
                 self.beam_angles.clear();
+                self.beam_base.clear();
             }
         }
 
@@ -832,11 +846,16 @@ impl Boss {
                             } else {
                                 2
                             };
-                            let start = gen_range(0.0, PI);
-                            self.beam_angles =
-                                (0..n).map(|i| start + i as f32 / n as f32 * TAU).collect();
-                            self.beam_warn = 1.0;
-                            self.beam_on = 4.0;
+                            // One beam aims at a random part of the lane; its sector never
+                            // covers all of it. The others point away, spaced evenly.
+                            let aim_x = gen_range(W * 0.22, W * 0.78);
+                            let down = (H - 80.0 - self.pos.y).atan2(aim_x - self.pos.x);
+                            self.beam_base =
+                                (0..n).map(|i| down + i as f32 / n as f32 * TAU).collect();
+                            self.beam_angles = self.beam_base.clone();
+                            self.beam_t = 0.0;
+                            self.beam_warn = 1.3;
+                            self.beam_on = 3.4;
                             out.sfx.push(Sfx::Warning);
                         }
                         done = self.beam_on <= 0.0;
@@ -1490,6 +1509,19 @@ impl Boss {
             }
         }
         if !self.beam_angles.is_empty() {
+            // the danger sector of every beam
+            for base in &self.beam_base {
+                let a0 = base - BEAM_SWING;
+                let a1 = base + BEAM_SWING;
+                let alpha = if self.beam_warn > 0.0 {
+                    0.16 + (time * 10.0).sin().abs() * 0.12
+                } else {
+                    0.07
+                };
+                let p0 = self.pos + vec2(a0.cos(), a0.sin()) * 900.0;
+                let p1 = self.pos + vec2(a1.cos(), a1.sin()) * 900.0;
+                draw_triangle(self.pos, p0, p1, Color::new(0.5, 0.85, 1.0, alpha));
+            }
             for a in &self.beam_angles {
                 let dir = vec2(a.cos(), a.sin());
                 let from = self.pos + dir * 30.0;

@@ -24,6 +24,10 @@ pub mod scenery;
 pub mod vanguard;
 
 pub const COLS: usize = 8;
+/// Ceiling for every drop-rate boost (cards, shop items, blessings), so the screen never
+/// floods with items.
+const MAX_DROP_BOOST: f32 = 1.6;
+
 /// Campaign length: 20 sectors of 5 levels each = 100 levels.
 pub const SECTORS: u32 = 20;
 /// Levels per sector.
@@ -658,8 +662,8 @@ impl Item {
             Item::Insurance => "Your next death won't cost a weapon level.",
             Item::EnergyCell => "Fills the ability and speeds up recharge.",
             Item::Bank => "Earns 15% of your crystals every sector.",
-            Item::Radar => "Cards drop twice as often.",
-            Item::Amulet => "More power-ups until the end of the run.",
+            Item::Radar => "Cards drop more often.",
+            Item::Amulet => "A few more power-ups until the end of the run (max 2).",
             Item::Crystallizer => "Enemies drop more crystals.",
             Item::TreasureMap => "A Golden Scarab in the next sector.",
             Item::Mercenary => "A wingman fires at your side for 2 sectors.",
@@ -692,7 +696,7 @@ impl Item {
     }
     fn price(self) -> u32 {
         match self {
-            Item::ExtraLife => 70,
+            Item::ExtraLife => 95,
             Item::Bomb => 25,
             Item::Shield => 40,
             Item::Upgrade => 50,
@@ -1159,7 +1163,7 @@ impl Game {
                         (
                             ((sector - 1) * 8 / SECTORS) as usize,
                             (sector * 2).div_ceil(3) + self.cycle * 14,
-                            x * 7.0 + x * x * 3.0 + self.cycle as f32 * 4.0,
+                            0.5 + x * 8.0 + x * x * 3.5 + self.cycle as f32 * 4.0,
                         )
                     }
                     Mode::Daily => (
@@ -1345,7 +1349,7 @@ impl Game {
             self.frenzy_t = self.frenzy_t.max(10.0);
         }
         if self.bank && self.wave > 1 {
-            let interest = (self.crystals * 0.15).floor();
+            let interest = (self.crystals * 0.1).floor();
             self.crystals += interest;
             if interest > 0.0 {
                 self.fx.text(
@@ -2510,7 +2514,7 @@ impl Game {
             if p.dead_t <= 0.0 && p.lives > 0 {
                 p.pos = vec2(spawn_x, H - 80.0);
                 p.vel = Vec2::ZERO;
-                p.invuln = 2.5;
+                p.invuln = 2.0;
                 p.tilt = 0.0;
             }
             return;
@@ -3133,7 +3137,7 @@ impl Game {
         let diff = self.diff();
         let player = self.player.pos;
         let alive = self.player.alive();
-        let bspeed = (185.0 + diff * 14.0) * self.bullet_mul();
+        let bspeed = (195.0 + diff * 15.0) * self.bullet_mul();
         let mut new_bullets: Vec<EBullet> = vec![];
         let mut spawns: Vec<(Vec2, Vec2)> = vec![];
         let mut fired = false;
@@ -3178,7 +3182,7 @@ impl Game {
             .iter()
             .map(|e| self.slot(e.col, e.row))
             .collect();
-        let formation_rate = 0.018 * (1.0 + diff * 0.3) * self.fire_rate_enemy() * self.rage_mul();
+        let formation_rate = 0.024 * (1.0 + diff * 0.3) * self.fire_rate_enemy() * self.rage_mul();
         let can_shoot = alive
             && ((self.wave_age > 2.5 && self.wave_kind == WaveKind::Normal)
                 || self.wave_kind == WaveKind::Boss);
@@ -4568,21 +4572,31 @@ impl Game {
             } else {
                 1.0
             };
+            // Never more than a couple of capsules, power-ups and cards at once: the screen
+            // must stay readable however many drop boosts were bought.
+            let (caps, powers, cards_out) =
+                self.drops.iter().fold((0, 0, 0), |n, d| match d.kind {
+                    DropKind::Capsule { .. } => (n.0 + 1, n.1, n.2),
+                    DropKind::Power(_) => (n.0, n.1 + 1, n.2),
+                    DropKind::Card(_) => (n.0, n.1, n.2 + 1),
+                    _ => n,
+                });
             self.capsule_pity += 1;
             let cap_chance = if e.kind == Kind::Beetle { 0.06 } else { 0.011 } * rain;
-            if self.capsule_pity > 70 || gen_range(0.0, 1.0) < cap_chance {
+            let power_mul = self.mods.powerup_mul.min(MAX_DROP_BOOST);
+            if caps < 2 && (self.capsule_pity > 70 || gen_range(0.0, 1.0) < cap_chance) {
                 self.capsule_pity = 0;
                 let cap = self.make_capsule();
                 self.spawn_drop(e.pos, cap);
-            } else if gen_range(0.0, 1.0) < 0.006 * self.mods.powerup_mul * rain {
+            } else if powers < 2 && gen_range(0.0, 1.0) < 0.006 * power_mul * rain {
                 self.spawn_drop(e.pos, DropKind::Power(PowerKind::random()));
             }
             let card_chance = if e.kind == Kind::Beetle {
                 0.006
             } else {
                 0.0018
-            } * self.mods.card_mul;
-            if gen_range(0.0, 1.0) < card_chance {
+            } * self.mods.card_mul.min(MAX_DROP_BOOST);
+            if cards_out < 1 && gen_range(0.0, 1.0) < card_chance {
                 self.spawn_drop(e.pos, DropKind::Card(cards::roll(0)));
             }
         }
@@ -4671,7 +4685,7 @@ impl Game {
     }
 
     fn price(&self, it: Item) -> u32 {
-        let mut p = it.price() as f32 * (1.0 + 0.5 * self.bought(it) as f32) * self.mods.shop_mul;
+        let mut p = it.price() as f32 * (1.0 + 0.75 * self.bought(it) as f32) * self.mods.shop_mul;
         if self.grudge {
             p *= 1.3;
         }
@@ -4692,8 +4706,8 @@ impl Game {
     fn shop_block(&self, it: Item) -> Option<&'static str> {
         let p = &self.player;
         match it {
-            Item::ExtraLife if p.lives >= 7 => Some("MAX"),
-            Item::Bomb if p.bombs >= 7 => Some("MAX"),
+            Item::ExtraLife if p.lives >= 5 => Some("MAX"),
+            Item::Bomb if p.bombs >= 5 => Some("MAX"),
             Item::Upgrade if p.level >= 5 => Some("MAX"),
             Item::Shield if p.shield => Some("OWNED"),
             Item::Thruster if p.speed_lvl >= 3 => Some("MAX"),
@@ -4704,6 +4718,8 @@ impl Game {
             Item::Insurance if self.insurance || self.mods.keep_level => Some("OWNED"),
             Item::Bank if self.bank => Some("OWNED"),
             Item::Crystallizer if self.crystalizer => Some("OWNED"),
+            Item::Amulet if self.bought(Item::Amulet) >= 2 => Some("MAX"),
+            Item::Radar if self.bought(Item::Radar) >= 1 => Some("OWNED"),
             Item::TreasureMap if self.treasure_map => Some("OWNED"),
             Item::Mercenary if self.ally_sectors > 0 => Some("OWNED"),
             Item::Weapon(w) if w == p.weapon => Some("EQUIPPED"),
@@ -4781,8 +4797,8 @@ impl Game {
                         self.mods.meter_mul += 0.2;
                     }
                     Item::Bank => self.bank = true,
-                    Item::Radar => self.mods.card_mul *= 2.0,
-                    Item::Amulet => self.mods.powerup_mul *= 1.6,
+                    Item::Radar => self.mods.card_mul += 0.6,
+                    Item::Amulet => self.mods.powerup_mul += 0.3,
                     Item::Crystallizer => self.crystalizer = true,
                     Item::TreasureMap => self.treasure_map = true,
                     Item::Mercenary => self.ally_sectors = 2,

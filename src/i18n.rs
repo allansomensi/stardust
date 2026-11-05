@@ -278,6 +278,10 @@ static EXACT: &[(&str, &str)] = &[
         "Um drone que atira com você.",
     ),
     (
+        "A few more power-ups until the end of the run (max 2).",
+        "Um pouco mais de power-ups até o fim da partida (máx. 2).",
+    ),
+    (
         "A flying nursery. Releases hatchlings while alive.",
         "Uma creche voadora. Solta filhotes enquanto estiver viva.",
     ),
@@ -575,10 +579,7 @@ static EXACT: &[(&str, &str)] = &[
     ("Card Fisher", "Pescador de Cartas"),
     ("Card Magnet", "Ímã de Cartas"),
     ("Cards drop 50% more often.", "Cartas caem 50% mais."),
-    (
-        "Cards drop twice as often.",
-        "Cartas caem com o dobro de frequência.",
-    ),
+    ("Cards drop more often.", "Cartas caem com mais frequência."),
     ("Cards fly to you.", "Cartas voam até você."),
     (
         "Carriers, Chameleons, Mimics, Thieves,",
@@ -1509,10 +1510,6 @@ static EXACT: &[(&str, &str)] = &[
     ),
     ("Minigames won", "Minigames vencidos"),
     ("Moo!", "Muuu!"),
-    (
-        "More power-ups until the end of the run.",
-        "Mais power-ups até o fim da partida.",
-    ),
     (
         "Mother of the whole Swarm. Her claws fire on their own and she calls minions.",
         "Mãe de todo o Enxame. Suas garras disparam sozinhas e ela chama lacaios.",

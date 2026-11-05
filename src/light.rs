@@ -97,6 +97,11 @@ fn with<R>(f: impl FnOnce(&mut State) -> R) -> R {
     })
 }
 
+/// Compiles the shader and builds the glow texture ahead of time.
+pub fn init() {
+    with(|_| {});
+}
+
 /// Turns the lighting on or off (Settings > Graphics).
 pub fn set_enabled(on: bool) {
     with(|s| s.on = on);

@@ -24,10 +24,38 @@ static TITLE_TTF: &[u8] = include_bytes!("../assets/fonts/PressStart2P.ttf");
 const BODY_SF: f32 = 1.12;
 const TITLE_SF: f32 = 0.6;
 
+/// One font per size (and per typeface), each with its own small glyph atlas. A single
+/// shared atlas grew to tens of megabytes at 4K and was re-uploaded to the GPU every time
+/// a glyph was added, which froze the game when going fullscreen.
 struct Fonts {
-    body: Font,
-    title: Font,
+    /// [0] body, [1] title; indexed like `SIZES`, created on first use.
+    faces: [Vec<Option<Font>>; 2],
     k: f32,
+    /// Glyphs still to rasterize: (title, index in SIZES, character).
+    queue: Vec<(bool, usize, char)>,
+}
+
+impl Fonts {
+    fn get(&mut self, title: bool, idx: usize) -> &Font {
+        let slot = &mut self.faces[title as usize][idx];
+        slot.get_or_insert_with(|| {
+            let mut f = load_ttf_font_from_bytes(if title { TITLE_TTF } else { BODY_TTF })
+                .expect("embedded font");
+            f.set_filter(FilterMode::Linear);
+            f
+        })
+    }
+}
+
+fn size_index(size: u16) -> usize {
+    SIZES.iter().position(|&s| s == size).unwrap_or_else(|| {
+        SIZES
+            .iter()
+            .enumerate()
+            .min_by_key(|(_, v)| (**v as i32 - size as i32).abs())
+            .map(|(i, _)| i)
+            .unwrap_or(4)
+    })
 }
 
 thread_local! {
@@ -48,11 +76,50 @@ fn charset() -> String {
     chars
 }
 
+/// Rebuilds the fonts only once the pixel scale has settled. While a window is being
+/// resized or goes fullscreen it reports several sizes in a row; rebuilding the fonts for
+/// each of them used to freeze the game for a moment.
+#[derive(Default)]
+pub struct Scaler {
+    pending: f32,
+    stable_t: f32,
+}
+
+impl Scaler {
+    pub fn update(&mut self, k: f32, dt: f32) {
+        let have = FONTS.with(|f| f.borrow().as_ref().map(|f| f.k));
+        let Some(cur) = have else {
+            // First frame: build right away.
+            set_pixel_scale(k);
+            self.pending = k;
+            return;
+        };
+        let target = quantize(k);
+        if (target - cur).abs() < 0.001 {
+            self.stable_t = 0.0;
+            self.pending = target;
+            return;
+        }
+        if (target - self.pending).abs() > 0.001 {
+            self.pending = target;
+            self.stable_t = 0.0;
+        }
+        self.stable_t += dt;
+        if self.stable_t > 0.25 {
+            set_pixel_scale(k);
+        }
+    }
+}
+
+fn quantize(k_raw: f32) -> f32 {
+    ((k_raw * 8.0).round() / 8.0).clamp(0.75, 4.5)
+}
+
 /// Sets how many physical pixels exist per logical unit (called every frame).
 /// When the scale changes, the fonts are recreated (new atlas) and every glyph is
 /// pre-rasterized at the exact screen size, before anything is drawn that frame.
 pub fn set_pixel_scale(k_raw: f32) {
-    let k = ((k_raw * 8.0).round() / 8.0).clamp(0.75, 4.5);
+    let k = quantize(k_raw);
     let same = FONTS.with(|f| {
         f.borrow()
             .as_ref()
@@ -62,20 +129,75 @@ pub fn set_pixel_scale(k_raw: f32) {
     if same {
         return;
     }
-    let mut body = load_ttf_font_from_bytes(BODY_TTF).expect("embedded font");
-    let mut title = load_ttf_font_from_bytes(TITLE_TTF).expect("embedded font");
-    body.set_filter(FilterMode::Linear);
-    title.set_filter(FilterMode::Linear);
-    let chars = charset();
-    for &s in SIZES.iter() {
+    let t0 = std::time::Instant::now();
+    let mut fonts = Fonts {
+        faces: [
+            (0..SIZES.len()).map(|_| None).collect(),
+            (0..SIZES.len()).map(|_| None).collect(),
+        ],
+        k,
+        queue: Vec::new(),
+    };
+    let chars: Vec<char> = charset().chars().collect();
+    let text: String = chars.iter().collect();
+    // Small body text (HUD and menus) is ready right away. Medium sizes are queued and
+    // rasterized a little every frame by `warm_step`; big titles only ever use a few
+    // letters, so they are rasterized when first drawn.
+    // Glyphs bigger than this (in screen pixels) are only rasterized when drawn: they
+    // belong to titles that use a handful of letters, and pre-rasterizing whole alphabets
+    // at that size would make the atlases grow again and again.
+    const MAX_WARM_PX: u16 = 72;
+    for (i, &s) in SIZES.iter().enumerate().rev() {
         let (fs, sc) = raster(s, BODY_SF, k);
-        measure_text(&chars, Some(&body), fs, sc);
-        if s >= 14 {
-            let (fs, sc) = raster(s, TITLE_SF, k);
-            measure_text(&chars, Some(&title), fs, sc);
+        if s <= 13 && fs <= MAX_WARM_PX {
+            // the tiniest HUD text is needed on the very first frame
+            let font = fonts.get(false, i);
+            measure_text(&text, Some(font), fs, sc);
+        } else if s <= 38 && fs <= MAX_WARM_PX {
+            fonts.queue.extend(chars.iter().map(|c| (false, i, *c)));
+        }
+        let (tfs, _) = raster(s, TITLE_SF, k);
+        if (14..=30).contains(&s) && tfs <= MAX_WARM_PX {
+            fonts.queue.extend(chars.iter().map(|c| (true, i, *c)));
         }
     }
-    FONTS.with(|f| *f.borrow_mut() = Some(Fonts { body, title, k }));
+    if crate::dev_env("STARDUST_FONTBENCH").is_some() {
+        eprintln!(
+            "FONTS k={k} took {:?}, {} glyphs queued",
+            t0.elapsed(),
+            fonts.queue.len()
+        );
+    }
+    FONTS.with(|f| *f.borrow_mut() = Some(fonts));
+}
+
+/// True when every queued glyph has been rasterized.
+pub fn warm_done() -> bool {
+    FONTS.with(|f| {
+        f.borrow()
+            .as_ref()
+            .map(|f| f.queue.is_empty())
+            .unwrap_or(false)
+    })
+}
+
+/// Rasterizes queued glyphs for up to `budget` (call once per frame, before drawing).
+pub fn warm_step(budget: std::time::Duration) {
+    let t0 = std::time::Instant::now();
+    FONTS.with(|f| {
+        let mut f = f.borrow_mut();
+        let Some(fonts) = f.as_mut() else { return };
+        let k = fonts.k;
+        let mut buf = [0u8; 4];
+        while let Some((title, idx, c)) = fonts.queue.pop() {
+            let (fs, sc) = raster(SIZES[idx], if title { TITLE_SF } else { BODY_SF }, k);
+            let font = fonts.get(title, idx);
+            measure_text(c.encode_utf8(&mut buf), Some(font), fs, sc);
+            if t0.elapsed() >= budget {
+                break;
+            }
+        }
+    });
 }
 
 fn raster(size: u16, sf: f32, k: f32) -> (u16, f32) {
@@ -84,11 +206,14 @@ fn raster(size: u16, sf: f32, k: f32) -> (u16, f32) {
     (fs, logical / fs as f32)
 }
 
-fn with_font<R>(title: bool, f: impl FnOnce(Option<&Font>, f32) -> R) -> R {
+fn with_font<R>(title: bool, size: u16, f: impl FnOnce(Option<&Font>, f32) -> R) -> R {
     FONTS.with(|fonts| {
-        let fonts = fonts.borrow();
-        match fonts.as_ref() {
-            Some(x) => f(Some(if title { &x.title } else { &x.body }), x.k),
+        let mut fonts = fonts.borrow_mut();
+        match fonts.as_mut() {
+            Some(x) => {
+                let k = x.k;
+                f(Some(x.get(title, size_index(size))), k)
+            }
             None => f(None, 1.0),
         }
     })
@@ -96,7 +221,7 @@ fn with_font<R>(title: bool, f: impl FnOnce(Option<&Font>, f32) -> R) -> R {
 
 fn measure(s: &str, size: u16, title: bool) -> f32 {
     let s = &crate::i18n::tr(s);
-    with_font(title, |font, k| {
+    with_font(title, size, |font, k| {
         let (fs, sc) = raster(size, if title { TITLE_SF } else { BODY_SF }, k);
         measure_text(s, font, fs, sc).width
     })
@@ -112,7 +237,7 @@ pub fn title_width(s: &str, size: f32) -> f32 {
 
 fn raw_font(s: &str, x: f32, y: f32, size: u16, color: Color, title: bool) {
     let s = &crate::i18n::tr(s);
-    with_font(title, |font, k| {
+    with_font(title, size, |font, k| {
         let (fs, sc) = raster(size, if title { TITLE_SF } else { BODY_SF }, k);
         draw_text_ex(
             s,

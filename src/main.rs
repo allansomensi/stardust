@@ -4343,10 +4343,37 @@ async fn main() {
     }
     macroquad::rand::srand(miniquad::date::now() as u64);
 
+    if dev_env("STARDUST_FONTBENCH").is_some() {
+        for k in [1.0, 2.0, 3.0, 4.0] {
+            ui::set_pixel_scale(k);
+        }
+        return;
+    }
     let mut screens = Screens::new();
-    for _ in 0..2 {
+    let save = Save::load();
+    // The soundtrack is synthesized on worker threads while this loop keeps the window
+    // alive (so going fullscreen at start-up is handled right away instead of freezing).
+    let mut job = audio::SynthJob::start();
+    if save.fullscreen {
+        display::set_fullscreen(true);
+    }
+    let mut scaler = ui::Scaler::default();
+    let mut t = 0.0f32;
+    // Heavy one-time set-up happens while the loading screen is up.
+    let mut built: Option<(sprites::Sprites, art::Art)> = None;
+    let mut frames = 0;
+    loop {
+        frames += 1;
+        if frames == 3 {
+            light::init();
+            let mut sp = sprites::build();
+            let art = art::build(&mut sp);
+            built = Some((sp, art));
+        }
+        let progress = job.poll();
         let l = Screens::layout();
-        ui::set_pixel_scale(l.k);
+        scaler.update(l.k, get_frame_time());
+        ui::warm_step(std::time::Duration::from_millis(12));
         screens.ensure(&l);
         set_camera(&screens.wide_cam(&l));
         draw_rectangle(0.0, 0.0, l.ww, H, Color::from_rgba(4, 4, 16, 255));
@@ -4366,20 +4393,29 @@ async fn main() {
             16.0,
             DIM,
         );
+        let bw = 220.0;
+        draw_rectangle(
+            W / 2.0 - bw / 2.0,
+            H / 2.0 + 44.0,
+            bw,
+            6.0,
+            Color::new(0.2, 0.2, 0.35, 1.0),
+        );
+        draw_rectangle(W / 2.0 - bw / 2.0, H / 2.0 + 44.0, bw * progress, 6.0, CYAN);
+        let dot = (t * 2.0) as usize % 4;
+        ui::text_c(&".".repeat(dot), W / 2.0, H / 2.0 + 72.0, 16.0, DIM);
         screens.present(&l, false);
+        t += get_frame_time();
         next_frame().await;
+        if job.finished() && built.is_some() && (ui::warm_done() || t > 8.0) {
+            break;
+        }
     }
-
-    let save = Save::load();
-    if save.fullscreen {
-        display::set_fullscreen(true);
-    }
-    let audio = Audio::load(|_| {}).await;
+    let audio = Audio::from_job(job).await;
     let mut bg = Background::new();
     bg.set_theme(0);
     let env = dev_env;
-    let mut sp = sprites::build();
-    let art = art::build(&mut sp);
+    let (sp, art) = built.expect("built during loading");
     let mut app = App {
         screen: Screen::Title { sel: 0 },
         save,
@@ -4507,8 +4543,13 @@ async fn main() {
     app.apply_settings();
 
     let mut rep = Repeat::default();
+    // Development: CPU time spent per frame (update + draw submission).
+    let profile = dev_env("STARDUST_PROFILE").is_some();
+    let resize_test = dev_env("STARDUST_RESIZE").is_some();
+    let mut prof = (0.0f64, 0u32, 0.0f64);
     loop {
         let dt = get_frame_time().min(1.0 / 30.0);
+        let frame_t0 = std::time::Instant::now();
         app.pads.update(dt);
         let full = poll_input(&mut rep, dt);
         let coop_playing = matches!(app.screen, Screen::Playing)
@@ -4534,14 +4575,26 @@ async fn main() {
         }
         let l = Screens::layout();
         app.panels = l.panels && app.save.panels;
+        let pre_ms = frame_t0.elapsed().as_secs_f64() * 1000.0;
+        if resize_test && app.time > 4.0 && app.time - dt <= 4.0 {
+            request_new_screen_size(3840.0, 2160.0);
+        }
+        let t_upd = std::time::Instant::now();
         app.update(dt, &inp);
+        let upd_ms = t_upd.elapsed().as_secs_f64() * 1000.0;
         if app.quit {
             app.save.write();
             break;
         }
 
-        ui::set_pixel_scale(l.k);
+        let t_font = std::time::Instant::now();
+        scaler.update(l.k, dt);
+        ui::warm_step(std::time::Duration::from_micros(2500));
+        let font_ms = t_font.elapsed().as_secs_f64() * 1000.0;
+        let t_rt = std::time::Instant::now();
         screens.ensure(&l);
+        let rt_ms = t_rt.elapsed().as_secs_f64() * 1000.0;
+        let t_pan = std::time::Instant::now();
         set_camera(&screens.wide_cam(&l));
         let bg = app.game.as_ref().map(|g| &g.bg).unwrap_or(&app.bg);
         bg.draw_wide(l.ww);
@@ -4555,13 +4608,47 @@ async fn main() {
             H + 4.0,
             Color::from_rgba(70, 40, 110, 255),
         );
+        let pan_ms = t_pan.elapsed().as_secs_f64() * 1000.0;
         set_camera(&screens.play_cam(&l));
+        let t_draw = std::time::Instant::now();
         app.draw();
+        let draw_ms = t_draw.elapsed().as_secs_f64() * 1000.0;
         if app.save.show_fps {
             ui::text_r(&format!("{} FPS", get_fps()), W - 6.0, 14.0, 11.0, GREEN);
         }
+        let t_pres = std::time::Instant::now();
         screens.present(&l, app.save.crt);
+        let pres_ms = t_pres.elapsed().as_secs_f64() * 1000.0;
         app.audio.end_frame();
+        if profile {
+            let ft = frame_t0.elapsed().as_secs_f64();
+            if ft > 0.03 {
+                eprintln!(
+                    "SLOW FRAME {:.0} ms (pre {:.0}, update {:.0}, fonts {:.0}, rt {:.0}, panels {:.0}, draw {:.0}, present {:.0}) at t={:.2} playing={}",
+                    ft * 1000.0,
+                    pre_ms,
+                    upd_ms,
+                    font_ms,
+                    rt_ms,
+                    pan_ms,
+                    draw_ms,
+                    pres_ms,
+                    app.time,
+                    app.game.is_some()
+                );
+            }
+            prof.0 += frame_t0.elapsed().as_secs_f64();
+            prof.1 += 1;
+            prof.2 = prof.2.max(frame_t0.elapsed().as_secs_f64());
+            if prof.1 == 120 {
+                eprintln!(
+                    "PROFILE cpu avg {:.2} ms, worst {:.2} ms",
+                    prof.0 / prof.1 as f64 * 1000.0,
+                    prof.2 * 1000.0
+                );
+                prof = (0.0, 0, 0.0);
+            }
+        }
         next_frame().await;
     }
 }
